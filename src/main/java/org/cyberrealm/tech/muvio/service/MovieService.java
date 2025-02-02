@@ -4,6 +4,8 @@ import java.util.List;
 import org.cyberrealm.tech.muvio.model.Movie;
 
 public interface MovieService {
+    void importMovies();
+
     List<Movie> getAllMovies();
 
     Movie getMovieById(String id);
