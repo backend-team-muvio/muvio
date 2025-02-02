@@ -17,12 +17,4 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
         env:
-          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_SUCCESS_URL: ${{ secrets.STRIPE_SUCCESS_URL }}
-          STRIPE_CANCEL_URL: ${{ secrets.STRIPE_CANCEL_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_ROOT_PASSWORD: ${{ secrets.POSTGRES_ROOT_PASSWORD }}
+          MONGO_URL: ${{ secrets.MONGO_URL }}
