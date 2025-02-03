@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: moodie-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: us
+    buildCommand: ""
+    startCommand: "java -jar app.jar"

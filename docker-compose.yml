@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  app:
+    restart: on-failure
+    image: muvio
+    build: .
+    env_file: ./.env
+    ports:
+      - "${SPRING_LOCAL_PORT}:${SPRING_DOCKER_PORT}"
+      - "${DEBUG_PORT}:${DEBUG_PORT}"
+    environment:
+      SPRING_APPLICATION_JSON: |
+        {
+          "spring.data.mongodb.uri": "${MONGO_URL}"
+        }
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${DEBUG_PORT}"
