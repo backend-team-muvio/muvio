@@ -1,12 +1,13 @@
 package org.cyberrealm.tech.muvio.service;
 
 import java.util.List;
+import org.cyberrealm.tech.muvio.dto.MovieDto;
 import org.cyberrealm.tech.muvio.model.Movie;
 
 public interface MovieService {
     void importMovies();
 
-    List<Movie> getAllMovies();
+    List<MovieDto> getAllMovies();
 
     Movie getMovieById(String id);
 

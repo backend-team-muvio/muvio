@@ -2,6 +2,7 @@ package org.cyberrealm.tech.muvio.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.dto.MovieDto;
 import org.cyberrealm.tech.muvio.model.Movie;
 import org.cyberrealm.tech.muvio.service.MovieService;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,7 +21,7 @@ public class MovieController {
     private final MovieService movieService;
 
     @GetMapping
-    public List<Movie> getAllMovies() {
+    public List<MovieDto> getAllMovies() {
         return movieService.getAllMovies();
     }
 
