@@ -6,7 +6,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Document(collection = "durations")
+
 public class Duration {
     @Id
-    private String duration;
+    private Integer duration;
 }
