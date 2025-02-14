@@ -39,4 +39,5 @@ public class Movie {
     private Set<Atmosphere> atmospheres = new HashSet<>();
     @DBRef
     private Set<Category> categories = new HashSet<>();
+    private Set<String> keywords = new HashSet<>();
 }

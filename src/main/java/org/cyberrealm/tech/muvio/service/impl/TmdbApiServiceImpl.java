@@ -7,11 +7,7 @@ import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.MovieResultsPage;
 import info.movito.themoviedbapi.model.core.video.VideoResults;
-import info.movito.themoviedbapi.model.movies.Cast;
-import info.movito.themoviedbapi.model.movies.Credits;
-import info.movito.themoviedbapi.model.movies.Crew;
-import info.movito.themoviedbapi.model.movies.Images;
-import info.movito.themoviedbapi.model.movies.MovieDb;
+import info.movito.themoviedbapi.model.movies.*;
 import info.movito.themoviedbapi.tools.TmdbException;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +34,7 @@ import org.cyberrealm.tech.muvio.repository.photos.PhotoRepository;
 import org.cyberrealm.tech.muvio.repository.producer.ProducerRepository;
 import org.cyberrealm.tech.muvio.repository.ratings.RatingRepository;
 import org.cyberrealm.tech.muvio.repository.years.YearRepository;
+import org.cyberrealm.tech.muvio.service.AtmosphereService;
 import org.cyberrealm.tech.muvio.service.TmdbService;
 import org.springframework.stereotype.Service;
 
@@ -61,6 +58,7 @@ public class TmdbApiServiceImpl implements TmdbService {
     private final DurationRepository durationRepository;
     private final CategoryRepository categoryRepository;
     private final AtmosphereRepository atmosphereRepository;
+    private final AtmosphereService atmosphereService;
 
     @Override
     public void importMovies(int fromPage, int toPage, String language, String location) {
@@ -78,15 +76,24 @@ public class TmdbApiServiceImpl implements TmdbService {
             }
             final List<Movie> movies = movieResultsPage.getResults();
             for (Movie movie : movies) {
-                MovieDb movieDb;
+                final MovieDb movieDb;
                 final int movieId = movie.getId();
-                try {
-                    movieDb = tmdbApi.getMovies().getDetails(movieId, language);
-                } catch (TmdbException e) {
-                    throw new RuntimeException("Can't find movie by id");
-                }
+                final KeywordResults keywords;
+                final Credits credits;
+                final List<ReleaseInfo> releaseInfo;
                 final org.cyberrealm.tech.muvio.model.Movie movieMdb =
                         new org.cyberrealm.tech.muvio.model.Movie();
+                try {
+                    movieDb = tmdbApi.getMovies().getDetails(movieId, language);
+                    keywords = tmdbMovies.getKeywords(movieId);
+                    movieMdb.setPhotos(getPhotos(tmdbMovies.getImages(movieId, language)));
+                    movieMdb.setTrailer(getTrailer(tmdbMovies.getVideos(movieId, language)));
+                    credits = tmdbMovies.getCredits(movieId, language);
+                    releaseInfo = tmdbMovies.getReleaseDates(movieId).getResults();
+                } catch (TmdbException e) {
+                    throw new RuntimeException("Can't find movie or credits or video or images"
+                            + " or keywords by movieId " + movieId);
+                }
                 movieMdb.setId(String.valueOf(movieId));
                 movieMdb.setName(movieDb.getTitle());
                 movieMdb.setPosterPath(getPosterPath(IMAGE_PATH + movieDb.getPosterPath()));
@@ -94,18 +101,11 @@ public class TmdbApiServiceImpl implements TmdbService {
                 movieMdb.setOverview(movieDb.getOverview());
                 movieMdb.setRating(getRating(movieDb.getVoteAverage()));
                 movieMdb.setGenres(getGenres(movieDb.getGenres()));
-                final Credits credits;
-                try {
-                    movieMdb.setPhotos(getPhotos(tmdbMovies.getImages(movieId, language)));
-                    movieMdb.setTrailer(getTrailer(tmdbMovies.getVideos(movieId, language)));
-                    credits = tmdbMovies.getCredits(movieId, language);
-                } catch (TmdbException e) {
-                    throw new RuntimeException("Can't find credits, video by movieId "
-                            + movieId + " or images");
-                }
                 movieMdb.setProducer(getProducer(credits.getCrew()));
                 movieMdb.setActors(getActors(credits.getCast()));
                 movieMdb.setDuration(getDuration(movieDb.getRuntime()));
+                atmosphereService.putAtmosphere(releaseInfo, movieMdb);
+                keywords.getKeywords().forEach(k -> movieMdb.getKeywords().add(k.getName()));
                 movieRepository.save(movieMdb);
             }
         }
