@@ -1,6 +1,6 @@
 package org.cyberrealm.tech.muvio.config;
 
-import com.uwetrottmann.tmdb2.Tmdb;
+import info.movito.themoviedbapi.TmdbApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,7 +11,7 @@ public class SecurityConfig {
     private String apiKey;
 
     @Bean
-    public Tmdb tmdb() {
-        return new Tmdb(apiKey);
+    public TmdbApi tmdbApi() {
+        return new TmdbApi(apiKey);
     }
 }

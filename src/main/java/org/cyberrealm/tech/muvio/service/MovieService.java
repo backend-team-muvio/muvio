@@ -5,7 +5,6 @@ import org.cyberrealm.tech.muvio.dto.MovieDto;
 import org.cyberrealm.tech.muvio.model.Movie;
 
 public interface MovieService {
-    void importMovies();
 
     List<MovieDto> getAllMovies();
 

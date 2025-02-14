@@ -8,5 +8,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "years")
 public class Year {
     @Id
-    private String year;
+    private Integer year;
 }

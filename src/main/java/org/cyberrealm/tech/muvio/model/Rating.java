@@ -8,5 +8,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "ratings")
 public class Rating {
     @Id
-    private String rating;
+    private Double rating;
 }
