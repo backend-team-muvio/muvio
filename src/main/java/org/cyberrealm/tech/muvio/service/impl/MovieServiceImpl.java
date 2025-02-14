@@ -2,19 +2,17 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import com.uwetrottmann.tmdb2.Tmdb;
 import com.uwetrottmann.tmdb2.entities.BaseMovie;
-import com.uwetrottmann.tmdb2.entities.Genre;
 import com.uwetrottmann.tmdb2.entities.GenreResults;
 import com.uwetrottmann.tmdb2.entities.MovieResultsPage;
 import com.uwetrottmann.tmdb2.entities.Videos;
-import com.uwetrottmann.tmdb2.services.GenresService;
 import com.uwetrottmann.tmdb2.services.MoviesService;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Movie;
 import org.cyberrealm.tech.muvio.repository.genres.GenreRepository;
@@ -25,13 +23,13 @@ import retrofit2.Response;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MovieServiceImpl implements MovieService {
     private static final String UA = "ua";
     private static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
-    private static final int ZERO = 0;
-    private static final int ONE = 1;
-    private static final int FIVE = 5;
+    private static final int PAGES_TO_LOAD = 5;
+
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
     private final Tmdb tmdb;
@@ -39,64 +37,9 @@ public class MovieServiceImpl implements MovieService {
     @PostConstruct
     @Override
     public void importMovies() {
-        if (movieRepository != null) {
-            movieRepository.deleteAll();
-        }
+        movieRepository.deleteAll();
         loadGenres();
-        MoviesService moviesService = tmdb.moviesService();
-        for (int page = ONE; page <= FIVE; page++) {
-            Response<MovieResultsPage> response;
-            try {
-                response = moviesService.popular(page, UA, UA).execute();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to fetch popular movies");
-            }
-            MovieResultsPage movieResultsPage = response.body();
-            if (movieResultsPage != null) {
-                List<BaseMovie> movies = movieResultsPage.results;
-                if (movies != null) {
-                    for (BaseMovie movie : movies) {
-                        Movie movieDb = new Movie();
-                        movieDb.setName(movie.title);
-                        movieDb.setPosterPath(IMAGE_PATH + movie.poster_path);
-                        if (movie.genre_ids != null && !movie.genre_ids.isEmpty()) {
-                            Set<GenreEntity> genres = movie.genre_ids.stream()
-                                    .map(genreId -> genreRepository.findById(
-                                            String.valueOf(genreId)).orElseThrow(
-                                                    () -> new RuntimeException(
-                                                            "Can't find genre by id " + genreId)))
-                                    .filter(Objects::nonNull)
-                                    .collect(Collectors.toSet());
-                            movieDb.setGenres(genres);
-                        }
-                        if (movie.id != null) {
-                            Response<Videos> videosResponse;
-                            try {
-                                videosResponse = moviesService.videos(movie.id, UA).execute();
-                            } catch (IOException e) {
-                                throw new RuntimeException("Can not find videos");
-                            }
-                            List<Videos.Video> trailers = Objects.requireNonNull(
-                                    Objects.requireNonNull(videosResponse.body()).results)
-                                    .stream().filter(video -> {
-                                        if (video.type != null) {
-                                            return "Trailer".equals(video.type.toString());
-                                        }
-                                        return false;
-                                    })
-                                    .toList();
-                            if (!trailers.isEmpty()) {
-                                movieDb.setTrailer(YOUTUBE_PATH + trailers.get(ZERO).key);
-                            }
-                        }
-                        if (movie.vote_average != null) {
-                            movieDb.setRating(movie.vote_average);
-                        }
-                        Objects.requireNonNull(movieRepository).save(movieDb);
-                    }
-                }
-            }
-        }
+        fetchAndSaveMovies();
     }
 
     @Override
@@ -122,8 +65,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public Movie updateMovie(String id, Movie updatedMovie) {
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("There is no movie with this id: " + id));
+        Movie movie = getMovieById(id);
         movie.setName(updatedMovie.getName());
         movie.setGenres(updatedMovie.getGenres());
         movie.setRating(updatedMovie.getRating());
@@ -133,24 +75,75 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private void loadGenres() {
-        if (genreRepository != null) {
-            genreRepository.deleteAll();
-        }
-        GenresService genresService = tmdb.genreService();
-        Response<GenreResults> response;
+        genreRepository.deleteAll();
         try {
-            response = genresService.movie(UA).execute();
+            Response<GenreResults> response = tmdb.genreService().movie(UA).execute();
+            if (response.isSuccessful() && response.body() != null) {
+                List<GenreEntity> genres = response.body().genres.stream()
+                        .map(genre -> {
+                            GenreEntity genreEntity = new GenreEntity();
+                            genreEntity.setId(String.valueOf(genre.id));
+                            genreEntity.setName(genre.name);
+                            return genreEntity;
+                        })
+                        .toList();
+                genreRepository.saveAll(genres);
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Failed execute genres");
+            log.error("Failed to fetch genres", e);
+            throw new RuntimeException("Failed to fetch genres", e);
         }
-        if (response.body() != null) {
-            List<Genre> genreEntities = response.body().genres;
-            for (Genre genre : Objects.requireNonNull(genreEntities)) {
-                GenreEntity genreEntity = new GenreEntity();
-                genreEntity.setId(String.valueOf(genre.id));
-                genreEntity.setName(genre.name);
-                Objects.requireNonNull(genreRepository).save(genreEntity);
+    }
+
+    private void fetchAndSaveMovies() {
+        MoviesService moviesService = tmdb.moviesService();
+        for (int page = 1; page <= PAGES_TO_LOAD; page++) {
+            try {
+                Response<MovieResultsPage> response = moviesService.popular(page, UA, UA).execute();
+                if (response.isSuccessful() && response.body() != null) {
+                    saveMovies(response.body().results);
+                }
+            } catch (IOException e) {
+                log.error("Failed to fetch movies for page {}", page, e);
             }
         }
+    }
+
+    private void saveMovies(List<BaseMovie> movies) {
+        for (BaseMovie baseMovie : movies) {
+            Movie movie = new Movie();
+            movie.setName(baseMovie.title);
+            movie.setPosterPath(IMAGE_PATH + baseMovie.poster_path);
+            movie.setGenres(mapGenres(baseMovie.genre_ids));
+            movie.setTrailer(fetchTrailer(baseMovie.id));
+            movie.setRating(baseMovie.vote_average);
+            movieRepository.save(movie);
+        }
+    }
+
+    private Set<GenreEntity> mapGenres(List<Integer> genreIds) {
+        return genreIds.stream()
+                .map(id -> genreRepository.findById(String.valueOf(id))
+                        .orElseThrow(() -> new RuntimeException("Can't find genre by id " + id)))
+                .collect(Collectors.toSet());
+    }
+
+    private String fetchTrailer(Integer movieId) {
+        if (movieId == null) {
+            return null;
+        }
+        try {
+            Response<Videos> response = tmdb.moviesService().videos(movieId, UA).execute();
+            if (response.isSuccessful() && response.body() != null) {
+                return response.body().results.stream()
+                        .filter(video -> "Trailer".equals(video.type))
+                        .map(video -> YOUTUBE_PATH + video.key)
+                        .findFirst()
+                        .orElse(null);
+            }
+        } catch (IOException e) {
+            log.error("Failed to fetch trailer for movie id {}", movieId, e);
+        }
+        return null;
     }
 }
