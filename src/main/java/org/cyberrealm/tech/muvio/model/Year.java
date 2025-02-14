@@ -5,9 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
-@Document(collection = "genres")
-public class GenreEntity {
+@Document(collection = "years")
+public class Year {
     @Id
-    private Integer id;
-    private String name;
+    private Integer year;
 }

@@ -5,9 +5,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
-@Document(collection = "genres")
-public class GenreEntity {
+@Document(collection = "actors")
+public class Actor {
     @Id
-    private Integer id;
     private String name;
+    private String photo;
 }
