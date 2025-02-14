@@ -41,7 +41,9 @@ import org.cyberrealm.tech.muvio.repository.producer.ProducerRepository;
 import org.cyberrealm.tech.muvio.repository.ratings.RatingRepository;
 import org.cyberrealm.tech.muvio.repository.years.YearRepository;
 import org.cyberrealm.tech.muvio.service.MovieService;
+import org.springframework.stereotype.Service;
 import retrofit2.Response;
+
 
 @Service
 @RequiredArgsConstructor
