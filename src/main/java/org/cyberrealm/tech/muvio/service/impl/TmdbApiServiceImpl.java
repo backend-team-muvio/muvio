@@ -247,6 +247,7 @@ public class TmdbApiServiceImpl implements TmdbService {
         }
     }
 
+
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     private void loadGenres(String language) {
