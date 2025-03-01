@@ -1,0 +1,90 @@
+package org.cyberrealm.tech.muvio.service.impl;
+
+import info.movito.themoviedbapi.model.movies.ReleaseDate;
+import info.movito.themoviedbapi.model.movies.ReleaseInfo;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.model.GenreEntity;
+import org.cyberrealm.tech.muvio.model.Vibe;
+import org.cyberrealm.tech.muvio.service.VibeService;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class VibeServiceImpl implements VibeService {
+    private static final int ZERO = 0;
+    private static final Map<String, Map<Vibe, Integer>> GENRE_TO_VIBE_MAP = Map.ofEntries(
+            Map.entry("Family", Map.of(Vibe.MAKE_ME_CHILL, 9, Vibe.MAKE_ME_FEEL_GOOD, 9,
+                    Vibe.MAKE_ME_DREAM, 9)),
+            Map.entry("Romance", Map.of(Vibe.MAKE_ME_DREAM, 8, Vibe.MAKE_ME_FEEL_GOOD, 8)),
+            Map.entry("Music", Map.of(Vibe.MAKE_ME_DREAM, 6, Vibe.MAKE_ME_FEEL_GOOD, 6)),
+            Map.entry("Documentary", Map.of(Vibe.MAKE_ME_CURIOUS, 6)),
+            Map.entry("History", Map.of(Vibe.MAKE_ME_CURIOUS, 7)),
+            Map.entry("Fantasy", Map.of(Vibe.MAKE_ME_DREAM, 10, Vibe.TAKE_ME_TO_ANOTHER_WORLD,
+                    10)),
+            Map.entry("Animation", Map.of(Vibe.MAKE_ME_CHILL, 9, Vibe.MAKE_ME_FEEL_GOOD, 9)),
+            Map.entry("Crime", Map.of(Vibe.KEEP_ME_ON_EDGE, 7)),
+            Map.entry("Western", Map.of(Vibe.TAKE_ME_TO_ANOTHER_WORLD, 6, Vibe.MAKE_ME_CURIOUS,
+                    6)),
+            Map.entry("Action", Map.of(Vibe.KEEP_ME_ON_EDGE, 8, Vibe.BLOW_MY_MIND, 8)),
+            Map.entry("War", Map.of(Vibe.MAKE_ME_CURIOUS, 8, Vibe.BLOW_MY_MIND, 8)),
+            Map.entry("Adventure", Map.of(Vibe.TAKE_ME_TO_ANOTHER_WORLD, 7, Vibe.MAKE_ME_DREAM,
+                    7, Vibe.BLOW_MY_MIND, 7)),
+            Map.entry("Horror", Map.of(Vibe.SCARY_ME_SILLY, 10)),
+            Map.entry("Comedy", Map.of(Vibe.MAKE_ME_CHILL, 10, Vibe.MAKE_ME_FEEL_GOOD, 10)),
+            Map.entry("Science Fiction", Map.of(Vibe.BLOW_MY_MIND, 10,
+                    Vibe.TAKE_ME_TO_ANOTHER_WORLD, 10)),
+            Map.entry("Thriller", Map.of(Vibe.KEEP_ME_ON_EDGE, 10)),
+            Map.entry("Drama", Map.of(Vibe.MAKE_ME_FEEL_GOOD, 6, Vibe.MAKE_ME_DREAM, 6)),
+            Map.entry("Mystery", Map.of(Vibe.MAKE_ME_CURIOUS, 7, Vibe.KEEP_ME_ON_EDGE, 7))
+    );
+
+    private static final Map<String, Map<Vibe, Integer>> RATING_TO_VIBE_MAP = Map.ofEntries(
+            Map.entry("G", Map.of(Vibe.MAKE_ME_CHILL, 9, Vibe.MAKE_ME_FEEL_GOOD, 9)),
+            Map.entry("PG", Map.of(Vibe.MAKE_ME_CHILL, 9, Vibe.MAKE_ME_FEEL_GOOD, 9)),
+            Map.entry("NC-17", Map.of(Vibe.SCARY_ME_SILLY, 5, Vibe.KEEP_ME_ON_EDGE, 5,
+                    Vibe.BLOW_MY_MIND, 5)),
+            Map.entry("R", Map.of(Vibe.SCARY_ME_SILLY, 7, Vibe.BLOW_MY_MIND, 7,
+                    Vibe.KEEP_ME_ON_EDGE, 7)),
+            Map.entry("PG-13", Map.of(Vibe.MAKE_ME_FEEL_GOOD, 8, Vibe.BLOW_MY_MIND, 8,
+                    Vibe.MAKE_ME_DREAM, 8))
+    );
+
+    @Override
+    public Set<Vibe> getVibes(List<ReleaseInfo> releaseInfo, Set<GenreEntity> genresMdb) {
+        Map<Vibe, Integer> vibeCount = calculateVibesFromGenres(genresMdb);
+        return collectVibes(addVibesFromRatings(releaseInfo, vibeCount));
+    }
+
+    private Set<Vibe> collectVibes(Map<Vibe, Integer> vibeCount) {
+        final Integer maxVibeValue = vibeCount.values().stream()
+                .max(Integer::compareTo).orElse(ZERO);
+        return vibeCount.entrySet().stream()
+                .filter(vibe -> Objects.equals(vibe.getValue(), maxVibeValue))
+                .map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
+
+    private Map<Vibe, Integer> calculateVibesFromGenres(Set<GenreEntity> genresMdb) {
+        final Map<Vibe, Integer> vibeCount = new HashMap<>();
+        genresMdb.forEach(genre -> GENRE_TO_VIBE_MAP
+                .getOrDefault(genre.getName(), Map.of())
+                .forEach((vibe, score) -> vibeCount.merge(vibe, score, Integer::sum)));
+        return vibeCount;
+    }
+
+    private Map<Vibe, Integer> addVibesFromRatings(
+            List<ReleaseInfo> releaseInfo, Map<Vibe, Integer> vibeCount) {
+        Set<String> ratings = releaseInfo.stream()
+                .flatMap(release -> release.getReleaseDates().stream()
+                        .map(ReleaseDate::getCertification)).collect(Collectors.toSet());
+        ratings.forEach(rating -> RATING_TO_VIBE_MAP
+                .getOrDefault(rating, Map.of())
+                .forEach((vibe, score) -> vibeCount.merge(vibe, score, Integer::sum)));
+        return vibeCount;
+    }
+}

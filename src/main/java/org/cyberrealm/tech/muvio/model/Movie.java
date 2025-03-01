@@ -35,9 +35,6 @@ public class Movie {
     @DBRef
     private Year releaseYear;
     private String overview;
-    @DBRef
-    private Set<Atmosphere> atmospheres = new HashSet<>();
-    @DBRef
+    private Set<Vibe> vibes = new HashSet<>();
     private Set<Category> categories = new HashSet<>();
-    private Set<String> keywords = new HashSet<>();
 }
