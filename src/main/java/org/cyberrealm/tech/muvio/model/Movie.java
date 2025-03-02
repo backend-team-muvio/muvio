@@ -35,4 +35,6 @@ public class Movie {
     @DBRef
     private Year releaseYear;
     private String overview;
+    private Set<Vibe> vibes = new HashSet<>();
+    private Set<Category> categories = new HashSet<>();
 }

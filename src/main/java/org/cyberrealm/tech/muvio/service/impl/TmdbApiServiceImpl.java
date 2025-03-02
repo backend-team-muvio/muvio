@@ -6,18 +6,23 @@ import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.MovieResultsPage;
+import info.movito.themoviedbapi.model.core.image.Artwork;
 import info.movito.themoviedbapi.model.core.video.VideoResults;
 import info.movito.themoviedbapi.model.movies.Cast;
 import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.Crew;
 import info.movito.themoviedbapi.model.movies.Images;
+import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
+import info.movito.themoviedbapi.model.movies.ReleaseInfo;
 import info.movito.themoviedbapi.tools.TmdbException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.exception.TmdbServiceException;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Duration;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
@@ -33,8 +38,13 @@ import org.cyberrealm.tech.muvio.repository.photos.PhotoRepository;
 import org.cyberrealm.tech.muvio.repository.producer.ProducerRepository;
 import org.cyberrealm.tech.muvio.repository.ratings.RatingRepository;
 import org.cyberrealm.tech.muvio.repository.years.YearRepository;
+import org.cyberrealm.tech.muvio.service.CategoryService;
 import org.cyberrealm.tech.muvio.service.TmdbService;
+import org.cyberrealm.tech.muvio.service.VibeService;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +55,8 @@ public class TmdbApiServiceImpl implements TmdbService {
     private static final String DIRECTOR = "Director";
     private static final String TRAILER = "Trailer";
     private static final String TEASER = "Teaser";
+    private static final int MAX_ATTEMPTS = 60;
+    private static final int BACK_OFF = 1000;
     private final TmdbApi tmdbApi;
     private final PhotoRepository photoRepository;
     private final YearRepository yearRepository;
@@ -54,81 +66,97 @@ public class TmdbApiServiceImpl implements TmdbService {
     private final ProducerRepository producerRepository;
     private final ActorRepository actorRepository;
     private final DurationRepository durationRepository;
+    private final VibeService vibeService;
+    private final CategoryService categoryService;
 
+    @Transactional(rollbackFor = Exception.class)
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
     @Override
     public void importMovies(int fromPage, int toPage, String language, String location) {
         deleteAll();
         loadGenres(language);
+        final Set<String> imdbTop250 = categoryService.getImdbTop250();
         final TmdbMovies tmdbMovies = tmdbApi.getMovies();
         for (int page = fromPage; page <= toPage; page++) {
             final MovieResultsPage movieResultsPage;
             try {
                 movieResultsPage = tmdbApi.getMovieLists().getPopular(language, page, location);
             } catch (TmdbException e) {
-                throw new RuntimeException("Failed to fetch popular movies");
+                throw new TmdbServiceException("Failed to fetch popular movies", e);
             }
             final List<Movie> movies = movieResultsPage.getResults();
             for (Movie movie : movies) {
                 final MovieDb movieDb;
                 final int movieId = movie.getId();
+                final KeywordResults keywords;
                 final Credits credits;
+                final List<ReleaseInfo> releaseInfo;
                 final org.cyberrealm.tech.muvio.model.Movie movieMdb =
                         new org.cyberrealm.tech.muvio.model.Movie();
                 try {
                     movieDb = tmdbApi.getMovies().getDetails(movieId, language);
-                    movieMdb.setPhotos(getPhotos(tmdbMovies.getImages(movieId, language)));
-                    movieMdb.setTrailer(getTrailer(tmdbMovies.getVideos(movieId, language)));
                     credits = tmdbMovies.getCredits(movieId, language);
+                    movieMdb.setTrailer(getTrailer(tmdbMovies.getVideos(movieId, language)));
+                    movieMdb.setPhotos(getPhotos(tmdbMovies.getImages(movieId, language)));
+                    keywords = tmdbMovies.getKeywords(movieId);
+                    releaseInfo = tmdbMovies.getReleaseDates(movieId).getResults();
                 } catch (TmdbException e) {
-                    throw new RuntimeException("Can't find movie or credits or video or images"
-                            + " or keywords by movieId " + movieId);
+                    throw new TmdbServiceException("Can't find movie or credits or video or images"
+                            + " or keywords or releaseInfo by movieId " + movieId, e);
                 }
                 movieMdb.setId(String.valueOf(movieId));
-                movieMdb.setName(movieDb.getTitle());
+                final String title = movieDb.getTitle();
+                movieMdb.setName(title);
                 movieMdb.setPosterPath(getPosterPath(IMAGE_PATH + movieDb.getPosterPath()));
                 movieMdb.setReleaseYear(getReleaseYear(movieDb.getReleaseDate()));
-                movieMdb.setOverview(movieDb.getOverview());
-                movieMdb.setRating(getRating(movieDb.getVoteAverage()));
-                movieMdb.setGenres(getGenres(movieDb.getGenres()));
+                final String overview = movieDb.getOverview();
+                movieMdb.setOverview(overview);
+                final Rating rating = getRating(movieDb.getVoteAverage());
+                movieMdb.setRating(rating);
+                movieMdb.setDuration(getDuration(movieDb.getRuntime()));
                 movieMdb.setProducer(getProducer(credits.getCrew()));
                 movieMdb.setActors(getActors(credits.getCast()));
-                movieMdb.setDuration(getDuration(movieDb.getRuntime()));
+                final Set<GenreEntity> genres = getGenres(movieDb.getGenres());
+                movieMdb.setGenres(genres);
+                movieMdb.setVibes(vibeService.getVibes(releaseInfo, genres));
+                movieMdb.setCategories(categoryService.getCategories(overview.toLowerCase(),
+                        keywords, rating.getRating(), movieDb.getVoteCount(),
+                        movieDb.getPopularity(), imdbTop250, title));
                 movieRepository.save(movieMdb);
             }
         }
     }
 
     private Set<Photo> getPhotos(Images images) {
-        final Set<String> posters = images.getPosters().stream()
+        final Set<Photo> photos = new HashSet<>();
+        addPhoto(images.getPosters(), photos);
+        addPhoto(images.getBackdrops(), photos);
+        return photos;
+    }
+
+    private void addPhoto(List<Artwork> artworks, Set<Photo> photos) {
+        Set<String> photoLinks = artworks.stream()
                 .map(poster -> IMAGE_PATH + poster.getFilePath())
                 .collect(Collectors.toSet());
-        final Set<String> backdrops = images.getBackdrops().stream()
-                .map(backdrop -> IMAGE_PATH + backdrop.getFilePath())
-                .collect(Collectors.toSet());
-        final Set<Photo> photos = new HashSet<>();
-        posters.forEach(poster -> photos.add(photoRepository.findById(poster)
+        photoLinks.forEach(poster -> photos.add(photoRepository.findById(poster)
                 .orElseGet(() -> {
                     Photo photo = new Photo();
                     photo.setPath(poster);
                     return photoRepository.save(photo);
                 })));
-        backdrops.forEach(backdrop ->
-                photos.add(photoRepository.findById(backdrop).orElseGet(() -> {
-                    Photo photo = new Photo();
-                    photo.setPath(backdrop);
-                    return photoRepository.save(photo);
-                })));
-        return photos;
     }
 
     private String getTrailer(VideoResults videos) {
+        return getTrailerLink(videos, TRAILER)
+                .orElse(getTrailerLink(videos, TEASER).orElse("no trailer"));
+    }
+
+    private Optional<String> getTrailerLink(VideoResults videos, String type) {
         return videos.getResults().stream()
-                .filter(video -> video.getType().equals(TRAILER))
+                .filter(video -> video.getType().equals(type))
                 .map(trailer -> YOUTUBE_PATH + trailer.getKey())
-                .findFirst().orElse(videos.getResults().stream()
-                        .filter(video -> video.getType().equals(TEASER))
-                        .map(teaser -> YOUTUBE_PATH + teaser.getKey())
-                        .findFirst().orElse(null));
+                .findFirst();
     }
 
     private Duration getDuration(Integer runtime) {
@@ -170,16 +198,11 @@ public class TmdbApiServiceImpl implements TmdbService {
                     producerTmdb.setName(name);
                     return producerRepository.save(producerTmdb);
                 }).findFirst()
-                .orElse(crews.stream().filter(crew -> crew.getJob().equals(PRODUCER))
-                        .map(producer -> {
-                            final String name = producer.getName();
-                            if (producerRepository.findById(name).isPresent()) {
-                                return producerRepository.findById(name).get();
-                            }
-                            final Producer producerTmdb = new Producer();
-                            producerTmdb.setName(name);
-                            return producerRepository.save(producerTmdb);
-                        }).findFirst().orElse(null));
+                .orElseGet(() -> {
+                    final Producer producer = new Producer();
+                    producer.setName("unknown director");
+                    return producer;
+                });
     }
 
     private Set<GenreEntity> getGenres(List<Genre> genres) {
@@ -200,9 +223,18 @@ public class TmdbApiServiceImpl implements TmdbService {
     }
 
     private Year getReleaseYear(String releaseDate) {
-        Year year = new Year();
-        year.setYear(Integer.valueOf(releaseDate.substring(0,4)));
-        return yearRepository.save(year);
+        if (releaseDate != null && releaseDate.length() == 10) {
+            return findYear(Integer.parseInt(releaseDate.substring(0, 4)));
+        }
+        return findYear(0);
+    }
+
+    private Year findYear(int yearInt) {
+        return yearRepository.findById(yearInt).orElseGet(() -> {
+            final Year year = new Year();
+            year.setYear(yearInt);
+            return yearRepository.save(year);
+        });
     }
 
     private Rating getRating(Double rating) {
@@ -215,24 +247,20 @@ public class TmdbApiServiceImpl implements TmdbService {
         }
     }
 
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
     private void loadGenres(String language) {
         final TmdbGenre genres;
         genres = tmdbApi.getGenre();
         try {
-            if (genres != null && genres.getMovieList(language) != null) {
-                try {
-                    for (Genre genre : genres.getMovieList(language)) {
-                        final GenreEntity genreEntity = new GenreEntity();
-                        genreEntity.setId(genre.getId());
-                        genreEntity.setName(genre.getName());
-                        genreRepository.save(genreEntity);
-                    }
-                } catch (TmdbException e) {
-                    throw new RuntimeException(e);
-                }
+            for (Genre genre : genres.getMovieList(language)) {
+                final GenreEntity genreEntity = new GenreEntity();
+                genreEntity.setId(genre.getId());
+                genreEntity.setName(genre.getName());
+                genreRepository.save(genreEntity);
             }
         } catch (TmdbException e) {
-            throw new RuntimeException(e);
+            throw new TmdbServiceException("Can't get genres",e);
         }
     }
 

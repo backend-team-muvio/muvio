@@ -14,8 +14,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MovieServiceImpl implements MovieService, SmartLifecycle {
+    private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int FIVE = 5;
+    private static final int LAST_PAGE = 164;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private final MovieRepository movieRepository;
@@ -57,7 +58,7 @@ public class MovieServiceImpl implements MovieService, SmartLifecycle {
 
     @Override
     public void start() {
-        tmdbService.importMovies(ONE, FIVE, LANGUAGE, REGION);
+        tmdbService.importMovies(ZERO, LAST_PAGE, LANGUAGE, REGION);
         isRunning = true;
     }
 
