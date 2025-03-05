@@ -1,32 +1,41 @@
 package org.cyberrealm.tech.muvio.model;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Data
+@Getter
+@Setter
 @Document(collection = "movies")
 public class Movie {
     @Id
     private String id;
     private String name;
-    private Set<GenreEn> genres = new HashSet<>();
-    private Double rating;
+    @DBRef
+    private Set<GenreEntity> genres = new HashSet<>();
+    @DBRef
+    private Rating rating;
     private String trailer;
-    private String posterPath;
-    private Integer duration;
-    private String director;
-    private Set<String> photos = new HashSet<>();
     @DBRef
-    private Map<String, Actor> actors = new HashMap<>();
+    private Photo posterPath;
     @DBRef
-    private List<ReviewDb> reviewDbs = new ArrayList<>();
-    private Integer releaseYear;
+    private Duration duration;
+    @DBRef
+    private Producer producer;
+    @DBRef
+    private Set<Photo> photos = new HashSet<>();
+    @DBRef
+    private Set<Actor> actors = new HashSet<>();
+    @DBRef
+    private List<Review> reviews = new ArrayList<>();
+    @DBRef
+    private Year releaseYear;
     private String overview;
     private Set<Vibe> vibes = new HashSet<>();
     private Set<Category> categories = new HashSet<>();
-    private Type type;
 }

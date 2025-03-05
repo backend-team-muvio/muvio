@@ -1,17 +1,16 @@
 package org.cyberrealm.tech.muvio.model;
 
 import java.time.LocalDateTime;
-import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
 @Document(collection = "reviews")
-public class ReviewDb {
+public class Review {
     @Id
     private String id;
-    private String nickname;
-    private String text;
+    private String author;
+    private String avatarPath;
+    private String content;
     private LocalDateTime time;
-    private Double rating;
 }
