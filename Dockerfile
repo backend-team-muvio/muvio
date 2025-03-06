@@ -1,13 +1,16 @@
 # Builder stage
-FROM maven:3.8.4-openjdk-17 AS build
-WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -Dcheckstyle.skip=true
+FROM openjdk:21-jdk-slim AS builder
+WORKDIR /application
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
+RUN java -Djarmode=layertools -jar application.jar extract
 
 # Final stage
-FROM eclipse-temurin:17-jdk
-WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+FROM openjdk:21-jdk-slim
+WORKDIR /application
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
