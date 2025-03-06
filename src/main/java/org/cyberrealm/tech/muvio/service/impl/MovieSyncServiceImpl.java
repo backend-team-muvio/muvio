@@ -1,7 +1,5 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import static org.cyberrealm.tech.muvio.service.impl.TmdbServiceImpl.IMAGE_PATH;
-
 import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.movies.Cast;
@@ -10,12 +8,15 @@ import info.movito.themoviedbapi.model.movies.Crew;
 import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.movies.ReleaseInfo;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.cyberrealm.tech.muvio.exception.MovieSyncException;
-import org.cyberrealm.tech.muvio.exception.TmdbServiceException;
+import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MovieMapper;
@@ -24,36 +25,32 @@ import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Movie;
 import org.cyberrealm.tech.muvio.model.Review;
+import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.repository.actors.ActorRepository;
-import org.cyberrealm.tech.muvio.repository.genres.GenreRepository;
 import org.cyberrealm.tech.muvio.repository.movies.MovieRepository;
 import org.cyberrealm.tech.muvio.service.CategoryService;
 import org.cyberrealm.tech.muvio.service.MovieSyncService;
 import org.cyberrealm.tech.muvio.service.TmdbService;
 import org.cyberrealm.tech.muvio.service.VibeService;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
 public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
+    public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
+    private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 164;
+    private static final int LAST_PAGE = 5;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
-    private static final String PRODUCER = "Producer";
     private static final String DIRECTOR = "Director";
-    private static final int MAX_ATTEMPTS = 60;
-    private static final int BACK_OFF = 1000;
     private static final String DEFAULT_PRODUCER = "Unknown";
     private boolean isRunning;
     private final TmdbService tmdbService;
     private final MovieRepository movieRepository;
-    private final GenreRepository genreRepository;
     private final ActorRepository actorRepository;
     private final CategoryService categoryService;
     private final VibeService vibeService;
@@ -62,31 +59,28 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
     private final ActorMapper actorMapper;
     private final ReviewMapper reviewMapper;
 
-    @Override
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    public void loadGenres(String language) {
-        final List<GenreEntity> genres = tmdbService.fetchGenres(language).stream()
-                .map(genreMapper::toGenreEntity)
-                .toList();
-        genreRepository.saveAll(genres);
-    }
-
     @Transactional(rollbackFor = Exception.class)
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
     @Override
     public void importMovies(int fromPage, int toPage, String language, String location) {
         deleteAll();
-        loadGenres(language);
         final Set<String> imdbTop250 = categoryService.getImdbTop250();
         final TmdbMovies tmdbMovies = tmdbService.getTmdbMovies();
         final List<info.movito.themoviedbapi.model.core.Movie> movieList =
                 tmdbService.fetchPopularMovies(fromPage, toPage, language, location);
-        final List<Movie> movies = movieList.stream()
-                .map(movieTmdb -> createMovie(language, movieTmdb, tmdbMovies, imdbTop250))
-                .toList();
-        movieRepository.saveAll(movies);
+        final List<Movie> movies;
+        try (ForkJoinPool pool = new ForkJoinPool(TmdbServiceImpl.LIMIT_THREADS)) {
+            try {
+                movies = pool.submit(() -> movieList.parallelStream()
+                        .map(movieTmdb -> createMovie(language, movieTmdb, tmdbMovies, imdbTop250))
+                        .toList()).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new EntityNotFoundException("Failed to process movies with thread pool");
+            }
+        }
+        for (int i = 0; i < movies.size(); i += BATCH_SIZE) {
+            int toIndex = Math.min(i + BATCH_SIZE, movies.size());
+            movieRepository.saveAll(movies.subList(i, toIndex));
+        }
     }
 
     @Override
@@ -118,9 +112,6 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         if (movieRepository != null) {
             movieRepository.deleteAll();
         }
-        if (genreRepository != null) {
-            genreRepository.deleteAll();
-        }
     }
 
     private Movie createMovie(String language,
@@ -142,10 +133,8 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         movie.setTrailer(tmdbService.fetchTrailer(tmdbMovies, movieId, language));
         movie.setPhotos(tmdbService.fetchPhotos(tmdbMovies, language, movieId));
         movie.setReleaseYear(getReleaseYear(movieDb.getReleaseDate()));
-        movie.setProducer(getProducer(credits.getCrew()));
-        Set<Actor> actors = getActors(credits.getCast());
-        actorRepository.saveAll(actors);
-        movie.setActors(actors);
+        movie.setDirector(getDirector(credits.getCrew()));
+        movie.setActors(getActors(credits.getCast()));
         final Set<GenreEntity> genres = getGenres(movieDb.getGenres());
         movie.setGenres(genres);
         movie.setReviews(getReviews(tmdbMovies, language, movieId));
@@ -153,6 +142,7 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         movie.setCategories(categoryService.getCategories(movie.getOverview().toLowerCase(),
                 keywords, movieDb.getVoteAverage(), movieDb.getVoteCount(),
                 movieDb.getPopularity(), imdbTop250, movie.getTitle()));
+        movie.setType(Type.MOVIE);
         return movie;
     }
 
@@ -162,36 +152,35 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
                 .toList();
     }
 
-    private Set<Actor> getActors(List<Cast> casts) {
-        return casts.stream().map(cast -> {
-            final String name = cast.getName();
-            return actorRepository.findById(name)
-                .orElseGet(() -> {
+    private Map<String, Actor> getActors(List<Cast> casts) {
+        final Set<Actor> newActors = new HashSet<>();
+        final Map<String, Actor> actorsMap = casts.stream().collect(Collectors.toMap(cast ->
+                        cast.getCharacter().replace(".", "_"), cast -> {
+                final String name = cast.getName();
+                return actorRepository.findById(name).orElseGet(() -> {
                     final Actor actor = actorMapper.toActorEntity(cast);
                     actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
+                    newActors.add(actor);
                     return actor;
                 });
-        }).collect(Collectors.toSet());
+            },
+                (existingActor, duplicateActor) -> existingActor));
+        if (!newActors.isEmpty()) {
+            actorRepository.saveAll(newActors);
+        }
+        return actorsMap;
     }
 
-    private String getProducer(List<Crew> crews) {
-        return crews.stream().filter(crew -> {
-            final String job = crew.getJob();
-            if (job.equals(DIRECTOR)) {
-                return true;
-            }
-            return job.equals(PRODUCER);
-        }).findFirst()
+    private String getDirector(List<Crew> crews) {
+        return crews.stream().filter(crew -> crew.getJob().equals(DIRECTOR))
+                .findFirst()
                 .map(Crew::getOriginalName)
                 .orElse(DEFAULT_PRODUCER);
     }
 
     private Set<GenreEntity> getGenres(List<Genre> genres) {
         return genres.stream()
-                .map(genre -> genreRepository.findById(genre.getId())
-                    .orElseThrow(() -> new MovieSyncException(
-                        "Can't find genre by id " + genre.getId())))
-                .collect(Collectors.toSet());
+                .map(genreMapper::toGenreEntity).collect(Collectors.toSet());
     }
 
     private Integer getReleaseYear(String releaseDate) {

@@ -6,7 +6,6 @@ import org.cyberrealm.tech.muvio.model.Movie;
 
 public interface MovieService {
 
-    void importMovies(int fromPage, int toPage, String language, String location);
     List<MovieDto> getAllMovies();
 
     Movie getMovieById(String id);

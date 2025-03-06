@@ -5,11 +5,16 @@ import info.movito.themoviedbapi.model.movies.KeywordResults;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
 import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.service.CategoryService;
 import org.jsoup.Jsoup;
@@ -534,7 +539,7 @@ public class CategoryServiceImpl implements CategoryService {
             driver.get(IMDB_TOP250_URL);
             Thread.sleep(SLEEP_TIME);
             final String pageSource = driver.getPageSource();
-            final Document doc = Jsoup.parse(pageSource);
+            final Document doc = Jsoup.parse(Objects.requireNonNull(pageSource));
             Elements movieElements = doc.select(SELECT_ROW);
             for (Element movieElement : movieElements) {
                 final String title = movieElement.select(H3).text();
@@ -552,15 +557,20 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private Set<Category> collectCategories(Set<String> movieKeywords, String overview) {
-        final Map<Category, Integer> categoryCount = new HashMap<>();
-        CATEGORY_KEYWORDS.forEach((category, keywords) -> keywords.forEach(keyword -> {
-            if (movieKeywords.contains(keyword)) {
-                categoryCount.merge(category, TWO, Integer::sum);
-            }
-            if (overview.matches(BEFORE_KEYWORD + keyword + AFTER_KEYWORD)) {
-                categoryCount.merge(category, ONE, Integer::sum);
-            }
-        }));
+        final Map<Category, Integer> categoryCount = new ConcurrentHashMap<>();
+        try (final ForkJoinPool pool = new ForkJoinPool(TmdbServiceImpl.LIMIT_THREADS)) {
+            pool.submit(() -> CATEGORY_KEYWORDS.forEach((category, keywords) ->
+                    keywords.parallelStream().forEach(keyword -> {
+                        if (movieKeywords.contains(keyword)) {
+                            categoryCount.merge(category, TWO, Integer::sum);
+                        }
+                        if (overview.matches(BEFORE_KEYWORD + keyword + AFTER_KEYWORD)) {
+                            categoryCount.merge(category, ONE, Integer::sum);
+                        }
+                    }))).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new EntityNotFoundException("Failed to process keywords with custom thread pool");
+        }
         final Set<Category> categories;
         final Integer maxCategoryValue = categoryCount.values().stream()
                 .max(Integer::compareTo).orElse(ZERO);
