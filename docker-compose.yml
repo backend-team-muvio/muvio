@@ -12,6 +12,7 @@ services:
     environment:
       SPRING_APPLICATION_JSON: |
         {
-          "spring.data.mongodb.uri": "${MONGO_URL}"
+          "spring.data.mongodb.uri": "${MONGO_URL}",
+          "tmdb.api.key": "${TMDB_API_TOKEN}"
         }
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${DEBUG_PORT}"
