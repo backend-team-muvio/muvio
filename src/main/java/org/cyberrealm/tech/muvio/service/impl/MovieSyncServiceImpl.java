@@ -49,7 +49,6 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
     private static final String DIRECTOR = "Director";
     private static final int MAX_ATTEMPTS = 60;
     private static final int BACK_OFF = 1000;
-    private static final String DEFAULT_PRODUCER = "Unknown";
     private boolean isRunning;
     private final TmdbService tmdbService;
     private final MovieRepository movieRepository;
@@ -79,7 +78,7 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
     public void importMovies(int fromPage, int toPage, String language, String location) {
         deleteAll();
         loadGenres(language);
-        final Set<String> imdbTop250 = categoryService.getImdbTop250();
+        final Set<String> imdbTop250 = null; //categoryService.getImdbTop250();
         final TmdbMovies tmdbMovies = tmdbService.getTmdbMovies();
         final List<info.movito.themoviedbapi.model.core.Movie> movieList =
                 tmdbService.fetchPopularMovies(fromPage, toPage, language, location);
@@ -150,9 +149,9 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         movie.setGenres(genres);
         movie.setReviews(getReviews(tmdbMovies, language, movieId));
         movie.setVibes(vibeService.getVibes(releaseInfo, genres));
-        movie.setCategories(categoryService.getCategories(movie.getOverview().toLowerCase(),
-                keywords, movieDb.getVoteAverage(), movieDb.getVoteCount(),
-                movieDb.getPopularity(), imdbTop250, movie.getTitle()));
+        //movie.setCategories(categoryService.getCategories(movie.getOverview().toLowerCase(),
+        //        keywords, movieDb.getVoteAverage(), movieDb.getVoteCount(),
+        //        movieDb.getPopularity(), imdbTop250, movie.getTitle()));
         return movie;
     }
 
@@ -166,11 +165,15 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         return casts.stream().map(cast -> {
             final String name = cast.getName();
             return actorRepository.findById(name)
-                .orElseGet(() -> {
-                    final Actor actor = actorMapper.toActorEntity(cast);
-                    actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
-                    return actor;
-                });
+                    .orElseGet(() -> {
+                        final Actor actor = actorMapper.toActorEntity(cast);
+                        if (cast.getProfilePath() != null) {
+                            actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
+                        } else {
+                            actor.setPhoto(null);
+                        }
+                        return actor;
+                    });
         }).collect(Collectors.toSet());
     }
 
@@ -183,7 +186,7 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
             return job.equals(PRODUCER);
         }).findFirst()
                 .map(Crew::getOriginalName)
-                .orElse(DEFAULT_PRODUCER);
+                .orElse(null);
     }
 
     private Set<GenreEntity> getGenres(List<Genre> genres) {

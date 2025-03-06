@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class TmdbServiceImpl implements TmdbService {
-    public static final String NOT_FOUND = "Not found";
     public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
     private static final String TRAILER = "Trailer";
@@ -91,7 +90,7 @@ public class TmdbServiceImpl implements TmdbService {
         try {
             return getTrailerLink(tmdbMovies.getVideos(movieId, language), TRAILER)
                     .orElse(getTrailerLink(tmdbMovies.getVideos(movieId, language), TEASER)
-                            .orElse(NOT_FOUND));
+                            .orElse(null));
         } catch (TmdbException e) {
             throw new TmdbServiceException("Failed to fetch trailer from TMDB", e);
         }
@@ -161,7 +160,7 @@ public class TmdbServiceImpl implements TmdbService {
             if (avatarPath != null) {
                 review.getAuthorDetails().setAvatarPath(IMAGE_PATH + avatarPath);
             } else {
-                review.getAuthorDetails().setAvatarPath(NOT_FOUND);
+                review.getAuthorDetails().setAvatarPath(null);
             }
         }
         return review;
