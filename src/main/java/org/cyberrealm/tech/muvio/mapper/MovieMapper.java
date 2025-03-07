@@ -1,6 +1,7 @@
 package org.cyberrealm.tech.muvio.mapper;
 
 import info.movito.themoviedbapi.model.movies.MovieDb;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -14,7 +15,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-@Mapper(config = MapperConfig.class)
+@Mapper(config = MapperConfig.class, uses = GenreMapper.class)
 public interface MovieMapper {
     @Mapping(source = "actors", target = "actorsDto", qualifiedByName = "toActorDto")
     @Mapping(source = "reviews", target = "reviewsDto")
@@ -25,19 +26,21 @@ public interface MovieMapper {
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
     @Mapping(source = "movieDb.runtime", target = "duration")
     @Mapping(source = "movieDb.voteAverage", target = "rating")
+    @Mapping(target = "genres", source = "genres", qualifiedByName = "mapGenres")
     Movie toEntity(MovieDb movieDb);
 
     @Named("toGenresDto")
     default Set<String> toGenresDto(Set<GenreEntity> genres) {
         return genres.stream()
-                .map(GenreEntity::getName)
+                .map(GenreEntity::name)
                 .collect(Collectors.toSet());
     }
 
     @Named("toActorDto")
-    default Set<ActorDto> toActorDto(Set<Actor> actors) {
-        return actors.stream()
-                .map(actor -> new ActorDto(actor.getName(), actor.getPhoto()))
+    default Set<ActorDto> toActorDto(Map<String, Actor> actors) {
+        return actors.entrySet().stream()
+                .map(actor -> new ActorDto(actor.getKey(), actor.getValue().getName(),
+                        actor.getValue().getPhoto()))
                 .collect(Collectors.toSet());
     }
 

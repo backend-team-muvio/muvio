@@ -13,6 +13,7 @@ import org.mapstruct.Named;
 public interface ReviewMapper {
     @Mapping(source = "authorDetails.avatarPath", target = "avatarPath")
     @Mapping(source = "createdAt", target = "time", qualifiedByName = "mapToTime")
+    @Mapping(source = "authorDetails.rating", target = "rating")
     Review toEntity(info.movito.themoviedbapi.model.core.Review review);
 
     @Named("mapToTime")

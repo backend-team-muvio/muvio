@@ -1,24 +1,27 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import info.movito.themoviedbapi.model.core.NamedIdElement;
 import info.movito.themoviedbapi.model.movies.KeywordResults;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
 import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.service.CategoryService;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,23 +29,15 @@ import org.springframework.stereotype.Service;
 public class CategoryServiceImpl implements CategoryService {
     private static final String BEFORE_KEYWORD = ".*\\b";
     private static final String AFTER_KEYWORD = "\\b.*";
-    private static final String H3 = "h3";
-    private static final String SELECT_ROW = "li.ipc-metadata-list-summary-item";
-    private static final int SLEEP_TIME = 5000;
-    private static final String HEADLESS = "--headless";
-    private static final String DISABLE_GPU = "--disable-gpu";
-    private static final String WINDOW_SIZE = "--window-size=1920,1080";
-    private static final String BROWSE_OPTION = "--user-agent=Mozilla/5.0 (Windows NT 10.0;"
-            + " Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
-    private static final String LANGUAGE_OPTION = "--lang=en";
+    private static final String NAME = "name";
     private static final int ZERO = 0;
     private static final int TWO = 2;
     private static final int ONE = 1;
     private static final int POPULARITY_LIMIT = 60;
     private static final int VOTE_COUNT_LIMIT = 10000;
     private static final int RATING_LIMIT = 7;
-    private static final String IMDB_TOP250_URL = "https://www.imdb.com/chart/top";
-    private static final Pattern PATTERN = Pattern.compile("^\\d+\\.\\s*(.*)");
+    private static final String API_URL =
+            "https://raw.githubusercontent.com/movie-monk-b0t/top250/master/top250_min.json";
     private static final Map<Category, Set<String>> CATEGORY_KEYWORDS = new HashMap<>();
 
     static {
@@ -525,42 +520,38 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Set<String> getImdbTop250() {
         final Set<String> imdbTop250 = new HashSet<>();
-        final ChromeOptions options = new ChromeOptions();
-        options.addArguments(HEADLESS, DISABLE_GPU, WINDOW_SIZE);
-        options.addArguments(BROWSE_OPTION);
-        options.addArguments(LANGUAGE_OPTION);
-        final WebDriver driver = new ChromeDriver(options);
-        try {
-            driver.get(IMDB_TOP250_URL);
-            Thread.sleep(SLEEP_TIME);
-            final String pageSource = driver.getPageSource();
-            final Document doc = Jsoup.parse(pageSource);
-            Elements movieElements = doc.select(SELECT_ROW);
-            for (Element movieElement : movieElements) {
-                final String title = movieElement.select(H3).text();
-                final Matcher matcher = PATTERN.matcher(title);
-                if (matcher.find()) {
-                    imdbTop250.add(matcher.group(ONE));
-                }
+        try (final HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL)).GET().build();
+            final HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            final String json = response.body();
+            final ObjectMapper mapper = new ObjectMapper();
+            final List<Map<String, Object>> movies =
+                    mapper.readValue(json, new TypeReference<>() {});
+            for (Map<String, Object> movie : movies) {
+                imdbTop250.add((String) movie.get(NAME));
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted thread");
-        } finally {
-            driver.quit();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Failed to fetch the IMDB Top 250 page", e);
         }
         return imdbTop250;
     }
 
     private Set<Category> collectCategories(Set<String> movieKeywords, String overview) {
-        final Map<Category, Integer> categoryCount = new HashMap<>();
-        CATEGORY_KEYWORDS.forEach((category, keywords) -> keywords.forEach(keyword -> {
-            if (movieKeywords.contains(keyword)) {
-                categoryCount.merge(category, TWO, Integer::sum);
-            }
-            if (overview.matches(BEFORE_KEYWORD + keyword + AFTER_KEYWORD)) {
-                categoryCount.merge(category, ONE, Integer::sum);
-            }
-        }));
+        final Map<Category, Integer> categoryCount = new ConcurrentHashMap<>();
+        try (final ForkJoinPool pool = new ForkJoinPool(TmdbServiceImpl.LIMIT_THREADS)) {
+            pool.submit(() -> CATEGORY_KEYWORDS.forEach((category, keywords) ->
+                    keywords.parallelStream().forEach(keyword -> {
+                        if (movieKeywords.contains(keyword)) {
+                            categoryCount.merge(category, TWO, Integer::sum);
+                        }
+                        if (overview.matches(BEFORE_KEYWORD + keyword + AFTER_KEYWORD)) {
+                            categoryCount.merge(category, ONE, Integer::sum);
+                        }
+                    }))).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new EntityNotFoundException("Failed to process keywords with custom thread pool");
+        }
         final Set<Category> categories;
         final Integer maxCategoryValue = categoryCount.values().stream()
                 .max(Integer::compareTo).orElse(ZERO);

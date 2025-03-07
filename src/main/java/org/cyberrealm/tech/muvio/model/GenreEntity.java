@@ -1,14 +1,30 @@
 package org.cyberrealm.tech.muvio.model;
 
-import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.HashMap;
+import java.util.Map;
 
-@Data
-@Document(collection = "genres")
+public enum GenreEntity {
+    MUSIC("Music"), MYSTERY("Mystery"), ROMANCE("Romance"), SCIENCE_FICTION("Science Fiction"),
+    TV_MOVIE("TV Movie"), THRILLER("Thriller"), WAR("War"), WESTERN("Western"), CRIME("Crime"),
+    DOCUMENTARY("Documentary"), DRAMA("Drama"), FAMILY("Family"), FANTASY("Fantasy"),
+    HISTORY("History"), HORROR("Horror"), ACTION("Action"), ADVENTURE("Adventure"),
+    ANIMATION("Animation"), COMEDY("Comedy");
 
-public class GenreEntity {
-    @Id
-    private Integer id;
-    private String name;
+    private static final Map<String, GenreEntity> NAME_TO_ENUM = new HashMap<>();
+    private final String name;
+
+    static {
+        for (GenreEntity genreEntity : values()) {
+            NAME_TO_ENUM.put(genreEntity.name, genreEntity);
+        }
+    }
+
+    GenreEntity(String name) {
+        this.name = name;
+    }
+
+    public static GenreEntity fromString(String name) {
+        return NAME_TO_ENUM.get(name);
+    }
 }
+

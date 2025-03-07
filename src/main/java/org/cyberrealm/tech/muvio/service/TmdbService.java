@@ -1,7 +1,6 @@
 package org.cyberrealm.tech.muvio.service;
 
 import info.movito.themoviedbapi.TmdbMovies;
-import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.movies.Credits;
@@ -14,8 +13,6 @@ import java.util.Set;
 public interface TmdbService {
 
     TmdbMovies getTmdbMovies();
-
-    List<Genre> fetchGenres(String language);
 
     List<Movie> fetchPopularMovies(int fromPage, int toPage, String language, String location);
 
