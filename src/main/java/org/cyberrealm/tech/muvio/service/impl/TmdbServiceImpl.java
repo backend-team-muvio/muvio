@@ -33,7 +33,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TmdbServiceImpl implements TmdbService {
     public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
-    public static final int LIMIT_THREADS = Math.min(4, Runtime.getRuntime().availableProcessors());
+    public static final int LIMIT_THREADS = Math.min(50, Runtime.getRuntime().availableProcessors() * 2);
     private static final int MAX_ATTEMPTS = 12;
     private static final int BACK_OFF = 10000;
     private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
