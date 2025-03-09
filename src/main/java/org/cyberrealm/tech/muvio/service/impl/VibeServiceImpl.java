@@ -22,7 +22,7 @@ public class VibeServiceImpl implements VibeService {
             Map.entry(GenreEntity.ROMANCE, Map.of(Vibe.MAKE_ME_DREAM, 8,
                     Vibe.MAKE_ME_FEEL_GOOD, 8)),
             Map.entry(GenreEntity.MUSIC, Map.of(Vibe.MAKE_ME_DREAM, 6, Vibe.MAKE_ME_FEEL_GOOD, 6)),
-            Map.entry(GenreEntity.DOCUMENTARY, Map.of(Vibe.MAKE_ME_CURIOUS, 9)),
+            Map.entry(GenreEntity.DOCUMENTARY, Map.of(Vibe.MAKE_ME_CURIOUS, 10)),
             Map.entry(GenreEntity.HISTORY, Map.of(Vibe.MAKE_ME_CURIOUS, 9)),
             Map.entry(GenreEntity.FANTASY, Map.of(Vibe.MAKE_ME_DREAM, 10,
                     Vibe.TAKE_ME_TO_ANOTHER_WORLD, 10)),
