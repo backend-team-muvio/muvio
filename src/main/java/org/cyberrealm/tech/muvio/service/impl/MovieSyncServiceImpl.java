@@ -1,6 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import info.movito.themoviedbapi.TmdbMovies;
+import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.movies.Cast;
 import info.movito.themoviedbapi.model.movies.Credits;
@@ -47,7 +48,7 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
-    private static final String DEFAULT_PRODUCER = "Unknown";
+    private static final String PRODUCER = "Producer";
     private boolean isRunning;
     private final TmdbService tmdbService;
     private final MovieRepository movieRepository;
@@ -154,17 +155,20 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
 
     private Map<String, Actor> getActors(List<Cast> casts) {
         final Set<Actor> newActors = new HashSet<>();
-        final Map<String, Actor> actorsMap = casts.stream().collect(Collectors.toMap(cast ->
-                        cast.getCharacter().replace(".", "_"), cast -> {
-                final String name = cast.getName();
-                return actorRepository.findById(name).orElseGet(() -> {
-                    final Actor actor = actorMapper.toActorEntity(cast);
-                    actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
-                    newActors.add(actor);
-                    return actor;
-                });
-            },
-                (existingActor, duplicateActor) -> existingActor));
+        final Map<String, Actor> actorsMap = casts.stream()
+                .filter(cast -> cast.getProfilePath() != null)
+                .limit(3)
+                .collect(Collectors.toMap(cast ->
+                                cast.getCharacter().replace(".", "_"), cast -> {
+                        final String name = cast.getName();
+                        return actorRepository.findById(name).orElseGet(() -> {
+                            final Actor actor = actorMapper.toActorEntity(cast);
+                            actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
+                            newActors.add(actor);
+                            return actor;
+                        });
+                        },
+                        (existingActor, duplicateActor) -> existingActor));
         if (!newActors.isEmpty()) {
             actorRepository.saveAll(newActors);
         }
@@ -172,10 +176,11 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
     }
 
     private String getDirector(List<Crew> crews) {
-        return crews.stream().filter(crew -> crew.getJob().equals(DIRECTOR))
+        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR)
+                || crew.getJob().equalsIgnoreCase(PRODUCER))
                 .findFirst()
                 .map(Crew::getOriginalName)
-                .orElse(DEFAULT_PRODUCER);
+                .orElse(null);
     }
 
     private Set<GenreEntity> getGenres(List<Genre> genres) {
