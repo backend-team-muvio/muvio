@@ -32,7 +32,7 @@ public interface MovieMapper {
     @Named("toGenresDto")
     default Set<String> toGenresDto(Set<GenreEntity> genres) {
         return genres.stream()
-                .map(GenreEntity::name)
+                .map(GenreEntity::getName)
                 .collect(Collectors.toSet());
     }
 
