@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MovieDto;
 import org.cyberrealm.tech.muvio.model.Movie;
 import org.cyberrealm.tech.muvio.service.MovieService;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,8 +22,8 @@ public class MovieController {
     private final MovieService movieService;
 
     @GetMapping
-    public List<MovieDto> getAllMovies() {
-        return movieService.getAllMovies();
+    public List<MovieDto> getAllMovies(Pageable pageable) {
+        return movieService.getAllMovies(pageable);
     }
 
     @GetMapping("/{id}")
