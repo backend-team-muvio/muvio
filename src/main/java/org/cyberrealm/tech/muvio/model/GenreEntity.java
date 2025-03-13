@@ -23,6 +23,10 @@ public enum GenreEntity {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public static GenreEntity fromString(String name) {
         return NAME_TO_ENUM.get(name);
     }
