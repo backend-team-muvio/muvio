@@ -8,6 +8,7 @@ import org.cyberrealm.tech.muvio.mapper.MovieMapper;
 import org.cyberrealm.tech.muvio.model.Movie;
 import org.cyberrealm.tech.muvio.repository.movies.MovieRepository;
 import org.cyberrealm.tech.muvio.service.MovieService;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,8 +18,8 @@ public class MovieServiceImpl implements MovieService {
     private final MovieMapper movieMapper;
 
     @Override
-    public List<MovieDto> getAllMovies() {
-        return movieRepository.findAll().stream().map(movieMapper::toMovieDto).toList();
+    public List<MovieDto> getAllMovies(Pageable pageable) {
+        return movieRepository.findAll(pageable).stream().map(movieMapper::toMovieDto).toList();
     }
 
     @Override
