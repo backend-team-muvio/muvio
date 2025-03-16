@@ -33,7 +33,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TmdbServiceImpl implements TmdbService {
     public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
-    public static final int LIMIT_THREADS = Math.min(50, Runtime.getRuntime().availableProcessors() * 2);
     private static final int MAX_ATTEMPTS = 12;
     private static final int BACK_OFF = 10000;
     private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
@@ -52,8 +51,8 @@ public class TmdbServiceImpl implements TmdbService {
             backoff = @Backoff(delay = BACK_OFF))
     @Override
     public List<Movie> fetchPopularMovies(int fromPage, int toPage, String language,
-                                          String location) {
-        try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
+                                          String location, ForkJoinPool pool) {
+        try {
             return pool.submit(() -> IntStream.rangeClosed(fromPage, toPage).parallel()
                     .mapToObj(page -> {
                         try {

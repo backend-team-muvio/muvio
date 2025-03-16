@@ -15,7 +15,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class VibeServiceImpl implements VibeService {
-    private static final List<String> RATINGS = List.of("G", "PG", "PG-13", "R", "NC-17");
+    private static final List<String> RATINGS = List.of("G", "PG", "PG-13", "R", "NC-17", "N-13",
+            "NC16");
     private static final Map<GenreEntity, Map<Vibe, Integer>> GENRE_TO_VIBE_MAP = Map.ofEntries(
             Map.entry(GenreEntity.FAMILY, Map.of(Vibe.MAKE_ME_CHILL, 9, Vibe.MAKE_ME_FEEL_GOOD, 9,
                     Vibe.MAKE_ME_DREAM, 9)),
@@ -56,7 +57,11 @@ public class VibeServiceImpl implements VibeService {
             Map.entry("R", Map.of(Vibe.BLOW_MY_MIND, 6, Vibe.KEEP_ME_ON_EDGE, 6,
                     Vibe.MAKE_ME_CURIOUS, 6)),
             Map.entry("PG-13", Map.of(Vibe.MAKE_ME_FEEL_GOOD, 8, Vibe.BLOW_MY_MIND, 8,
-                    Vibe.MAKE_ME_DREAM, 8, Vibe.MAKE_ME_CURIOUS, 5))
+                    Vibe.MAKE_ME_DREAM, 8, Vibe.MAKE_ME_CURIOUS, 5)),
+            Map.entry("N-13", Map.of(Vibe.TAKE_ME_TO_ANOTHER_WORLD, 7, Vibe.MAKE_ME_DREAM, 6,
+                    Vibe.SCARY_ME_SILLY, 6)),
+            Map.entry("NC16", Map.of(Vibe.BLOW_MY_MIND, 9, Vibe.KEEP_ME_ON_EDGE, 9,
+                    Vibe.SCARY_ME_SILLY, 9))
     );
 
     @Override
@@ -77,7 +82,7 @@ public class VibeServiceImpl implements VibeService {
 
     private Map<Vibe, Integer> calculateVibesFromGenres(Set<GenreEntity> genresMdb) {
         return genresMdb.stream()
-                .flatMap(genre -> GENRE_TO_VIBE_MAP.getOrDefault(genre,
+                .flatMap(genreDb -> GENRE_TO_VIBE_MAP.getOrDefault(genreDb,
                         Map.of()).entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
     }

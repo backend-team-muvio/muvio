@@ -9,12 +9,14 @@ import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.movies.ReleaseInfo;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 
 public interface TmdbService {
 
     TmdbMovies getTmdbMovies();
 
-    List<Movie> fetchPopularMovies(int fromPage, int toPage, String language, String location);
+    List<Movie> fetchPopularMovies(int fromPage, int toPage, String language, String location,
+                                   ForkJoinPool pool);
 
     MovieDb fetchMovieDetails(TmdbMovies tmdbMovies, int movieId, String language);
 

@@ -1,6 +1,5 @@
 package org.cyberrealm.tech.muvio.model;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,13 +24,14 @@ public class Movie {
     private String posterPath;
     private Integer duration;
     private String director;
-    private Set<String> photos = new HashSet<>();
+    private Set<String> photos;
     @DBRef
     private Map<String, Actor> actors = new HashMap<>();
-    private List<Review> reviews = new ArrayList<>();
+    private List<Review> reviews;
     private Integer releaseYear;
     private String overview;
     private Set<Vibe> vibes = new HashSet<>();
     private Set<Category> categories = new HashSet<>();
     private Type type;
+    private Set<TopLists> topLists;
 }
