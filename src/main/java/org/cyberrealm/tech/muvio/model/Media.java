@@ -1,6 +1,5 @@
 package org.cyberrealm.tech.muvio.model;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,8 +16,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Setter
-@Document(collection = "movies")
-public class Movie {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Document(collection = "media")
+public class Media {
     @Id
     private String id;
     private String title;
@@ -39,5 +41,6 @@ public class Movie {
     private List<Review> reviews = new ArrayList<>();
     private Set<Vibe> vibes = new HashSet<>();
     private Set<Category> categories = new HashSet<>();
-
+    private Type type;
+    private Set<TopLists> topLists;
 }

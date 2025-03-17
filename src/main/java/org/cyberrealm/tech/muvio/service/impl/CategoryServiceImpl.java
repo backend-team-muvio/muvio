@@ -19,7 +19,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
+import org.cyberrealm.tech.muvio.exception.CategoryProcessingException;
+import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
 import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.service.CategoryService;
 import org.springframework.stereotype.Service;
@@ -27,14 +28,16 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
+    private static final int LIMIT_THREADS =
+            Math.min(50, Runtime.getRuntime().availableProcessors() * 3);
     private static final String BEFORE_KEYWORD = ".*\\b";
     private static final String AFTER_KEYWORD = "\\b.*";
     private static final String NAME = "name";
     private static final int ZERO = 0;
     private static final int TWO = 2;
     private static final int ONE = 1;
-    private static final int POPULARITY_LIMIT = 60;
-    private static final int VOTE_COUNT_LIMIT = 10000;
+    private static final int POPULARITY_LIMIT = 4;
+    private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
     private static final String API_URL =
             "https://raw.githubusercontent.com/movie-monk-b0t/top250/master/top250_min.json";
@@ -341,7 +344,8 @@ public class CategoryServiceImpl implements CategoryService {
                 "fight for equality", "women’s support", "female community", "women’s experience",
                 "maternal strength", "fight for rights", "female professional",
                 "successful women stories", "real women heroes", "female influence",
-                 "new beginning", "female lawyer", "women in business","woman", "has escaped")));
+                 "new beginning", "female lawyer", "women in business","woman", "has escaped",
+                "herself")));
         CATEGORY_KEYWORDS.put(Category.LIFE_CHANGING_MOVIES, new HashSet<>(Set.of(
                 "inspirational", "motivational", "transformative", "meaningful",
                 "life-changing", "self-discovery", "spiritual journey", "personal growth",
@@ -443,7 +447,7 @@ public class CategoryServiceImpl implements CategoryService {
                 "empowerment", "facing fears", "recovery", "revenge", "lgbt", "bisexual man",
                 "gay theme", "suicide", "trauma", "delusion", "addiction", "curse",
                 "car accident", "demon", "evil", "self-harm", "body horror", "admiring",
-                "out of it", "cannibal", "cannibal cult"
+                "out of it", "cannibal", "cannibal cult", "ghost"
                 )));
         CATEGORY_KEYWORDS.put(Category.SPORT_LIFE_MOVIES, new HashSet<>(Set.of(
                 "sport", "athlete", "competition", "coach", "championship", "sports drama",
@@ -502,7 +506,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Set<Category> getCategories(
+    public Set<Category> putCategories(
             String overview, KeywordResults keywords, Double rating, Integer voteCount,
             Double popularity, Set<String> imdbTop250, String title) {
         final Set<Category> categories = collectCategories(keywords.getKeywords().stream()
@@ -532,14 +536,14 @@ public class CategoryServiceImpl implements CategoryService {
                 imdbTop250.add((String) movie.get(NAME));
             }
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Failed to fetch the IMDB Top 250 page", e);
+            throw new NetworkRequestException("Failed to fetch the IMDB Top 250 page", e);
         }
         return imdbTop250;
     }
 
     private Set<Category> collectCategories(Set<String> movieKeywords, String overview) {
         final Map<Category, Integer> categoryCount = new ConcurrentHashMap<>();
-        try (final ForkJoinPool pool = new ForkJoinPool(TmdbServiceImpl.LIMIT_THREADS)) {
+        try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
             pool.submit(() -> CATEGORY_KEYWORDS.forEach((category, keywords) ->
                     keywords.parallelStream().forEach(keyword -> {
                         if (movieKeywords.contains(keyword)) {
@@ -550,7 +554,8 @@ public class CategoryServiceImpl implements CategoryService {
                         }
                     }))).get();
         } catch (ExecutionException | InterruptedException e) {
-            throw new EntityNotFoundException("Failed to process keywords with custom thread pool");
+            throw new CategoryProcessingException(
+                    "Failed to process keywords with custom thread pool", e);
         }
         final Set<Category> categories;
         final Integer maxCategoryValue = categoryCount.values().stream()
