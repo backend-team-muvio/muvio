@@ -14,8 +14,8 @@ public class GlobalExceptionHandler {
                 .body(exception.getMessage());
     }
 
-    @ExceptionHandler(MovieSyncException.class)
-    public ResponseEntity<Object> handleMovieSyncException(MovieSyncException exception) {
+    @ExceptionHandler(MediaSyncException.class)
+    public ResponseEntity<Object> handleMovieSyncException(MediaSyncException exception) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(exception.getMessage());
