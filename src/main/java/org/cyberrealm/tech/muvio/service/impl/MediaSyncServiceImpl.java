@@ -2,6 +2,7 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.model.core.Genre;
+import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.movies.Cast;
 import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.Crew;
@@ -19,17 +20,17 @@ import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.exception.MovieProcessingException;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.GenreMapper;
-import org.cyberrealm.tech.muvio.mapper.MovieMapper;
+import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
-import org.cyberrealm.tech.muvio.model.Movie;
+import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.repository.actors.ActorRepository;
-import org.cyberrealm.tech.muvio.repository.movies.MovieRepository;
+import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
 import org.cyberrealm.tech.muvio.service.CategoryService;
-import org.cyberrealm.tech.muvio.service.MovieSyncService;
+import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.TmdbService;
 import org.cyberrealm.tech.muvio.service.TopListService;
 import org.cyberrealm.tech.muvio.service.VibeService;
@@ -39,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
-public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
+public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int SHORT_DURATION = 40;
     private static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     private static final int LIMIT_THREADS =
@@ -47,49 +48,50 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 5;
+    private static final int LAST_PAGE = 10;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
+    private static final String PRODUCER = "Producer";
     private boolean isRunning;
     private final TmdbService tmdbService;
-    private final MovieRepository movieRepository;
+    private final MediaRepository mediaRepository;
     private final ActorRepository actorRepository;
     private final CategoryService categoryService;
     private final VibeService vibeService;
     private final GenreMapper genreMapper;
-    private final MovieMapper movieMapper;
+    private final MediaMapper mediaMapper;
     private final ActorMapper actorMapper;
     private final ReviewMapper reviewMapper;
     private final TopListService topListService;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void importMovies(int fromPage, int toPage, String language, String location) {
+    public void importMedia(Type type, int fromPage, int toPage, String language, String location) {
         deleteAll();
         final Set<String> imdbTop250 = categoryService.getImdbTop250();
         final Set<String> oscarWinningMedia = topListService.getOscarWinningMedia();
         final TmdbMovies tmdbMovies = tmdbService.getTmdbMovies();
-        final List<Movie> movies;
+        final List<Media> media;
         try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
-            final List<info.movito.themoviedbapi.model.core.Movie> movieList =
+            final List<Movie> movieList =
                     tmdbService.fetchPopularMovies(fromPage, toPage, language, location, pool);
-            movies = pool.submit(() -> movieList.parallelStream()
+            media = pool.submit(() -> movieList.parallelStream()
                     .map(movieTmdb -> createMovie(language, movieTmdb, tmdbMovies, imdbTop250,
                             oscarWinningMedia))
                     .toList()).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new MovieProcessingException("Failed to process movies with thread pool", e);
         }
-        for (int i = 0; i < movies.size(); i += BATCH_SIZE) {
-            int toIndex = Math.min(i + BATCH_SIZE, movies.size());
-            movieRepository.saveAll(movies.subList(i, toIndex));
+        for (int i = 0; i < media.size(); i += BATCH_SIZE) {
+            int toIndex = Math.min(i + BATCH_SIZE, media.size());
+            mediaRepository.saveAll(media.subList(i, toIndex));
         }
     }
 
     @Override
     public void start() {
-        importMovies(ZERO, LAST_PAGE, LANGUAGE, REGION);
+        importMedia(Type.MOVIE, ZERO, LAST_PAGE, LANGUAGE, REGION);
         isRunning = true;
     }
 
@@ -113,13 +115,13 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         if (actorRepository != null) {
             actorRepository.deleteAll();
         }
-        if (movieRepository != null) {
-            movieRepository.deleteAll();
+        if (mediaRepository != null) {
+            mediaRepository.deleteAll();
         }
     }
 
-    private Movie createMovie(String language,
-                              info.movito.themoviedbapi.model.core.Movie movieTmdb,
+    private Media createMovie(String language,
+                              Movie movieTmdb,
                               TmdbMovies tmdbMovies, Set<String> imdbTop250,
                               Set<String> oscarWinningMedia) {
         final MovieDb movieDb;
@@ -128,31 +130,31 @@ public class MovieSyncServiceImpl implements MovieSyncService, SmartLifecycle {
         final Credits credits;
         final List<ReleaseInfo> releaseInfo;
         movieDb = tmdbService.fetchMovieDetails(tmdbMovies, movieId, language);
-        final Movie movie = movieMapper.toEntity(movieDb);
+        final Media media = mediaMapper.toEntity(movieDb);
         credits = tmdbService.fetchMovieCredits(tmdbMovies, movieId, language);
         keywords = tmdbService.fetchKeywords(tmdbMovies, movieId);
         releaseInfo = tmdbService.fetchReleaseInfo(tmdbMovies, movieId);
         final Double voteAverage = movieDb.getVoteAverage();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
-        final String title = movie.getTitle();
-        movie.setPosterPath(IMAGE_PATH + movieDb.getPosterPath());
-        movie.setTrailer(tmdbService.fetchTrailer(tmdbMovies, movieId, language));
-        movie.setPhotos(tmdbService.fetchPhotos(tmdbMovies, language, movieId));
-        movie.setReleaseYear(getReleaseYear(movieDb.getReleaseDate()));
-        movie.setDirector(getDirector(credits.getCrew()));
-        movie.setActors(getActors(credits.getCast()));
+        final String title = media.getTitle();
+        media.setPosterPath(IMAGE_PATH + movieDb.getPosterPath());
+        media.setTrailer(tmdbService.fetchTrailer(tmdbMovies, movieId, language));
+        media.setPhotos(tmdbService.fetchPhotos(tmdbMovies, language, movieId));
+        media.setReleaseYear(getReleaseYear(movieDb.getReleaseDate()));
+        media.setDirector(getDirector(credits.getCrew()));
+        media.setActors(getActors(credits.getCast()));
         final Set<GenreEntity> genres = getGenres(movieDb.getGenres());
-        movie.setGenres(genres);
-        movie.setReviews(getReviews(tmdbMovies, language, movieId));
-        movie.setVibes(vibeService.getVibes(releaseInfo, genres));
-        movie.setCategories(categoryService.putCategories(movie.getOverview().toLowerCase(),
+        media.setGenres(genres);
+        media.setReviews(getReviews(tmdbMovies, language, movieId));
+        media.setVibes(vibeService.getVibes(releaseInfo, genres));
+        media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, imdbTop250, title));
-        movie.setType(putType(movie.getDuration()));
-        movie.setTopLists(topListService.putTopLists(keywords, voteAverage, voteCount, popularity,
-                movie.getReleaseYear(), oscarWinningMedia, title, movieDb.getBudget(),
+        media.setType(putType(media.getDuration()));
+        media.setTopLists(topListService.putTopLists(keywords, voteAverage, voteCount, popularity,
+                media.getReleaseYear(), oscarWinningMedia, title, movieDb.getBudget(),
                 movieDb.getRevenue()));
-        return movie;
+        return media;
     }
 
     private Type putType(int duration) {
