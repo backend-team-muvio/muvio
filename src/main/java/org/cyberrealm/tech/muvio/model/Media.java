@@ -34,13 +34,12 @@ public class Media {
     private Type type;
 
     private Set<GenreEntity> genres = new HashSet<>();
-    private Set<String> photos = new HashSet<>();
+    private Set<String> photos;
 
     @DBRef
     private Map<String, Actor> actors = new HashMap<>();
-    private List<Review> reviews = new ArrayList<>();
+    private List<Review> reviews;
     private Set<Vibe> vibes = new HashSet<>();
     private Set<Category> categories = new HashSet<>();
-    private Type type;
     private Set<TopLists> topLists;
 }
