@@ -61,6 +61,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
     private static final String PRODUCER = "Producer";
+    private static final String DEFAULT_LANGUAGE = "null";
     private boolean isRunning;
     private final TmdbService tmdbService;
     private final MediaRepository mediaRepository;
@@ -165,7 +166,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         final String title = media.getTitle();
         media.setPosterPath(IMAGE_PATH + movieDb.getPosterPath());
         media.setTrailer(tmdbService.fetchMovieTrailer(tmdbMovies, movieId, language));
-        media.setPhotos(tmdbService.fetchMoviePhotos(tmdbMovies, language, movieId));
+        media.setPhotos(tmdbService.fetchMoviePhotos(tmdbMovies, DEFAULT_LANGUAGE, movieId));
         media.setReleaseYear(getReleaseYear(movieDb.getReleaseDate()));
         media.setDirector(getMovieDirector(credits.getCrew()));
         media.setActors(getMovieActors(credits.getCast()));
@@ -200,7 +201,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         final String title = media.getTitle();
         media.setPosterPath(IMAGE_PATH + tvSeriesDb.getPosterPath());
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(tmdbTvSeries, seriesId, language));
-        media.setPhotos(tmdbService.fetchTvSerialsPhotos(tmdbTvSeries, language, seriesId));
+        media.setPhotos(tmdbService.fetchTvSerialsPhotos(tmdbTvSeries, DEFAULT_LANGUAGE, seriesId));
         media.setReleaseYear(getReleaseYear(tvSeriesDb.getFirstAirDate()));
         media.setDirector(getTvDirector(credits.getCrew()));
         media.setActors(getTvActors(credits.getCast()));
