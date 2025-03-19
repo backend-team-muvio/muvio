@@ -4,11 +4,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum GenreEntity {
-    MUSIC("Music"), MYSTERY("Mystery"), ROMANCE("Romance"), SCIENCE_FICTION("Science Fiction"),
-    TV_MOVIE("TV Movie"), THRILLER("Thriller"), WAR("War"), WESTERN("Western"), CRIME("Crime"),
-    DOCUMENTARY("Documentary"), DRAMA("Drama"), FAMILY("Family"), FANTASY("Fantasy"),
-    HISTORY("History"), HORROR("Horror"), ACTION("Action"), ADVENTURE("Adventure"),
-    ANIMATION("Animation"), COMEDY("Comedy");
+    ACTION("Action"),
+    ADVENTURE("Adventure"),
+    ANIMATION("Animation"),
+    COMEDY("Comedy"),
+    CRIME("Crime"),
+    DOCUMENTARY("Documentary"),
+    DRAMA("Drama"),
+    FAMILY("Family"),
+    FANTASY("Fantasy"),
+    HISTORY("History"),
+    HORROR("Horror"),
+    KIDS("Kids"),
+    MUSIC("Music"),
+    MYSTERY("Mystery"),
+    NEWS("News"),
+    POLITICS("Politics"),
+    REALITY("Reality"),
+    ROMANCE("Romance"),
+    SCIENCE_FICTION("Science Fiction"),
+    SCRIPTED("Scripted"),
+    SOAP("Soap"),
+    TALK_SHOW("Talk Show"),
+    THRILLER("Thriller"),
+    TV_MOVIE("TV Movie"),
+    WAR("War"),
+    WESTERN("Western");
+
 
     private static final Map<String, GenreEntity> NAME_TO_ENUM = new HashMap<>();
     private final String name;
