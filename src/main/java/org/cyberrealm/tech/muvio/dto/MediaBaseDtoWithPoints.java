@@ -5,6 +5,6 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class MovieBaseDtoWithPoints extends MovieBaseDto {
+public class MediaBaseDtoWithPoints extends MediaBaseDto {
     private Integer points;
 }

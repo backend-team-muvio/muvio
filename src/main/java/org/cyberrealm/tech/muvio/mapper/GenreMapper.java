@@ -9,6 +9,12 @@ import org.mapstruct.Mapper;
 public interface GenreMapper {
 
     default GenreEntity toGenreEntity(Genre genre) {
-        return genre != null ? GenreEntity.fromString(genre.getName()) : null;
+        if (genre == null || genre.getName() == null) {
+            return null;
+        }
+        String genreName = genre.getName().contains("&")
+                ? genre.getName().split("&")[1].trim()
+                : genre.getName();
+        return GenreEntity.fromString(genreName);
     }
 }

@@ -14,8 +14,8 @@ public class GlobalExceptionHandler {
                 .body(exception.getMessage());
     }
 
-    @ExceptionHandler(MovieSyncException.class)
-    public ResponseEntity<Object> handleMovieSyncException(MovieSyncException exception) {
+    @ExceptionHandler(MediaSyncException.class)
+    public ResponseEntity<Object> handleMovieSyncException(MediaSyncException exception) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(exception.getMessage());
@@ -36,9 +36,9 @@ public class GlobalExceptionHandler {
                 .body(exception.getMessage());
     }
 
-    @ExceptionHandler(MovieProcessingException.class)
+    @ExceptionHandler(MediaProcessingException.class)
     public ResponseEntity<Object> handleMovieProcessingException(
-            MovieProcessingException exception) {
+            MediaProcessingException exception) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(exception.getMessage());

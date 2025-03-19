@@ -3,7 +3,7 @@ package org.cyberrealm.tech.muvio.dto;
 import lombok.Data;
 
 @Data
-public class MovieBaseDto {
+public class MediaBaseDto {
     private String id;
     private String title;
     private String genres;

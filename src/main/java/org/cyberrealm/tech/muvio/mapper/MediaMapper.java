@@ -1,31 +1,39 @@
 package org.cyberrealm.tech.muvio.mapper;
 
 import info.movito.themoviedbapi.model.movies.MovieDb;
+import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.concurrent.TimeUnit;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
-import org.cyberrealm.tech.muvio.dto.MovieDto;
-import org.cyberrealm.tech.muvio.dto.MovieDtoFromDb;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCast;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCastFromDb;
-import org.cyberrealm.tech.muvio.model.Movie;
+import org.cyberrealm.tech.muvio.dto.MediaDto;
+import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.model.Media;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 @Mapper(config = MapperConfig.class, uses = {ActorMapper.class, GenreMapper.class})
-public interface MovieMapper {
+public interface MediaMapper {
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
-    MovieDto toMovieDto(MovieDtoFromDb movie);
+    MediaDto toMovieDto(MediaDtoFromDb movie);
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
     @Mapping(source = "movieDb.runtime", target = "duration")
     @Mapping(source = "movieDb.voteAverage", target = "rating")
-    Movie toEntity(MovieDb movieDb);
+    Media toEntity(MovieDb movieDb);
+
+    @Mapping(source = "tvSeriesDb.name", target = "title")
+    @Mapping(source = "tvSeriesDb.lastEpisodeToAir.runtime", target = "duration")
+    @Mapping(source = "tvSeriesDb.voteAverage", target = "rating")
+    @Mapping(source = "genres", target = "genres", ignore = true)
+    @Mapping(source = "type", target = "type", ignore = true)
+    Media toEntity(TvSeriesDb tvSeriesDb);
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toSetActors")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
-    MovieDtoWithCast toMovieDtoWithCast(MovieDtoWithCastFromDb movie);
+    MediaDtoWithCast toMediaDtoWithCast(MediaDtoWithCastFromDb movie);
 
     @Named("toDuration")
     default String toDuration(Integer duration) {

@@ -7,21 +7,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.cyberrealm.tech.muvio.dto.MovieBaseDto;
-import org.cyberrealm.tech.muvio.dto.MovieBaseDtoWithPoints;
-import org.cyberrealm.tech.muvio.dto.MovieDto;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCast;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCastFromDb;
-import org.cyberrealm.tech.muvio.dto.MovieGalleryRequestDto;
-import org.cyberrealm.tech.muvio.dto.MovieVibeRequestDto;
+import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
+import org.cyberrealm.tech.muvio.dto.MediaBaseDtoWithPoints;
+import org.cyberrealm.tech.muvio.dto.MediaDto;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
+import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
-import org.cyberrealm.tech.muvio.mapper.MovieMapper;
-import org.cyberrealm.tech.muvio.model.Movie;
+import org.cyberrealm.tech.muvio.mapper.MediaMapper;
+import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
-import org.cyberrealm.tech.muvio.repository.movies.MovieRepository;
-import org.cyberrealm.tech.muvio.service.MovieService;
+import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
+import org.cyberrealm.tech.muvio.service.MediaService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class MovieServiceImpl implements MovieService {
+public class MediaServiceImpl implements MediaService {
     private static final int NINE = 9;
     private static final String DEFAULT_TITLE = "";
     private static final String SPLIT_PATTERN = "-";
@@ -43,41 +43,41 @@ public class MovieServiceImpl implements MovieService {
     private static final int DEFAULT_YEAR = 1900;
     private static final String RATING = "rating";
     private static final List<String> TOP_GENRES = List.of("ACTION", "DRAMA", "COMEDY");
-    private final MovieRepository movieRepository;
-    private final MovieMapper movieMapper;
+    private final MediaRepository mediaRepository;
+    private final MediaMapper mediaMapper;
 
     @Override
-    public MovieDto getMovieById(String id) {
-        return movieMapper.toMovieDto(movieRepository.findMovieById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no movie with this id: "
+    public MediaDto getMediaById(String id) {
+        return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
+                .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
                         + id)));
     }
 
     @Override
-    public Movie saveMovie(Movie movie) {
-        return movieRepository.save(movie);
+    public Media saveMedia(Media media) {
+        return mediaRepository.save(media);
     }
 
     @Override
-    public void deleteMovieById(String id) {
-        movieRepository.deleteById(id);
+    public void deleteMediaById(String id) {
+        mediaRepository.deleteById(id);
     }
 
     @Override
-    public Movie updateMovie(String id, Movie updatedMovie) {
-        final Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no movie with this id: "
+    public Media updateMedia(String id, Media updatedMedia) {
+        final Media media = mediaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
                         + id));
-        movie.setTitle(updatedMovie.getTitle());
-        movie.setGenres(updatedMovie.getGenres());
-        movie.setRating(updatedMovie.getRating());
-        movie.setTrailer(updatedMovie.getTrailer());
-        return movieRepository.save(movie);
+        media.setTitle(updatedMedia.getTitle());
+        media.setGenres(updatedMedia.getGenres());
+        media.setRating(updatedMedia.getRating());
+        media.setTrailer(updatedMedia.getTrailer());
+        return mediaRepository.save(media);
     }
 
     @Override
-    public Slice<MovieBaseDtoWithPoints> getAllMoviesByVibe(MovieVibeRequestDto requestDto,
-                                                            Pageable pageable) {
+    public Slice<MediaBaseDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
+                                                           Pageable pageable) {
         final Integer[] years = getYearsIn(requestDto.years());
         final Set<String> categories;
         if (requestDto.categories() == null) {
@@ -85,15 +85,15 @@ public class MovieServiceImpl implements MovieService {
         } else {
             categories = requestDto.categories();
         }
-        final Slice<MovieBaseDtoWithPoints> moviesByVibes = movieRepository.findAllByVibes(
+        final Slice<MediaBaseDtoWithPoints> mediaByVibes = mediaRepository.findAllByVibes(
                 years[ZERO], years[ONE], getType(requestDto.type()),
                 requestDto.vibe(), categories, pageable);
-        updateDuration(moviesByVibes);
-        return moviesByVibes;
+        updateDuration(mediaByVibes);
+        return mediaByVibes;
     }
 
     @Override
-    public Slice<MovieBaseDto> getAllForGallery(MovieGalleryRequestDto requestDto,
+    public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
                                                 Pageable pageable) {
         final Integer[] years = getYearsIn(requestDto.years());
         final String title;
@@ -102,24 +102,24 @@ public class MovieServiceImpl implements MovieService {
         } else {
             title = DEFAULT_TITLE;
         }
-        final Slice<MovieBaseDto> moviesForGallery = movieRepository.getAllForGallery(years[ZERO],
+        final Slice<MediaBaseDto> mediaForGallery = mediaRepository.getAllForGallery(years[ZERO],
                 years[ONE], title, getType(requestDto.type()), pageable);
-        updateDuration(moviesForGallery);
-        return moviesForGallery;
+        updateDuration(mediaForGallery);
+        return mediaForGallery;
     }
 
     @Override
-    public Set<MovieBaseDto> getAllLuck(int size) {
-        final Set<MovieBaseDto> luck = movieRepository.getAllLuck(size);
+    public Set<MediaBaseDto> getAllLuck(int size) {
+        final Set<MediaBaseDto> luck = mediaRepository.getAllLuck(size);
         updateDuration(luck);
         return luck;
     }
 
     @Transactional
     @Override
-    public Slice<MovieBaseDto> getRecommendations(Pageable pageable) {
+    public Slice<MediaBaseDto> getRecommendations(Pageable pageable) {
         int minYear = Year.now().getValue() - THREE;
-        final List<MovieBaseDto> recommendations = new ArrayList<>();
+        final List<MediaBaseDto> recommendations = new ArrayList<>();
         TOP_GENRES.forEach(genre -> {
             addRecommendationsByTypeAndGenre(Type.MOVIE, genre, minYear, pageable,
                     recommendations);
@@ -134,44 +134,44 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Slice<MovieDtoWithCast> findMoviesByTopLists(String topList, Pageable pageable) {
-        final Slice<MovieDtoWithCastFromDb> movies = movieRepository
+    public Slice<MediaDtoWithCast> findMediaByTopLists(String topList, Pageable pageable) {
+        final Slice<MediaDtoWithCastFromDb> media = mediaRepository
                 .findByTopListsContaining(topList, pageable);
-        final List<MovieDtoWithCast> moviesList = movies.stream()
-                .map(movieMapper::toMovieDtoWithCast).toList();
-        return new SliceImpl<>(moviesList, pageable, !moviesList.isEmpty());
+        final List<MediaDtoWithCast> mediaList = media.stream()
+                .map(mediaMapper::toMediaDtoWithCast).toList();
+        return new SliceImpl<>(mediaList, pageable, !mediaList.isEmpty());
     }
 
     @Override
     public Slice<PosterDto> findAllPosters(Pageable pageable) {
-        return movieRepository.findAllPosters(pageable);
+        return mediaRepository.findAllPosters(pageable);
     }
 
     @Override
     public Slice<TitleDto> findAllTitles(Pageable pageable) {
-        return movieRepository.findAllTitles(pageable);
+        return mediaRepository.findAllTitles(pageable);
     }
 
     @Override
-    public MovieDto findByTitle(String title) {
-        return movieMapper.toMovieDto(movieRepository.findByTitle(title));
+    public MediaDto findByTitle(String title) {
+        return mediaMapper.toMovieDto(mediaRepository.findByTitle(title));
     }
 
     private void addRecommendationsByTypeAndGenre(
             Type type, String genre, int minYear, Pageable pageable,
-            List<MovieBaseDto> recommendations) {
-        List<MovieBaseDto> movieList = fetchMovies(type, genre, minYear, pageable);
-        if (!movieList.isEmpty() && recommendations.contains(movieList.getFirst())) {
-            movieList = fetchMovies(type, genre, minYear, pageable.next());
+            List<MediaBaseDto> recommendations) {
+        List<MediaBaseDto> mediaList = fetchMedia(type, genre, minYear, pageable);
+        if (!mediaList.isEmpty() && recommendations.contains(mediaList.getFirst())) {
+            mediaList = fetchMedia(type, genre, minYear, pageable.next());
         }
-        recommendations.addAll(movieList);
+        recommendations.addAll(mediaList);
     }
 
-    private List<MovieBaseDto> fetchMovies(Type type, String genre, int minYear,
-                                           Pageable pageable) {
+    private List<MediaBaseDto> fetchMedia(Type type, String genre, int minYear,
+                                          Pageable pageable) {
         Pageable sortedPageRequest = PageRequest.of(pageable.getPageNumber(),
                 pageable.getPageSize(), Sort.by(RATING).descending());
-        return movieRepository.findMoviesByTypeGenreAndYears(type, genre, minYear,
+        return mediaRepository.findMoviesByTypeGenreAndYears(type, genre, minYear,
                 sortedPageRequest).getContent();
     }
 
@@ -195,8 +195,8 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-    private <T extends MovieBaseDto> void updateDuration(Iterable<T> movies) {
-        movies.forEach(movie -> movie.setDuration(
-                movieMapper.toDuration(Integer.parseInt(movie.getDuration()))));
+    private <T extends MediaBaseDto> void updateDuration(Iterable<T> mediaList) {
+        mediaList.forEach(media -> media.setDuration(
+                mediaMapper.toDuration(Integer.parseInt(media.getDuration()))));
     }
 }

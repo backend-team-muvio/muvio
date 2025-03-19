@@ -1,14 +1,14 @@
-package org.cyberrealm.tech.muvio.repository.movies;
+package org.cyberrealm.tech.muvio.repository.media;
 
 import java.util.Optional;
 import java.util.Set;
-import org.cyberrealm.tech.muvio.dto.MovieBaseDto;
-import org.cyberrealm.tech.muvio.dto.MovieBaseDtoWithPoints;
-import org.cyberrealm.tech.muvio.dto.MovieDtoFromDb;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
+import org.cyberrealm.tech.muvio.dto.MediaBaseDtoWithPoints;
+import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
-import org.cyberrealm.tech.muvio.model.Movie;
+import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -18,7 +18,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MovieRepository extends MongoRepository<Movie, String> {
+public interface MediaRepository extends MongoRepository<Media, String> {
 
     @Aggregation(pipeline = {
             "{ '$match': { 'releaseYear': { '$gte': ?0, '$lte': ?1 }, 'type': { $in: ?2 },"
@@ -37,7 +37,7 @@ public interface MovieRepository extends MongoRepository<Movie, String> {
                     + " { $eq: [?4, []] } ] }, 0, 1 ] } } } }",
             "{ '$match': { $or: [ { ?4: { $eq: null } }, { 'categories': { $in: ?4 } } ] } }"
     })
-    Slice<MovieBaseDtoWithPoints> findAllByVibes(int startYear, int endYear, Set<String> type,
+    Slice<MediaBaseDtoWithPoints> findAllByVibes(int startYear, int endYear, Set<String> type,
                                                  String vibe, Set<String> categories,
                                                  Pageable pageable);
 
@@ -46,24 +46,24 @@ public interface MovieRepository extends MongoRepository<Movie, String> {
             "{ $match: { title: { $regex: ?2, $options: 'i' } } }",
             "{ $match: { type: { $in: ?3 } } }"
     })
-    Slice<MovieBaseDto> getAllForGallery(int startYear, int endYear, String title, Set<String> type,
+    Slice<MediaBaseDto> getAllForGallery(int startYear, int endYear, String title, Set<String> type,
                                          Pageable pageable);
 
     @Aggregation(pipeline = {
             "{ '$sample': { 'size': ?0 } }"
     })
-    Set<MovieBaseDto> getAllLuck(int size);
+    Set<MediaBaseDto> getAllLuck(int size);
 
     @Aggregation(pipeline = {
             "{ '$match': { 'type': ?0, 'genres': ?1, 'releaseYear': { $gte: ?2 } } }",
             "{ '$sort': { 'rating': -1 } }"
     })
-    Slice<MovieBaseDto> findMoviesByTypeGenreAndYears(Type type, String genre, int minYear,
+    Slice<MediaBaseDto> findMoviesByTypeGenreAndYears(Type type, String genre, int minYear,
                                                       Pageable pageable);
 
-    Optional<MovieDtoFromDb> findMovieById(String id);
+    Optional<MediaDtoFromDb> findMovieById(String id);
 
-    Slice<MovieDtoWithCastFromDb> findByTopListsContaining(String topList, Pageable pageable);
+    Slice<MediaDtoWithCastFromDb> findByTopListsContaining(String topList, Pageable pageable);
 
     @Query(value = "{ 'posterPath': { '$ne': null } }", fields = "{ 'id': 1, 'posterPath': 1 }")
     Slice<PosterDto> findAllPosters(Pageable pageable);
@@ -71,5 +71,5 @@ public interface MovieRepository extends MongoRepository<Movie, String> {
     @Query(value = "{}", fields = "{ 'title': 1 }")
     Slice<TitleDto> findAllTitles(Pageable pageable);
 
-    MovieDtoFromDb findByTitle(String title);
+    MediaDtoFromDb findByTitle(String title);
 }
