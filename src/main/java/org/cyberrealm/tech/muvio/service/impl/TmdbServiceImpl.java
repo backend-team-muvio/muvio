@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TmdbServiceImpl implements TmdbService {
     public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
+    public static final double MIN_RATE = 5.0;
     private static final int MAX_ATTEMPTS = 12;
     private static final int BACK_OFF = 10000;
     private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
@@ -45,7 +46,7 @@ public class TmdbServiceImpl implements TmdbService {
     private static final String TEASER = "Teaser";
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_RECORDS = 6;
-    public static final double MIN_RATE = 5.0;
+
     private final TmdbApi tmdbApi;
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
