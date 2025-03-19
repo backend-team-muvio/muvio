@@ -24,7 +24,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.cyberrealm.tech.muvio.exception.MovieProcessingException;
+import org.cyberrealm.tech.muvio.exception.MediaProcessingException;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
@@ -105,7 +105,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 throw new IllegalArgumentException("Unsupported media type: " + type);
             }
         } catch (InterruptedException | ExecutionException e) {
-            throw new MovieProcessingException("Failed to process media with thread pool", e);
+            throw new MediaProcessingException("Failed to process media with thread pool", e);
         }
         for (int i = 0; i < media.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, media.size());

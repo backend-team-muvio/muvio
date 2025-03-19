@@ -36,9 +36,9 @@ public class GlobalExceptionHandler {
                 .body(exception.getMessage());
     }
 
-    @ExceptionHandler(MovieProcessingException.class)
+    @ExceptionHandler(MediaProcessingException.class)
     public ResponseEntity<Object> handleMovieProcessingException(
-            MovieProcessingException exception) {
+            MediaProcessingException exception) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(exception.getMessage());

@@ -8,12 +8,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
-import org.cyberrealm.tech.muvio.dto.MovieBaseDto;
-import org.cyberrealm.tech.muvio.dto.MovieBaseDtoWithPoints;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCast;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCastFromDb;
-import org.cyberrealm.tech.muvio.dto.MovieGalleryRequestDto;
-import org.cyberrealm.tech.muvio.dto.MovieVibeRequestDto;
+import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
+import org.cyberrealm.tech.muvio.dto.MediaBaseDtoWithPoints;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
+import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
@@ -47,37 +47,37 @@ public class MediaServiceImpl implements MediaService {
     private final MediaMapper mediaMapper;
 
     @Override
-    public MediaDto getMovieById(String id) {
+    public MediaDto getMediaById(String id) {
         return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no movie with this id: "
+                .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
                         + id)));
     }
 
     @Override
-    public Media saveMovie(Media media) {
+    public Media saveMedia(Media media) {
         return mediaRepository.save(media);
     }
 
     @Override
-    public void deleteMovieById(String id) {
+    public void deleteMediaById(String id) {
         mediaRepository.deleteById(id);
     }
 
     @Override
-    public Media updateMovie(String id, Media updatedMovie) {
-        final Media movie = mediaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no movie with this id: "
+    public Media updateMedia(String id, Media updatedMedia) {
+        final Media media = mediaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
                         + id));
-        movie.setTitle(updatedMovie.getTitle());
-        movie.setGenres(updatedMovie.getGenres());
-        movie.setRating(updatedMovie.getRating());
-        movie.setTrailer(updatedMovie.getTrailer());
-        return mediaRepository.save(movie);
+        media.setTitle(updatedMedia.getTitle());
+        media.setGenres(updatedMedia.getGenres());
+        media.setRating(updatedMedia.getRating());
+        media.setTrailer(updatedMedia.getTrailer());
+        return mediaRepository.save(media);
     }
 
     @Override
-    public Slice<MovieBaseDtoWithPoints> getAllMoviesByVibe(MovieVibeRequestDto requestDto,
-                                                            Pageable pageable) {
+    public Slice<MediaBaseDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
+                                                           Pageable pageable) {
         final Integer[] years = getYearsIn(requestDto.years());
         final Set<String> categories;
         if (requestDto.categories() == null) {
@@ -85,15 +85,15 @@ public class MediaServiceImpl implements MediaService {
         } else {
             categories = requestDto.categories();
         }
-        final Slice<MovieBaseDtoWithPoints> moviesByVibes = mediaRepository.findAllByVibes(
+        final Slice<MediaBaseDtoWithPoints> mediaByVibes = mediaRepository.findAllByVibes(
                 years[ZERO], years[ONE], getType(requestDto.type()),
                 requestDto.vibe(), categories, pageable);
-        updateDuration(moviesByVibes);
-        return moviesByVibes;
+        updateDuration(mediaByVibes);
+        return mediaByVibes;
     }
 
     @Override
-    public Slice<MovieBaseDto> getAllForGallery(MovieGalleryRequestDto requestDto,
+    public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
                                                 Pageable pageable) {
         final Integer[] years = getYearsIn(requestDto.years());
         final String title;
@@ -102,24 +102,24 @@ public class MediaServiceImpl implements MediaService {
         } else {
             title = DEFAULT_TITLE;
         }
-        final Slice<MovieBaseDto> moviesForGallery = mediaRepository.getAllForGallery(years[ZERO],
+        final Slice<MediaBaseDto> mediaForGallery = mediaRepository.getAllForGallery(years[ZERO],
                 years[ONE], title, getType(requestDto.type()), pageable);
-        updateDuration(moviesForGallery);
-        return moviesForGallery;
+        updateDuration(mediaForGallery);
+        return mediaForGallery;
     }
 
     @Override
-    public Set<MovieBaseDto> getAllLuck(int size) {
-        final Set<MovieBaseDto> luck = mediaRepository.getAllLuck(size);
+    public Set<MediaBaseDto> getAllLuck(int size) {
+        final Set<MediaBaseDto> luck = mediaRepository.getAllLuck(size);
         updateDuration(luck);
         return luck;
     }
 
     @Transactional
     @Override
-    public Slice<MovieBaseDto> getRecommendations(Pageable pageable) {
+    public Slice<MediaBaseDto> getRecommendations(Pageable pageable) {
         int minYear = Year.now().getValue() - THREE;
-        final List<MovieBaseDto> recommendations = new ArrayList<>();
+        final List<MediaBaseDto> recommendations = new ArrayList<>();
         TOP_GENRES.forEach(genre -> {
             addRecommendationsByTypeAndGenre(Type.MOVIE, genre, minYear, pageable,
                     recommendations);
@@ -134,12 +134,12 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public Slice<MovieDtoWithCast> findMoviesByTopLists(String topList, Pageable pageable) {
-        final Slice<MovieDtoWithCastFromDb> movies = mediaRepository
+    public Slice<MediaDtoWithCast> findMediaByTopLists(String topList, Pageable pageable) {
+        final Slice<MediaDtoWithCastFromDb> media = mediaRepository
                 .findByTopListsContaining(topList, pageable);
-        final List<MovieDtoWithCast> moviesList = movies.stream()
-                .map(mediaMapper::toMovieDtoWithCast).toList();
-        return new SliceImpl<>(moviesList, pageable, !moviesList.isEmpty());
+        final List<MediaDtoWithCast> mediaList = media.stream()
+                .map(mediaMapper::toMediaDtoWithCast).toList();
+        return new SliceImpl<>(mediaList, pageable, !mediaList.isEmpty());
     }
 
     @Override
@@ -159,16 +159,16 @@ public class MediaServiceImpl implements MediaService {
 
     private void addRecommendationsByTypeAndGenre(
             Type type, String genre, int minYear, Pageable pageable,
-            List<MovieBaseDto> recommendations) {
-        List<MovieBaseDto> movieList = fetchMovies(type, genre, minYear, pageable);
-        if (!movieList.isEmpty() && recommendations.contains(movieList.getFirst())) {
-            movieList = fetchMovies(type, genre, minYear, pageable.next());
+            List<MediaBaseDto> recommendations) {
+        List<MediaBaseDto> mediaList = fetchMedia(type, genre, minYear, pageable);
+        if (!mediaList.isEmpty() && recommendations.contains(mediaList.getFirst())) {
+            mediaList = fetchMedia(type, genre, minYear, pageable.next());
         }
-        recommendations.addAll(movieList);
+        recommendations.addAll(mediaList);
     }
 
-    private List<MovieBaseDto> fetchMovies(Type type, String genre, int minYear,
-                                           Pageable pageable) {
+    private List<MediaBaseDto> fetchMedia(Type type, String genre, int minYear,
+                                          Pageable pageable) {
         Pageable sortedPageRequest = PageRequest.of(pageable.getPageNumber(),
                 pageable.getPageSize(), Sort.by(RATING).descending());
         return mediaRepository.findMoviesByTypeGenreAndYears(type, genre, minYear,
@@ -195,8 +195,8 @@ public class MediaServiceImpl implements MediaService {
         }
     }
 
-    private <T extends MovieBaseDto> void updateDuration(Iterable<T> movies) {
-        movies.forEach(movie -> movie.setDuration(
-                mediaMapper.toDuration(Integer.parseInt(movie.getDuration()))));
+    private <T extends MediaBaseDto> void updateDuration(Iterable<T> mediaList) {
+        mediaList.forEach(media -> media.setDuration(
+                mediaMapper.toDuration(Integer.parseInt(media.getDuration()))));
     }
 }

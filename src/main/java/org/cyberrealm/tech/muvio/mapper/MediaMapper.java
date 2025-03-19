@@ -5,9 +5,9 @@ import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.concurrent.TimeUnit;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
-import org.cyberrealm.tech.muvio.dto.MovieDtoFromDb;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCast;
-import org.cyberrealm.tech.muvio.dto.MovieDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,7 +17,7 @@ import org.mapstruct.Named;
 public interface MediaMapper {
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
-    MediaDto toMovieDto(MovieDtoFromDb movie);
+    MediaDto toMovieDto(MediaDtoFromDb movie);
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
     @Mapping(source = "movieDb.runtime", target = "duration")
@@ -33,7 +33,7 @@ public interface MediaMapper {
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toSetActors")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
-    MovieDtoWithCast toMovieDtoWithCast(MovieDtoWithCastFromDb movie);
+    MediaDtoWithCast toMediaDtoWithCast(MediaDtoWithCastFromDb movie);
 
     @Named("toDuration")
     default String toDuration(Integer duration) {
