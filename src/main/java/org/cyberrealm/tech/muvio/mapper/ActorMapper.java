@@ -14,6 +14,8 @@ import org.mapstruct.Named;
 public interface ActorMapper {
     Actor toActorEntity(Cast cast);
 
+    Actor toActorEntity(info.movito.themoviedbapi.model.tv.core.credits.Cast cast);
+
     @Named("toActorDto")
     default Set<ActorDto> toActorDto(Map<String, Actor> actors) {
         return actors.entrySet().stream()
