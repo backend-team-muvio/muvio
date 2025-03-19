@@ -25,7 +25,6 @@ public interface MediaMapper {
     Media toEntity(MovieDb movieDb);
 
     @Mapping(source = "tvSeriesDb.name", target = "title")
-    @Mapping(source = "tvSeriesDb.lastEpisodeToAir.runtime", target = "duration")
     @Mapping(source = "tvSeriesDb.voteAverage", target = "rating")
     @Mapping(source = "genres", target = "genres", ignore = true)
     @Mapping(source = "type", target = "type", ignore = true)
@@ -39,6 +38,7 @@ public interface MediaMapper {
     default String toDuration(Integer duration) {
         long hours = TimeUnit.MINUTES.toHours(duration);
         long minutes = duration - TimeUnit.HOURS.toMinutes(hours);
-        return String.format("%dh %02dm", hours, minutes);
+        return hours > 0 ? String.format("%dh %02dm", hours, minutes)
+                : String.format("%02dm", minutes);
     }
 }
