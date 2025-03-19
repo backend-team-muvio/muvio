@@ -45,6 +45,7 @@ public class TmdbServiceImpl implements TmdbService {
     private static final String TEASER = "Teaser";
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_RECORDS = 6;
+    public static final double MIN_RATE = 5.0;
     private final TmdbApi tmdbApi;
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -66,7 +67,7 @@ public class TmdbServiceImpl implements TmdbService {
                     try {
                         return tmdbApi.getMovieLists().getPopular(language, page, location)
                                 .getResults().stream()
-                                .filter(movie -> movie.getVoteAverage() > 5.0)
+                                .filter(movie -> movie.getVoteAverage() > MIN_RATE)
                                 .filter(movie -> movie.getVideo() != null)
                                 .filter(movie -> movie.getPosterPath() != null)
                                 .filter(movie -> movie.getOverview() != null)
@@ -123,7 +124,7 @@ public class TmdbServiceImpl implements TmdbService {
     public Set<String> fetchMoviePhotos(TmdbMovies tmdbMovies, String language, int movieId) {
         return fetchPhotos(() -> {
             try {
-                return tmdbMovies.getImages(movieId, "null").getBackdrops();
+                return tmdbMovies.getImages(movieId, language).getBackdrops();
             } catch (TmdbException e) {
                 throw new TmdbServiceException("Failed to fetch photos from TMDB", e);
             }
@@ -185,7 +186,7 @@ public class TmdbServiceImpl implements TmdbService {
                     try {
                         return tmdbApi.getTvSeriesLists().getPopular(language, page).getResults()
                                 .stream()
-                                .filter(tvSeries -> tvSeries.getVoteAverage() > 5.0)
+                                .filter(tvSeries -> tvSeries.getVoteAverage() > MIN_RATE)
                                 .filter(tvSeries -> tvSeries.getPosterPath() != null)
                                 .filter(tvSeries -> tvSeries.getOverview() != null)
                                 .filter(tvSeries -> tvSeries.getFirstAirDate() != null)
