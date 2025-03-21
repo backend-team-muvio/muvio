@@ -8,12 +8,7 @@ import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.TvKeywords;
 import info.movito.themoviedbapi.model.core.TvSeries;
-import info.movito.themoviedbapi.model.movies.Cast;
-import info.movito.themoviedbapi.model.movies.Credits;
-import info.movito.themoviedbapi.model.movies.Crew;
-import info.movito.themoviedbapi.model.movies.KeywordResults;
-import info.movito.themoviedbapi.model.movies.MovieDb;
-import info.movito.themoviedbapi.model.movies.ReleaseInfo;
+import info.movito.themoviedbapi.model.movies.*;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +51,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 10;
+    private static final int LAST_PAGE = 20;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
@@ -77,10 +72,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void importMedia(Type type, int fromPage, int toPage, String language,
-                            String location) {
-        deleteAll();
-        final Set<String> imdbTop250 = categoryService.getImdbTop250();
-        final Set<String> oscarWinningMovie = topListService.getOscarWinningMedia();
+                            String location, Set<String> imdbTop250, Set<String> oscarWinningMovie) {
         final List<Media> media;
         try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
             if (type == Type.MOVIE) {
@@ -116,8 +108,11 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
 
     @Override
     public void start() {
-        importMedia(Type.MOVIE, ZERO, LAST_PAGE, LANGUAGE, REGION);
-        importMedia(Type.TV_SHOW, ZERO, LAST_PAGE, LANGUAGE, REGION);
+        deleteAll();
+        final Set<String> imdbTop250 = categoryService.getImdbTop250();
+        final Set<String> oscarWinningMovie = topListService.getOscarWinningMedia();
+        importMedia(Type.MOVIE, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTop250, oscarWinningMovie);
+        importMedia(Type.TV_SHOW, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTop250, oscarWinningMovie);
         isRunning = true;
     }
 
@@ -150,16 +145,11 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                               Movie movieTmdb,
                               TmdbMovies tmdbMovies, Set<String> imdbTop250,
                               Set<String> oscarWinningMedia) {
-        final MovieDb movieDb;
         final int movieId = movieTmdb.getId();
-        final KeywordResults keywords;
-        final Credits credits;
-        final List<ReleaseInfo> releaseInfo;
-        movieDb = tmdbService.fetchMovieDetails(tmdbMovies, movieId, language);
+        final MovieDb movieDb = tmdbService.fetchMovieDetails(tmdbMovies, movieId, language);
+        final KeywordResults keywords = tmdbService.fetchMovieKeywords(tmdbMovies, movieId);
+        final Credits credits  = tmdbService.fetchMovieCredits(tmdbMovies, movieId, language);
         final Media media = mediaMapper.toEntity(movieDb);
-        credits = tmdbService.fetchMovieCredits(tmdbMovies, movieId, language);
-        keywords = tmdbService.fetchMovieKeywords(tmdbMovies, movieId);
-        releaseInfo = tmdbService.fetchReleaseInfo(tmdbMovies, movieId);
         final Double voteAverage = movieDb.getVoteAverage();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
@@ -174,7 +164,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         media.setGenres(genres);
         media.setReviews(getReviews(() ->
                 tmdbService.fetchMovieReviews(tmdbMovies, language, movieId)));
-        media.setVibes(vibeService.getVibes(releaseInfo, genres));
+        media.setVibes(vibeService.getVibes(tmdbService.fetchTmdbMovieRatings(movieId), genres));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, imdbTop250, title));
         media.setType(putType(media.getDuration()));
@@ -214,9 +204,14 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         //By default
         media.setCategories(Set.of(Category.SPORT_LIFE_MOVIES));
         media.setTopLists(Set.of(ICONIC_MOVIES_OF_THE_21ST_CENTURY));
-
+        media.setVibes(vibeService.getVibes(tmdbService.fetchTmdbTvRatings(seriesId), genres));
         media.setType(Type.TV_SHOW);
         return media;
+    }
+
+    private Set<String> getTmdbMovieRatings (List<ReleaseInfo> releaseInfo) {
+        return releaseInfo.stream().flatMap(info -> info.getReleaseDates().stream()
+                .map(ReleaseDate::getCertification)).collect(Collectors.toSet());
     }
 
     private Type putType(int duration) {
@@ -291,7 +286,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR)
                         || crew.getJob().equalsIgnoreCase(PRODUCER))
                 .findFirst()
-                .map(info.movito.themoviedbapi.model.tv.core.credits.Crew::getOriginalName)
+                .map(info.movito.themoviedbapi.model.tv.core.credits.Crew::getName)
                 .orElse(null);
     }
 

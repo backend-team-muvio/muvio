@@ -1,10 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import java.time.Year;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
@@ -40,9 +37,10 @@ public class MediaServiceImpl implements MediaService {
     private static final int ONE = 1;
     private static final int TWO = 2;
     private static final int THREE = 3;
+    private static final int SIX = 6;
     private static final int DEFAULT_YEAR = 1900;
     private static final String RATING = "rating";
-    private static final List<String> TOP_GENRES = List.of("ACTION", "DRAMA", "COMEDY");
+    private static final List<String> TOP_GENRES = List.of("CRIME", "DRAMA", "COMEDY");
     private final MediaRepository mediaRepository;
     private final MediaMapper mediaMapper;
 
@@ -126,7 +124,7 @@ public class MediaServiceImpl implements MediaService {
             addRecommendationsByTypeAndGenre(Type.TV_SHOW, genre, minYear, pageable,
                     recommendations);
         });
-        if (recommendations.size() != 6) {
+        if (recommendations.size() != SIX) {
             return null;
         }
         updateDuration(recommendations);
@@ -196,7 +194,11 @@ public class MediaServiceImpl implements MediaService {
     }
 
     private <T extends MediaBaseDto> void updateDuration(Iterable<T> mediaList) {
-        mediaList.forEach(media -> media.setDuration(
-                mediaMapper.toDuration(Integer.parseInt(media.getDuration()))));
+        mediaList.forEach(media -> {
+            if (media.getDuration() != null) {
+                media.setDuration(
+                        mediaMapper.toDuration(Integer.parseInt(media.getDuration())));
+            }
+        });
     }
 }

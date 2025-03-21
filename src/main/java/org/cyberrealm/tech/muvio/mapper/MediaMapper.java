@@ -15,6 +15,8 @@ import org.mapstruct.Named;
 
 @Mapper(config = MapperConfig.class, uses = {ActorMapper.class, GenreMapper.class})
 public interface MediaMapper {
+    String TV = "TV";
+
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
     MediaDto toMovieDto(MediaDtoFromDb movie);
@@ -29,6 +31,7 @@ public interface MediaMapper {
     @Mapping(source = "tvSeriesDb.voteAverage", target = "rating")
     @Mapping(source = "genres", target = "genres", ignore = true)
     @Mapping(source = "type", target = "type", ignore = true)
+    @Mapping(source = "id", target = "id", qualifiedByName = "setTvSeriesId")
     Media toEntity(TvSeriesDb tvSeriesDb);
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toSetActors")
@@ -40,5 +43,10 @@ public interface MediaMapper {
         long hours = TimeUnit.MINUTES.toHours(duration);
         long minutes = duration - TimeUnit.HOURS.toMinutes(hours);
         return String.format("%dh %02dm", hours, minutes);
+    }
+
+    @Named("setTvSeriesId")
+    default String setTvSeriesId(Integer id) {
+        return TV + id;
     }
 }

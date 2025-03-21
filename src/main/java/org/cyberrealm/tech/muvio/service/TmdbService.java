@@ -9,7 +9,6 @@ import info.movito.themoviedbapi.model.core.TvSeries;
 import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
-import info.movito.themoviedbapi.model.movies.ReleaseInfo;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +31,6 @@ public interface TmdbService {
 
     KeywordResults fetchMovieKeywords(TmdbMovies tmdbMovies, int movieId);
 
-    List<ReleaseInfo> fetchReleaseInfo(TmdbMovies tmdbMovies, int movieId);
-
     List<Review> fetchMovieReviews(TmdbMovies tmdbMovies, String language, int movieId);
 
     TmdbTvSeries getTmdbTvSerials();
@@ -53,4 +50,8 @@ public interface TmdbService {
     TvKeywords fetchTvSerialsKeywords(TmdbTvSeries tvSeries, int serialId);
 
     List<Review> fetchTvSerialsReviews(TmdbTvSeries tvSeries, String language, int serialId);
+
+    Set<String> fetchTmdbTvRatings(int seriesId);
+
+    Set<String> fetchTmdbMovieRatings(int movieId);
 }

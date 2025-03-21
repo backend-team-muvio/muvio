@@ -10,10 +10,8 @@ import info.movito.themoviedbapi.model.core.TvKeywords;
 import info.movito.themoviedbapi.model.core.TvSeries;
 import info.movito.themoviedbapi.model.core.image.Artwork;
 import info.movito.themoviedbapi.model.core.video.VideoResults;
-import info.movito.themoviedbapi.model.movies.Credits;
-import info.movito.themoviedbapi.model.movies.KeywordResults;
-import info.movito.themoviedbapi.model.movies.MovieDb;
-import info.movito.themoviedbapi.model.movies.ReleaseInfo;
+import info.movito.themoviedbapi.model.movies.*;
+import info.movito.themoviedbapi.model.tv.series.ContentRating;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import info.movito.themoviedbapi.tools.TmdbException;
 import java.util.ArrayList;
@@ -146,17 +144,6 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<ReleaseInfo> fetchReleaseInfo(TmdbMovies tmdbMovies, int movieId) {
-        try {
-            return tmdbMovies.getReleaseDates(movieId).getResults();
-        } catch (TmdbException e) {
-            throw new TmdbServiceException("Failed to fetch release info from TMDB", e);
-        }
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
     public List<Review> fetchMovieReviews(TmdbMovies tmdbMovies, String language, int movieId) {
         return fetchAllReviews(page -> {
             try {
@@ -276,6 +263,32 @@ public class TmdbServiceImpl implements TmdbService {
                         + e.getMessage(), e);
             }
         });
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public Set<String> fetchTmdbTvRatings(int seriesId) {
+        try {
+            return getTmdbTvSerials().getContentRatings(seriesId).getResults().stream()
+                    .map(ContentRating::getRating).collect(Collectors.toSet());
+        } catch (TmdbException e) {
+            throw new TmdbServiceException("Failed to fetch ratings from TMDB: "
+                    + e.getMessage(), e);
+        }
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public Set<String> fetchTmdbMovieRatings(int movieId) {
+        try {
+            return getTmdbMovies().getReleaseDates(movieId).getResults().stream()
+                    .flatMap(info -> info.getReleaseDates().stream()
+                    .map(ReleaseDate::getCertification)).collect(Collectors.toSet());
+        } catch (TmdbException e) {
+            throw new TmdbServiceException("Failed to fetch release info from TMDB", e);
+        }
     }
 
     private Optional<String> getTrailerLink(VideoResults videos, String type) {
