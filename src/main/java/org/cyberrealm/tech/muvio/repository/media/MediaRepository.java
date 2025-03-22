@@ -52,7 +52,7 @@ public interface MediaRepository extends MongoRepository<Media, String> {
     @Aggregation(pipeline = {
             "{ '$sample': { 'size': ?0 } }"
     })
-    Set<MediaBaseDto> getAllLuck(int size);
+    Set<MediaDtoFromDb> getAllLuck(int size);
 
     @Aggregation(pipeline = {
             "{ '$match': { 'type': ?0, 'genres': ?1, 'releaseYear': { $gte: ?2 } } }",

@@ -110,10 +110,9 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public Set<MediaBaseDto> getAllLuck(int size) {
-        final Set<MediaBaseDto> luck = mediaRepository.getAllLuck(size);
-        updateDuration(luck);
-        return luck;
+    public Set<MediaDto> getAllLuck(int size) {
+        return mediaRepository.getAllLuck(size).stream()
+                .map(mediaMapper::toMovieDto).collect(Collectors.toSet());
     }
 
     @Transactional

@@ -63,7 +63,7 @@ public class MediaController {
     }
 
     @GetMapping("/luck/{size}")
-    public Set<MediaBaseDto> getAllLuck(@PathVariable int size) {
+    public Set<MediaDto> getAllLuck(@PathVariable int size) {
         return mediaService.getAllLuck(size);
     }
 

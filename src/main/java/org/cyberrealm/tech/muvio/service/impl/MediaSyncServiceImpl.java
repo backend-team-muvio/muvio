@@ -50,13 +50,17 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 500;
+    private static final int LAST_PAGE = 5;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
     private static final String PRODUCER = "Producer";
     private static final String DEFAULT_LANGUAGE = "null";
     private static final int CURRENT_YEAR = Year.now().getValue();
+    private static final String POINT = ".";
+    private static final String UNDERSCORE = "_";
+    private static final int FOUR = 4;
+    private static final int TEN = 10;
     private boolean isRunning;
     private final TmDbService tmdbService;
     private final MediaRepository mediaRepository;
@@ -101,7 +105,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         } catch (InterruptedException | ExecutionException e) {
             throw new MediaProcessingException("Failed to process media with thread pool", e);
         }
-        for (int i = 0; i < media.size(); i += BATCH_SIZE) {
+        for (int i = ZERO; i < media.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, media.size());
             mediaRepository.saveAll(media.subList(i, toIndex));
         }
@@ -233,7 +237,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private Map<String, Actor> getMovieActors(List<Cast> casts) {
         final Set<Actor> newActors = new HashSet<>();
         final Map<String, Actor> actorsMap = casts.stream().collect(Collectors.toMap(cast ->
-                        cast.getCharacter().replace(".", "_"), cast -> {
+                        cast.getCharacter().replace(POINT, UNDERSCORE), cast -> {
                 final String name = cast.getName();
                 return actorRepository.findById(name).orElseGet(() -> {
                     final Actor actor = actorMapper.toActorEntity(cast);
@@ -255,7 +259,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
             List<info.movito.themoviedbapi.model.tv.core.credits.Cast> casts) {
         final Set<Actor> newActors = new HashSet<>();
         final Map<String, Actor> actorsMap = casts.stream().collect(Collectors.toMap(cast ->
-                        cast.getCharacter().replace(".", "_"), cast -> {
+                        cast.getCharacter().replace(POINT, UNDERSCORE), cast -> {
                     final String name = cast.getName();
                     return actorRepository.findById(name).orElseGet(() -> {
                         final Actor actor = actorMapper.toActorEntity(cast);
@@ -297,8 +301,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private Integer getReleaseYear(String releaseDate) {
-        if (releaseDate != null && releaseDate.length() == 10) {
-            return Integer.parseInt(releaseDate.substring(0, 4));
+        if (releaseDate != null && releaseDate.length() == TEN) {
+            return Integer.parseInt(releaseDate.substring(ZERO, FOUR));
         }
         return null;
     }

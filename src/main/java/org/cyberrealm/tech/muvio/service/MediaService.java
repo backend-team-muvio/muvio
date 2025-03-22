@@ -28,7 +28,7 @@ public interface MediaService {
 
     Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto, Pageable pageable);
 
-    Set<MediaBaseDto> getAllLuck(int size);
+    Set<MediaDto> getAllLuck(int size);
 
     Slice<MediaBaseDto> getRecommendations(Pageable pageable);
 
