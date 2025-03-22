@@ -1,8 +1,9 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import info.movito.themoviedbapi.TmdbApi;
+import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.TmdbTvSeries;
+import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.core.ReviewResultsPage;
@@ -28,16 +29,17 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.exception.TmdbServiceException;
-import org.cyberrealm.tech.muvio.service.TmdbService;
+import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class TmdbServiceImpl implements TmdbService {
+public class TmDbServiceImpl implements TmDbService {
     public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     public static final double MIN_RATE = 5.0;
     private static final int MAX_ATTEMPTS = 12;
@@ -47,15 +49,10 @@ public class TmdbServiceImpl implements TmdbService {
     private static final String TEASER = "Teaser";
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_RECORDS = 6;
-
-    private final TmdbApi tmdbApi;
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public TmdbMovies getTmdbMovies() {
-        return tmdbApi.getMovies();
-    }
+    private final TmdbMovies tmdbMovies;
+    private final TmdbTvSeries tmdbTvSeries;
+    private final TmdbMovieLists tmdbMovieLists;
+    private final TmdbTvSeriesLists tmdbTvSeriesLists;
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
@@ -67,15 +64,15 @@ public class TmdbServiceImpl implements TmdbService {
                 toPage,
                 page -> {
                     try {
-                        return tmdbApi.getMovieLists().getPopular(language, page, location)
+                        return tmdbMovieLists.getPopular(language, page, location)
                                 .getResults().stream()
-                                .filter(movie -> movie.getVoteAverage() > MIN_RATE)
-                                .filter(movie -> movie.getVideo() != null)
-                                .filter(movie -> movie.getPosterPath() != null)
-                                .filter(movie -> movie.getOverview() != null)
+                                .filter(movie -> movie.getVoteAverage() > MIN_RATE
+                                        && movie.getVideo() != null
+                                        && movie.getPosterPath() != null
+                                        && movie.getOverview() != null)
                                 .toList();
                     } catch (TmdbException e) {
-                        throw new TmdbServiceException("Failed to fetch popular movies from TMDB",
+                        throw new TmdbServiceException("Failed to fetch popular movies from TmDb",
                                 e);
                     }
                 },
@@ -86,7 +83,7 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public MovieDb fetchMovieDetails(TmdbMovies tmdbMovies, int movieId, String language) {
+    public MovieDb fetchMovieDetails(int movieId, String language) {
         try {
             return tmdbMovies.getDetails(movieId, language);
         } catch (TmdbException e) {
@@ -98,7 +95,7 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Credits fetchMovieCredits(TmdbMovies tmdbMovies, int movieId, String language) {
+    public Credits fetchMovieCredits(int movieId, String language) {
         try {
             return tmdbMovies.getCredits(movieId, language);
         } catch (TmdbException e) {
@@ -110,12 +107,12 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public String fetchMovieTrailer(TmdbMovies tmdbMovies, int movieId, String language) {
+    public String fetchMovieTrailer(int movieId, String language) {
         return fetchTrailer(() -> {
             try {
                 return tmdbMovies.getVideos(movieId, language);
             } catch (TmdbException e) {
-                throw new TmdbServiceException("Failed to fetch trailer from TMDB", e);
+                throw new TmdbServiceException("Failed to fetch trailer from TmDb", e);
             }
         });
     }
@@ -123,12 +120,12 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<String> fetchMoviePhotos(TmdbMovies tmdbMovies, String language, int movieId) {
+    public Set<String> fetchMoviePhotos(String language, int movieId) {
         return fetchPhotos(() -> {
             try {
                 return tmdbMovies.getImages(movieId, language).getBackdrops();
             } catch (TmdbException e) {
-                throw new TmdbServiceException("Failed to fetch photos from TMDB", e);
+                throw new TmdbServiceException("Failed to fetch photos from TmDb", e);
             }
         });
     }
@@ -136,33 +133,26 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public KeywordResults fetchMovieKeywords(TmdbMovies tmdbMovies, int movieId) {
+    public KeywordResults fetchMovieKeywords(int movieId) {
         try {
             return tmdbMovies.getKeywords(movieId);
         } catch (TmdbException e) {
-            throw new TmdbServiceException("Failed to fetch keywords from TMDB", e);
+            throw new TmdbServiceException("Failed to fetch keywords from TmDb", e);
         }
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<Review> fetchMovieReviews(TmdbMovies tmdbMovies, String language, int movieId) {
+    public List<Review> fetchMovieReviews(String language, int movieId) {
         return fetchAllReviews(page -> {
             try {
                 return tmdbMovies.getReviews(movieId, language, page);
             } catch (TmdbException e) {
                 throw new TmdbServiceException(
-                        "Failed to fetch reviews from TMDB: " + e.getMessage(), e);
+                        "Failed to fetch reviews from TmDb: " + e.getMessage(), e);
             }
         });
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public TmdbTvSeries getTmdbTvSerials() {
-        return tmdbApi.getTvSeries();
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -175,16 +165,16 @@ public class TmdbServiceImpl implements TmdbService {
                 toPage,
                 page -> {
                     try {
-                        return tmdbApi.getTvSeriesLists().getPopular(language, page).getResults()
+                        return tmdbTvSeriesLists.getPopular(language, page).getResults()
                                 .stream()
-                                .filter(tvSeries -> tvSeries.getVoteAverage() > MIN_RATE)
-                                .filter(tvSeries -> tvSeries.getPosterPath() != null)
-                                .filter(tvSeries -> tvSeries.getOverview() != null)
-                                .filter(tvSeries -> tvSeries.getFirstAirDate() != null)
+                                .filter(tvSeries -> tvSeries.getVoteAverage() > MIN_RATE
+                                        && tvSeries.getPosterPath() != null
+                                        && tvSeries.getOverview() != null
+                                        && tvSeries.getFirstAirDate() != null)
                                 .toList();
                     } catch (TmdbException e) {
                         throw new TmdbServiceException(
-                                "Failed to fetch popular TVSerials from TMDB", e);
+                                "Failed to fetch popular TVSerials from TmDb", e);
                     }
                 },
                 pool
@@ -194,9 +184,9 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public TvSeriesDb fetchTvSerialsDetails(TmdbTvSeries tvSeries, int serialId, String language) {
+    public TvSeriesDb fetchTvSerialsDetails(int serialId, String language) {
         try {
-            return tvSeries.getDetails(serialId, language);
+            return tmdbTvSeries.getDetails(serialId, language);
         } catch (TmdbException e) {
             throw new TmdbServiceException("Can't load movie details by serialId: " + serialId
                     + e.getMessage());
@@ -207,9 +197,9 @@ public class TmdbServiceImpl implements TmdbService {
             backoff = @Backoff(delay = BACK_OFF))
     @Override
     public info.movito.themoviedbapi.model.tv.core.credits.Credits fetchTvSerialsCredits(
-            TmdbTvSeries tvSeries, int serialId, String language) {
+            int serialId, String language) {
         try {
-            return tvSeries.getCredits(serialId, language);
+            return tmdbTvSeries.getCredits(serialId, language);
         } catch (TmdbException e) {
             throw new TmdbServiceException("Can't load credits by serialId: " + serialId
                     + e.getMessage());
@@ -219,12 +209,12 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public String fetchTvSerialsTrailer(TmdbTvSeries tvSeries, int serialId, String language) {
+    public String fetchTvSerialsTrailer(int serialId, String language) {
         return fetchTrailer(() -> {
             try {
-                return tvSeries.getVideos(serialId, language);
+                return tmdbTvSeries.getVideos(serialId, language);
             } catch (TmdbException e) {
-                throw new TmdbServiceException("Failed to fetch trailer from TMDB", e);
+                throw new TmdbServiceException("Failed to fetch trailer from TmDb", e);
             }
         });
     }
@@ -232,12 +222,12 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<String> fetchTvSerialsPhotos(TmdbTvSeries tvSeries, String language, int serialId) {
+    public Set<String> fetchTvSerialsPhotos(String language, int serialId) {
         return fetchPhotos(() -> {
             try {
-                return tvSeries.getImages(serialId, language).getBackdrops();
+                return tmdbTvSeries.getImages(serialId, language).getBackdrops();
             } catch (TmdbException e) {
-                throw new TmdbServiceException("Failed to fetch photos from TMDB", e);
+                throw new TmdbServiceException("Failed to fetch photos from TmDb", e);
             }
         });
     }
@@ -245,24 +235,24 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public TvKeywords fetchTvSerialsKeywords(TmdbTvSeries tvSeries, int serialId) {
+    public TvKeywords fetchTvSerialsKeywords(int serialId) {
         try {
-            return tvSeries.getKeywords(serialId);
+            return tmdbTvSeries.getKeywords(serialId);
         } catch (TmdbException e) {
-            throw new TmdbServiceException("Failed to fetch keywords from TMDB", e);
+            throw new TmdbServiceException("Failed to fetch keywords from TmDb", e);
         }
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<Review> fetchTvSerialsReviews(TmdbTvSeries tvSeries, String language,
+    public List<Review> fetchTvSerialsReviews(String language,
                                               int serialId) {
         return fetchAllReviews(page -> {
             try {
-                return tvSeries.getReviews(serialId, language, page);
+                return tmdbTvSeries.getReviews(serialId, language, page);
             } catch (TmdbException e) {
-                throw new TmdbServiceException("Failed to fetch reviews from TMDB: "
+                throw new TmdbServiceException("Failed to fetch reviews from TmDb: "
                         + e.getMessage(), e);
             }
         });
@@ -271,12 +261,12 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<String> fetchTmdbTvRatings(int seriesId) {
+    public Set<String> fetchTmDbTvRatings(int seriesId) {
         try {
-            return getTmdbTvSerials().getContentRatings(seriesId).getResults().stream()
+            return tmdbTvSeries.getContentRatings(seriesId).getResults().stream()
                     .map(ContentRating::getRating).collect(Collectors.toSet());
         } catch (TmdbException e) {
-            throw new TmdbServiceException("Failed to fetch ratings from TMDB: "
+            throw new TmdbServiceException("Failed to fetch ratings from TmDb: "
                     + e.getMessage(), e);
         }
     }
@@ -284,13 +274,13 @@ public class TmdbServiceImpl implements TmdbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<String> fetchTmdbMovieRatings(int movieId) {
+    public Set<String> fetchTmDbMovieRatings(int movieId) {
         try {
-            return getTmdbMovies().getReleaseDates(movieId).getResults().stream()
+            return tmdbMovies.getReleaseDates(movieId).getResults().stream()
                     .flatMap(info -> info.getReleaseDates().stream()
                     .map(ReleaseDate::getCertification)).collect(Collectors.toSet());
         } catch (TmdbException e) {
-            throw new TmdbServiceException("Failed to fetch release info from TMDB", e);
+            throw new TmdbServiceException("Failed to fetch release info from TmDb", e);
         }
     }
 
@@ -330,9 +320,12 @@ public class TmdbServiceImpl implements TmdbService {
 
     private String fetchTrailer(Supplier<VideoResults> videoSupplier) {
         VideoResults videos = videoSupplier.get();
-        return getTrailerLink(videos, TRAILER)
-                .orElse(getTrailerLink(videos, TEASER)
-                        .orElse(null));
+        return Stream.of(TRAILER, TEASER)
+                .map(type -> getTrailerLink(videos, type))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(null);
     }
 
     private <T> List<T> fetchPopularItems(int fromPage, int toPage, Function<Integer,
@@ -352,11 +345,9 @@ public class TmdbServiceImpl implements TmdbService {
     private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier) {
         List<Artwork> artworks = imagesSupplier.get();
         return artworks.stream()
-                //.filter(artwork -> artwork.getAspectRatio() > 1.5)
                 .limit(MAX_NUMBER_OF_RECORDS)
                 .peek(artwork -> artwork.setFilePath(IMAGE_PATH + artwork.getFilePath()))
                 .map(Artwork::getFilePath)
                 .collect(Collectors.toSet());
     }
-
 }

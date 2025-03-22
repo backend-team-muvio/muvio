@@ -1,26 +1,12 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import info.movito.themoviedbapi.model.keywords.Keyword;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Year;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
-import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
 import org.cyberrealm.tech.muvio.model.TopLists;
 import org.cyberrealm.tech.muvio.service.TopListService;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,60 +16,12 @@ public class TopListServiceImpl implements TopListService {
     private static final int POPULARITY_LIMIT = 4;
     private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
-    private static final String SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
-    private static final String URL_EMMY = "https://en.wikipedia.org/wiki/List_of_Primetime_Emmy_Award_winners";
-    private static final String SPARQL_QUERY =
-            """
-                    SELECT DISTINCT ?awardWorkLabel
-                    WHERE {
-                      {
-                        SELECT ?awardWork
-                        WHERE {
-                          ?award wdt:P31 wd:Q19020 .
-                          {
-                            ?awardWork wdt:P31 wd:Q11424 .
-                            ?awardWork p:P166 ?awardStat .
-                            ?awardStat ps:P166 ?award .
-                          } UNION {
-                            ?awardWork wdt:P31 wd:Q5398426 .
-                            ?awardWork p:P166 ?awardStat .
-                            ?awardStat ps:P166 ?award .
-                          } UNION {
-                            ?awardWork wdt:P31 wd:Q93204 .
-                            ?awardWork p:P166 ?awardStat .
-                            ?awardStat ps:P166 ?award .
-                          } OPTIONAL {
-                            ?awardWork rdfs:label ?awardWorkLabel .
-                            FILTER (lang(?awardWorkLabel) = "en")
-                          }
-                        }
-                      }
-                      SERVICE wikibase:label {
-                        bd:serviceParam wikibase:language "en" .
-                      }
-                    }
-                    ORDER BY ?awardWorkLabel
-                    """;
-    private static final String RESULTS = "results";
-    private static final String BINDINGS = "bindings";
-    private static final String AWARD_WORK_LABEL = "awardWorkLabel";
-    private static final String VALUE = "value";
-    private static final int ZERO = 0;
-    private static final String QUERY = "?query=";
-    private static final String FORMAT_JSON = "&format=json";
-    private static final String GET = "GET";
-    private static final String PATTERN_A = "\\A";
     private static final int CURRENT_YEAR = Year.now().getValue();
     private static final int DECADE_YEAR;
     private static final int LIMIT_REVENUE = 50_000_000;
     private static final int TWO = 2;
     private static final double IMDB_TOP_RATING_LIMIT = 8.0;
     private static final int PREVIOUS_YEAR;
-    private static final String SELECT_TABLE = "table.wikitable";
-    private static final String ROWS_TR = "tr";
-    private static final String ROWS_TD = "td";
-    private static final String ROWS_I = "i";
-    private static final String TITLE = "title";
 
     static {
         DECADE_YEAR = CURRENT_YEAR - 10;
@@ -109,40 +47,6 @@ public class TopListServiceImpl implements TopListService {
     }
 
     @Override
-    public Set<String> getOscarWinningMedia() {
-        final Set<String> oscarWorks = new HashSet<>();
-        final JSONArray results = new JSONObject(executeSparqlQuery()).getJSONObject(RESULTS)
-                .getJSONArray(BINDINGS);
-        for (int i = ZERO; i < results.length(); i++) {
-            final JSONObject filmObj = results.getJSONObject(i);
-            if (filmObj.has(AWARD_WORK_LABEL)) {
-                final JSONObject awardWorkLabel = filmObj.getJSONObject(AWARD_WORK_LABEL);
-                if (awardWorkLabel != null && awardWorkLabel.has(VALUE)) {
-                    final String title = awardWorkLabel.getString(VALUE);
-                    oscarWorks.add(title);
-                }
-            }
-        }
-        return oscarWorks;
-    }
-
-    @Override
-    public Set<String> getEmmyWinningMedia() {
-        Set<String> winners = new HashSet<>();
-        try {
-            Document doc = Jsoup.connect(URL_EMMY).get();
-            Elements tables = doc.select(SELECT_TABLE);
-
-            for (Element table : tables) {
-                parseTableRows(table, winners);
-            }
-        } catch (IOException e) {
-            throw new NetworkRequestException("Error during Emmy winning request", e);
-        }
-        return winners;
-    }
-
-    @Override
     public Set<TopLists> putTopListsForTvShow(List<Keyword> keywords, Double voteAverage,
                                               Integer voteCount, Double popularity,
                                               Integer releaseYear, Set<String> emmyWinningSerials,
@@ -157,42 +61,6 @@ public class TopListServiceImpl implements TopListService {
             return null;
         }
         return topLists;
-    }
-
-    private void parseTableRows(Element table, Set<String> winners) {
-        Elements rows = table.select(ROWS_TR);
-        for (int i = 1; i < rows.size(); i++) {
-            Element row = rows.get(i);
-            Elements columns = row.select(ROWS_TD);
-            for (Element column : columns) {
-                extractShowNames(column, winners);
-            }
-        }
-    }
-
-    private void extractShowNames(Element column, Set<String> winners) {
-        Elements elements = column.select(ROWS_I);
-        for (Element element : elements) {
-            String showName = element.getElementsByAttribute(TITLE).text().trim();
-            if (!showName.isEmpty()) {
-                winners.add(showName);
-            }
-        }
-    }
-
-    private String executeSparqlQuery() {
-        try {
-            final String queryUrl = SPARQL_ENDPOINT + QUERY + URLEncoder.encode(SPARQL_QUERY,
-                    StandardCharsets.UTF_8) + FORMAT_JSON;
-            final HttpURLConnection connection = (HttpURLConnection) new URI(queryUrl)
-                    .toURL().openConnection();
-            connection.setRequestMethod(GET);
-            try (Scanner scanner = new Scanner(connection.getInputStream())) {
-                return scanner.useDelimiter(PATTERN_A).next();
-            }
-        } catch (IOException | URISyntaxException e) {
-            throw new NetworkRequestException("Error during SPARQL query execution", e);
-        }
     }
 
     private void putBlockbustersDecade(Set<TopLists> topLists, Integer releaseYear,
@@ -226,7 +94,7 @@ public class TopListServiceImpl implements TopListService {
     private void putEmmyWinningTvSerials(Set<TopLists> topLists, String title,
                                          Set<String> emmyWinningSerials) {
         if (emmyWinningSerials.contains(title)) {
-            topLists.add(TopLists.TOP_EMMY_WINNING_SERIES);
+            topLists.add(TopLists.TOP_EMMY_WINNING_MASTERPIECES);
         }
     }
 
@@ -235,7 +103,7 @@ public class TopListServiceImpl implements TopListService {
         if (releaseYear >= START_YEAR) {
             if (voteAverage >= RATING_LIMIT && voteCount >= VOTE_COUNT_LIMIT
                     && popularity >= POPULARITY_LIMIT) {
-                topLists.add(TopLists.ICONIC_MEDIA_OF_THE_21ST_CENTURY);
+                topLists.add(TopLists.ICONIC_MOVIES_OF_THE_21ST_CENTURY);
             }
         }
     }
@@ -243,7 +111,7 @@ public class TopListServiceImpl implements TopListService {
     void putSuperheroMovies(Set<TopLists> topLists, List<Keyword> keywords, Double voteAverage) {
         if (keywords.stream().map(keyword -> keyword.getName().equals(SUPERHERO))
                 .findFirst().orElse(false) && voteAverage >= RATING_LIMIT) {
-            topLists.add(TopLists.TOP_100_SUPERHERO_MEDIA);
+            topLists.add(TopLists.TOP_100_SUPERHERO_MOVIES);
         }
     }
 
@@ -251,7 +119,7 @@ public class TopListServiceImpl implements TopListService {
                                        Double voteAverage, Integer voteCount) {
         if (voteAverage >= IMDB_TOP_RATING_LIMIT
                 && voteCount >= VOTE_COUNT_LIMIT && releaseYear <= (PREVIOUS_YEAR)) {
-            topLists.add(TopLists.TOP_RATED_IMDB_MEDIA_OF_All_TIME);
+            topLists.add(TopLists.TOP_RATED_IMDB_MOVIES_OF_All_TIME);
         }
     }
 }

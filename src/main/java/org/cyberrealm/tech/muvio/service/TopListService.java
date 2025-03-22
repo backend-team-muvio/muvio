@@ -11,10 +11,6 @@ public interface TopListService {
                               Set<String> oscarWinningMedia, String title, Integer budget,
                               Long revenue);
 
-    Set<String> getOscarWinningMedia();
-
-    Set<String> getEmmyWinningMedia();
-
     Set<TopLists> putTopListsForTvShow(List<Keyword> keywords, Double voteAverage,
                                        Integer voteCount, Double popularity, Integer releaseYear,
                                        Set<String> oscarWinningMedia, String title);

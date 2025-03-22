@@ -1,7 +1,9 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -114,9 +116,13 @@ public class VibeServiceImpl implements VibeService {
     }
 
     private Map<Vibe, Integer> calculateVibesFromGenres(Set<GenreEntity> genresMdb) {
+        if (genresMdb == null || genresMdb.isEmpty()) {
+            return new HashMap<>(); // Повертаємо порожню мапу, якщо жанрів немає
+        }
         return genresMdb.stream()
-                .flatMap(genreDb -> GENRE_TO_VIBE_MAP.getOrDefault(genreDb,
-                        Map.of()).entrySet().stream())
+                .filter(Objects::nonNull) // Фільтруємо можливі null
+                .flatMap(genreDb -> GENRE_TO_VIBE_MAP
+                        .getOrDefault(genreDb, Map.of()).entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
     }
 
