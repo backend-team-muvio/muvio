@@ -1,14 +1,15 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import static org.cyberrealm.tech.muvio.model.TopLists.ICONIC_MOVIES_OF_THE_21ST_CENTURY;
-
 import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.Movie;
-import info.movito.themoviedbapi.model.core.TvKeywords;
 import info.movito.themoviedbapi.model.core.TvSeries;
-import info.movito.themoviedbapi.model.movies.*;
+import info.movito.themoviedbapi.model.keywords.Keyword;
+import info.movito.themoviedbapi.model.movies.Cast;
+import info.movito.themoviedbapi.model.movies.Credits;
+import info.movito.themoviedbapi.model.movies.Crew;
+import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +26,6 @@ import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
 import org.cyberrealm.tech.muvio.model.Actor;
-import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
@@ -51,7 +51,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 20;
+    private static final int LAST_PAGE = 45;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
@@ -72,7 +72,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void importMedia(Type type, int fromPage, int toPage, String language,
-                            String location, Set<String> imdbTop250, Set<String> oscarWinningMovie) {
+                            String location, Set<String> imdbTop250,
+                            Set<String> oscarWinningMovie) {
         final List<Media> media;
         try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
             if (type == Type.MOVIE) {
@@ -80,7 +81,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 final List<Movie> movieList =
                         tmdbService.fetchPopularMovies(fromPage, toPage, language, location, pool);
                 media = pool.submit(() -> movieList.parallelStream()
-                        .map(movieTmdb -> createMovie(language, movieTmdb, tmdbMovies,
+                        .map(movieTmDb -> createMovie(language, movieTmDb, tmdbMovies,
                                 imdbTop250,
                                 oscarWinningMovie))
                         .toList()).get();
@@ -90,8 +91,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                         tmdbService.fetchPopularTvSerials(fromPage, toPage, language,
                                 location, pool);
                 media = pool.submit(() -> tvSeriesList.parallelStream()
-                        .map(seriesTmdb -> createTvSeries(language, seriesTmdb,
-                                tmdbTvSeries,
+                        .map(seriesTmDb -> createTvSeries(language, seriesTmDb,
+                                tmdbTvSeries, imdbTop250,
                                 oscarWinningMovie))
                         .toList()).get();
             } else {
@@ -111,8 +112,10 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         deleteAll();
         final Set<String> imdbTop250 = categoryService.getImdbTop250();
         final Set<String> oscarWinningMovie = topListService.getOscarWinningMedia();
+        final Set<String> imdbTvShowTop250 = categoryService.getTvShowImdbTop250();
+        final Set<String> emmyWinners = topListService.getEmmyWinningMedia();
         importMedia(Type.MOVIE, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTop250, oscarWinningMovie);
-        importMedia(Type.TV_SHOW, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTop250, oscarWinningMovie);
+        importMedia(Type.TV_SHOW, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTvShowTop250, emmyWinners);
         isRunning = true;
     }
 
@@ -142,15 +145,16 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private Media createMovie(String language,
-                              Movie movieTmdb,
+                              Movie movieTmDb,
                               TmdbMovies tmdbMovies, Set<String> imdbTop250,
                               Set<String> oscarWinningMedia) {
-        final int movieId = movieTmdb.getId();
+        final int movieId = movieTmDb.getId();
         final MovieDb movieDb = tmdbService.fetchMovieDetails(tmdbMovies, movieId, language);
-        final KeywordResults keywords = tmdbService.fetchMovieKeywords(tmdbMovies, movieId);
-        final Credits credits  = tmdbService.fetchMovieCredits(tmdbMovies, movieId, language);
+        final List<Keyword> keywords = tmdbService.fetchMovieKeywords(tmdbMovies, movieId)
+                .getKeywords();
+        final Credits credits = tmdbService.fetchMovieCredits(tmdbMovies, movieId, language);
         final Media media = mediaMapper.toEntity(movieDb);
-        final Double voteAverage = movieDb.getVoteAverage();
+        final Double voteAverage = media.getRating();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
@@ -175,17 +179,18 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private Media createTvSeries(String language,
-                                 TvSeries tvSeriesTmdb,
-                                 TmdbTvSeries tmdbTvSeries, Set<String> oscarWinningMedia) {
+                                 TvSeries tvSeriesTmDb,
+                                 TmdbTvSeries tmdbTvSeries, Set<String> imdbTop250,
+                                 Set<String> oscarWinningMedia) {
         final TvSeriesDb tvSeriesDb;
-        final int seriesId = tvSeriesTmdb.getId();
-        final TvKeywords keywords;
+        final int seriesId = tvSeriesTmDb.getId();
+        final List<Keyword> keywords = tmdbService.fetchTvSerialsKeywords(tmdbTvSeries, seriesId)
+                .getResults();
         final info.movito.themoviedbapi.model.tv.core.credits.Credits credits;
         tvSeriesDb = tmdbService.fetchTvSerialsDetails(tmdbTvSeries, seriesId, language);
         final Media media = mediaMapper.toEntity(tvSeriesDb);
         credits = tmdbService.fetchTvSerialsCredits(tmdbTvSeries, seriesId, language);
-        keywords = tmdbService.fetchTvSerialsKeywords(tmdbTvSeries, seriesId);
-        final Double voteAverage = tvSeriesDb.getVoteAverage();
+        final Double voteAverage = media.getRating();
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
@@ -199,19 +204,13 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         media.setGenres(genres);
         media.setReviews(getReviews(() ->
                 tmdbService.fetchTvSerialsReviews(tmdbTvSeries,language,seriesId)));
-        //media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
-        //keywords, voteAverage, voteCount, popularity, popularShows, title));
-        //By default
-        media.setCategories(Set.of(Category.SPORT_LIFE_MOVIES));
-        media.setTopLists(Set.of(ICONIC_MOVIES_OF_THE_21ST_CENTURY));
+        media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
+                keywords, voteAverage, voteCount, popularity, imdbTop250, title));
+        media.setTopLists(topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
+                popularity, media.getReleaseYear(), oscarWinningMedia, title));
         media.setVibes(vibeService.getVibes(tmdbService.fetchTmdbTvRatings(seriesId), genres));
         media.setType(Type.TV_SHOW);
         return media;
-    }
-
-    private Set<String> getTmdbMovieRatings (List<ReleaseInfo> releaseInfo) {
-        return releaseInfo.stream().flatMap(info -> info.getReleaseDates().stream()
-                .map(ReleaseDate::getCertification)).collect(Collectors.toSet());
     }
 
     private Type putType(int duration) {

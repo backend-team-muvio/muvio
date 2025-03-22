@@ -1,6 +1,6 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import info.movito.themoviedbapi.model.movies.KeywordResults;
+import info.movito.themoviedbapi.model.keywords.Keyword;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Year;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
@@ -16,6 +17,10 @@ import org.cyberrealm.tech.muvio.model.TopLists;
 import org.cyberrealm.tech.muvio.service.TopListService;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,6 +31,7 @@ public class TopListServiceImpl implements TopListService {
     private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
     private static final String SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
+    private static final String URL_EMMY = "https://en.wikipedia.org/wiki/List_of_Primetime_Emmy_Award_winners";
     private static final String SPARQL_QUERY =
             """
                     SELECT DISTINCT ?awardWorkLabel
@@ -34,37 +40,29 @@ public class TopListServiceImpl implements TopListService {
                         SELECT ?awardWork
                         WHERE {
                           ?award wdt:P31 wd:Q19020 .
-                    
-                          # Work that has been awarded an Oscar
                           {
                             ?awardWork wdt:P31 wd:Q11424 .
                             ?awardWork p:P166 ?awardStat .
                             ?awardStat ps:P166 ?award .
-                          }
-                          UNION {
+                          } UNION {
                             ?awardWork wdt:P31 wd:Q5398426 .
                             ?awardWork p:P166 ?awardStat .
                             ?awardStat ps:P166 ?award .
-                          }
-                          UNION {
+                          } UNION {
                             ?awardWork wdt:P31 wd:Q93204 .
                             ?awardWork p:P166 ?awardStat .
                             ?awardStat ps:P166 ?award .
-                          }
-                    
-                          OPTIONAL {
+                          } OPTIONAL {
                             ?awardWork rdfs:label ?awardWorkLabel .
                             FILTER (lang(?awardWorkLabel) = "en")
                           }
                         }
                       }
-                    
                       SERVICE wikibase:label {
                         bd:serviceParam wikibase:language "en" .
                       }
                     }
                     ORDER BY ?awardWorkLabel
-                    
                     """;
     private static final String RESULTS = "results";
     private static final String BINDINGS = "bindings";
@@ -80,19 +78,25 @@ public class TopListServiceImpl implements TopListService {
     private static final int LIMIT_REVENUE = 50_000_000;
     private static final int TWO = 2;
     private static final double IMDB_TOP_RATING_LIMIT = 8.0;
-    private static final int ONE = 1;
+    private static final int PREVIOUS_YEAR;
+    private static final String SELECT_TABLE = "table.wikitable";
+    private static final String ROWS_TR = "tr";
+    private static final String ROWS_TD = "td";
+    private static final String ROWS_I = "i";
+    private static final String TITLE = "title";
 
     static {
         DECADE_YEAR = CURRENT_YEAR - 10;
+        PREVIOUS_YEAR = CURRENT_YEAR - 1;
     }
 
     @Override
-    public Set<TopLists> putTopLists(KeywordResults keywords, Double voteAverage,
+    public Set<TopLists> putTopLists(List<Keyword> keywords, Double voteAverage,
                                      Integer voteCount, Double popularity, Integer releaseYear,
                                      Set<String> oscarWinningMedia, String title, Integer budget,
                                      Long revenue) {
         Set<TopLists> topLists = new HashSet<>();
-        putSuperheroMovies(topLists, keywords);
+        putSuperheroMovies(topLists, keywords, voteAverage);
         putIconicMovies(topLists, voteAverage, voteCount, popularity, releaseYear);
         putOscarWinningMedia(topLists, title, oscarWinningMedia);
         putBlockbustersDecade(topLists, releaseYear, voteAverage, voteCount, popularity,
@@ -120,6 +124,60 @@ public class TopListServiceImpl implements TopListService {
             }
         }
         return oscarWorks;
+    }
+
+    @Override
+    public Set<String> getEmmyWinningMedia() {
+        Set<String> winners = new HashSet<>();
+        try {
+            Document doc = Jsoup.connect(URL_EMMY).get();
+            Elements tables = doc.select(SELECT_TABLE);
+
+            for (Element table : tables) {
+                parseTableRows(table, winners);
+            }
+        } catch (IOException e) {
+            throw new NetworkRequestException("Error during Emmy winning request", e);
+        }
+        return winners;
+    }
+
+    @Override
+    public Set<TopLists> putTopListsForTvShow(List<Keyword> keywords, Double voteAverage,
+                                              Integer voteCount, Double popularity,
+                                              Integer releaseYear, Set<String> emmyWinningSerials,
+                                              String title) {
+        Set<TopLists> topLists = new HashSet<>();
+        putSuperheroMovies(topLists, keywords, voteAverage);
+        putIconicMovies(topLists, voteAverage, voteCount, popularity, releaseYear);
+        putBlockbustersDecadeForTvShows(topLists, releaseYear, voteAverage, voteCount, popularity);
+        putTopRatedImdbMovies(topLists, releaseYear, voteAverage, voteCount);
+        putEmmyWinningTvSerials(topLists, title, emmyWinningSerials);
+        if (topLists.isEmpty()) {
+            return null;
+        }
+        return topLists;
+    }
+
+    private void parseTableRows(Element table, Set<String> winners) {
+        Elements rows = table.select(ROWS_TR);
+        for (int i = 1; i < rows.size(); i++) {
+            Element row = rows.get(i);
+            Elements columns = row.select(ROWS_TD);
+            for (Element column : columns) {
+                extractShowNames(column, winners);
+            }
+        }
+    }
+
+    private void extractShowNames(Element column, Set<String> winners) {
+        Elements elements = column.select(ROWS_I);
+        for (Element element : elements) {
+            String showName = element.getElementsByAttribute(TITLE).text().trim();
+            if (!showName.isEmpty()) {
+                winners.add(showName);
+            }
+        }
     }
 
     private String executeSparqlQuery() {
@@ -150,10 +208,25 @@ public class TopListServiceImpl implements TopListService {
         }
     }
 
+    private void putBlockbustersDecadeForTvShows(Set<TopLists> topLists, Integer releaseYear,
+                                       Double voteAverage, Integer voteCount, Double popularity) {
+        if (releaseYear >= DECADE_YEAR && voteAverage >= RATING_LIMIT
+                && voteCount >= VOTE_COUNT_LIMIT && popularity >= POPULARITY_LIMIT) {
+            topLists.add(TopLists.TOP_MOST_WATCHED_BLOCKBUSTERS_OF_THE_DECADE);
+        }
+    }
+
     private void putOscarWinningMedia(Set<TopLists> topLists, String title,
                                       Set<String> oscarWinningMedia) {
         if (oscarWinningMedia.contains(title)) {
             topLists.add(TopLists.TOP_OSCAR_WINNING_MASTERPIECES);
+        }
+    }
+
+    private void putEmmyWinningTvSerials(Set<TopLists> topLists, String title,
+                                         Set<String> emmyWinningSerials) {
+        if (emmyWinningSerials.contains(title)) {
+            topLists.add(TopLists.TOP_EMMY_WINNING_SERIES);
         }
     }
 
@@ -162,23 +235,23 @@ public class TopListServiceImpl implements TopListService {
         if (releaseYear >= START_YEAR) {
             if (voteAverage >= RATING_LIMIT && voteCount >= VOTE_COUNT_LIMIT
                     && popularity >= POPULARITY_LIMIT) {
-                topLists.add(TopLists.ICONIC_MOVIES_OF_THE_21ST_CENTURY);
+                topLists.add(TopLists.ICONIC_MEDIA_OF_THE_21ST_CENTURY);
             }
         }
     }
 
-    void putSuperheroMovies(Set<TopLists> topLists, KeywordResults keywords) {
-        if (keywords.getKeywords().stream().map(keyword -> keyword.getName().equals(SUPERHERO))
-                .findFirst().orElse(false)) {
-            topLists.add(TopLists.TOP_100_SUPERHERO_MOVIES);
+    void putSuperheroMovies(Set<TopLists> topLists, List<Keyword> keywords, Double voteAverage) {
+        if (keywords.stream().map(keyword -> keyword.getName().equals(SUPERHERO))
+                .findFirst().orElse(false) && voteAverage >= RATING_LIMIT) {
+            topLists.add(TopLists.TOP_100_SUPERHERO_MEDIA);
         }
     }
 
     private void putTopRatedImdbMovies(Set<TopLists> topLists, Integer releaseYear,
                                        Double voteAverage, Integer voteCount) {
         if (voteAverage >= IMDB_TOP_RATING_LIMIT
-                && voteCount >= VOTE_COUNT_LIMIT && releaseYear <= (CURRENT_YEAR - ONE)) {
-            topLists.add(TopLists.TOP_RATED_IMDB_MOVIES_OF_All_TIME);
+                && voteCount >= VOTE_COUNT_LIMIT && releaseYear <= (PREVIOUS_YEAR)) {
+            topLists.add(TopLists.TOP_RATED_IMDB_MEDIA_OF_All_TIME);
         }
     }
 }

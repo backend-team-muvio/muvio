@@ -1,9 +1,8 @@
 package org.cyberrealm.tech.muvio.model;
 
-import lombok.Getter;
-
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 @Getter
 public enum GenreEntity {
