@@ -8,20 +8,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
-import org.cyberrealm.tech.muvio.dto.MediaBaseDtoWithPoints;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
+import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithPoints;
 import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
+import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaService;
+import org.cyberrealm.tech.muvio.service.PaginationUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -46,6 +49,7 @@ public class MediaServiceImpl implements MediaService {
     private static final List<String> TOP_GENRES = List.of("CRIME", "DRAMA", "COMEDY");
     private final MediaRepository mediaRepository;
     private final MediaMapper mediaMapper;
+    private final PaginationUtil paginationUtil;
 
     @Override
     public MediaDto getMediaById(String id) {
@@ -77,20 +81,28 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public Slice<MediaBaseDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
-                                                           Pageable pageable) {
+    public Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
+                                                       Pageable pageable) {
         final Integer[] years = getYearsIn(requestDto.years());
         final Set<String> categories;
-        if (requestDto.categories() == null) {
-            categories = Set.of();
+        if (requestDto.categories() == null || requestDto.categories().isEmpty()) {
+            categories = Arrays.stream(Category.values())
+                    .map(Enum::name).collect(Collectors.toSet());
         } else {
             categories = requestDto.categories();
         }
-        final Slice<MediaBaseDtoWithPoints> mediaByVibes = mediaRepository.findAllByVibes(
+        final Set<MediaDtoFromDb> mediaByVibes = mediaRepository.getAllMediaByVibe(
                 years[ZERO], years[ONE], getType(requestDto.type()),
-                requestDto.vibe(), categories, pageable);
-        updateDuration(mediaByVibes);
-        return mediaByVibes;
+                requestDto.vibe(), categories);
+        final List<MediaDtoWithPoints> mediasWithPoints = mediaByVibes.stream().map(
+                media -> {
+                    if (requestDto.categories() == null || requestDto.categories().isEmpty()) {
+                        return mediaMapper.toMediaDtoWithPoints(media, Set.of());
+                    }
+                    return mediaMapper.toMediaDtoWithPoints(media, categories);
+                }
+                ).toList();
+        return paginationUtil.paginateList(pageable, mediasWithPoints);
     }
 
     @Override

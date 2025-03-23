@@ -3,7 +3,6 @@ package org.cyberrealm.tech.muvio.repository.media;
 import java.util.Optional;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
-import org.cyberrealm.tech.muvio.dto.MediaBaseDtoWithPoints;
 import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
@@ -20,26 +19,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MediaRepository extends MongoRepository<Media, String> {
 
-    @Aggregation(pipeline = {
-            "{ '$match': { 'releaseYear': { '$gte': ?0, '$lte': ?1 }, 'type': { $in: ?2 },"
-                    + " 'vibes': ?3 } }",
-            "{ '$unwind': { 'path': '$categories', 'preserveNullAndEmptyArrays': true } }",
-            "{ '$group': { "
-                    + "   '_id': '$_id', "
-                    + "   'title': { '$first': '$title' }, "
-                    + "   'releaseYear': { '$first': '$releaseYear' }, "
-                    + "   'genres': { '$first': '$genres' }, "
-                    + "   'rating': { '$first': '$rating' }, "
-                    + "   'posterPath': { '$first': '$posterPath' }, "
-                    + "   'duration': { '$first': '$duration' }, "
-                    + "   'type': { '$first': '$type' }, "
-                    + "   'points': { '$sum': { '$cond': [ { $or: [ { $eq: [?4, null] },"
-                    + " { $eq: [?4, []] } ] }, 0, 1 ] } } } }",
-            "{ '$match': { $or: [ { ?4: { $eq: null } }, { 'categories': { $in: ?4 } } ] } }"
-    })
-    Slice<MediaBaseDtoWithPoints> findAllByVibes(int startYear, int endYear, Set<String> type,
-                                                 String vibe, Set<String> categories,
-                                                 Pageable pageable);
+    @Query("{ 'releaseYear': { '$gte': ?0, '$lte': ?1 }, 'type': { '$in': ?2 }, 'vibes': ?3, "
+            + "'categories': { '$in': ?4 } }")
+    Set<MediaDtoFromDb> getAllMediaByVibe(int startYear, int endYear, Set<String> type,
+                                          String vibe, Set<String> categories);
 
     @Aggregation(pipeline = {
             "{ $match: { releaseYear: { $gte: ?0, $lte: ?1 } } }",

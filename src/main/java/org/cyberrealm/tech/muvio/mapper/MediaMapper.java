@@ -2,12 +2,14 @@ package org.cyberrealm.tech.muvio.mapper;
 
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
 import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithPoints;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -38,6 +40,11 @@ public interface MediaMapper {
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
     MediaDtoWithCast toMediaDtoWithCast(MediaDtoWithCastFromDb movie);
 
+    @Mapping(source = "media.actors", target = "actors", qualifiedByName = "toActorDto")
+    @Mapping(source = "media.duration", target = "duration", qualifiedByName = "toDuration")
+    @Mapping(target = "points", expression = "java(calculatePoints(media, categories))")
+    MediaDtoWithPoints toMediaDtoWithPoints(MediaDtoFromDb media, Set<String> categories);
+
     @Named("toDuration")
     default String toDuration(Integer duration) {
         long hours = TimeUnit.MINUTES.toHours(duration);
@@ -48,5 +55,15 @@ public interface MediaMapper {
     @Named("setTvSeriesId")
     default String setTvSeriesId(Integer id) {
         return TV + id;
+    }
+
+    default int calculatePoints(MediaDtoFromDb media, Set<String> categories) {
+        int points = 0;
+        for (String category : media.categories()) {
+            if (categories.contains(category)) {
+                points++;
+            }
+        }
+        return points;
     }
 }

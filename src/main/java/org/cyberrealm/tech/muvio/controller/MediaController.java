@@ -4,9 +4,9 @@ import jakarta.validation.Valid;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
-import org.cyberrealm.tech.muvio.dto.MediaBaseDtoWithPoints;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
+import org.cyberrealm.tech.muvio.dto.MediaDtoWithPoints;
 import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
@@ -51,7 +51,7 @@ public class MediaController {
     }
 
     @GetMapping("/vibe")
-    public Slice<MediaBaseDtoWithPoints> getAllMediaByVibe(
+    public Slice<MediaDtoWithPoints> getAllMediaByVibe(
             @RequestBody @Valid MediaVibeRequestDto requestDto, Pageable pageable) {
         return mediaService.getAllMediaByVibe(requestDto, pageable);
     }
