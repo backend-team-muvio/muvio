@@ -69,7 +69,8 @@ public class TmDbServiceImpl implements TmDbService {
                                 .filter(movie -> movie.getVoteAverage() > MIN_RATE
                                         && movie.getVideo() != null
                                         && movie.getPosterPath() != null
-                                        && movie.getOverview() != null)
+                                        && movie.getOverview() != null
+                                        && movie.getReleaseDate() != null)
                                 .toList();
                     } catch (TmdbException e) {
                         throw new TmdbServiceException("Failed to fetch popular movies from TmDb",
