@@ -2,7 +2,9 @@ package org.cyberrealm.tech.muvio.model;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
+@Getter
 public enum GenreEntity {
     ACTION("Action"),
     ADVENTURE("Adventure"),
@@ -25,11 +27,11 @@ public enum GenreEntity {
     SCIENCE_FICTION("Science Fiction"),
     SCRIPTED("Scripted"),
     SOAP("Soap"),
-    TALK_SHOW("Talk Show"),
     THRILLER("Thriller"),
     TV_MOVIE("TV Movie"),
     WAR("War"),
-    WESTERN("Western");
+    WESTERN("Western"),
+    TALK("Talk");
 
 
     private static final Map<String, GenreEntity> NAME_TO_ENUM = new HashMap<>();
@@ -43,10 +45,6 @@ public enum GenreEntity {
 
     GenreEntity(String name) {
         this.name = name;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public static GenreEntity fromString(String name) {

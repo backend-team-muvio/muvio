@@ -1,14 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import info.movito.themoviedbapi.model.core.NamedIdElement;
-import info.movito.themoviedbapi.model.movies.KeywordResults;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import info.movito.themoviedbapi.model.keywords.Keyword;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +13,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.exception.CategoryProcessingException;
-import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
 import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.service.CategoryService;
 import org.springframework.stereotype.Service;
@@ -32,15 +24,12 @@ public class CategoryServiceImpl implements CategoryService {
             Math.min(50, Runtime.getRuntime().availableProcessors() * 3);
     private static final String BEFORE_KEYWORD = ".*\\b";
     private static final String AFTER_KEYWORD = "\\b.*";
-    private static final String NAME = "name";
     private static final int ZERO = 0;
     private static final int TWO = 2;
     private static final int ONE = 1;
     private static final int POPULARITY_LIMIT = 4;
     private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
-    private static final String API_URL =
-            "https://raw.githubusercontent.com/movie-monk-b0t/top250/master/top250_min.json";
     private static final Map<Category, Set<String>> CATEGORY_KEYWORDS = new HashMap<>();
 
     static {
@@ -507,9 +496,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Set<Category> putCategories(
-            String overview, KeywordResults keywords, Double rating, Integer voteCount,
+            String overview, List<Keyword> keywords, Double rating, Integer voteCount,
             Double popularity, Set<String> imdbTop250, String title) {
-        final Set<Category> categories = collectCategories(keywords.getKeywords().stream()
+        final Set<Category> categories = collectCategories(keywords.stream()
                 .map(NamedIdElement::getName).collect(Collectors.toSet()), overview);
         if (rating >= RATING_LIMIT && voteCount >= VOTE_COUNT_LIMIT
                 && popularity >= POPULARITY_LIMIT) {
@@ -519,26 +508,6 @@ public class CategoryServiceImpl implements CategoryService {
             categories.add(Category.IMD_TOP_250_MOVIES);
         }
         return categories;
-    }
-
-    @Override
-    public Set<String> getImdbTop250() {
-        final Set<String> imdbTop250 = new HashSet<>();
-        try (final HttpClient client = HttpClient.newHttpClient()) {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL)).GET().build();
-            final HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
-            final String json = response.body();
-            final ObjectMapper mapper = new ObjectMapper();
-            final List<Map<String, Object>> movies =
-                    mapper.readValue(json, new TypeReference<>() {});
-            for (Map<String, Object> movie : movies) {
-                imdbTop250.add((String) movie.get(NAME));
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new NetworkRequestException("Failed to fetch the IMDB Top 250 page", e);
-        }
-        return imdbTop250;
     }
 
     private Set<Category> collectCategories(Set<String> movieKeywords, String overview) {
