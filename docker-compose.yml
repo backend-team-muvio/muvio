@@ -9,10 +9,15 @@ services:
     ports:
       - "${SPRING_LOCAL_PORT}:${SPRING_DOCKER_PORT}"
       - "${DEBUG_PORT}:${DEBUG_PORT}"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:${PORT:-10000}/api/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 40
     environment:
       SPRING_APPLICATION_JSON: |
         {
           "spring.data.mongodb.uri": "${MONGO_URL}",
           "tmdb.api.key": "${TMDB_API_TOKEN}"
         }
-      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${DEBUG_PORT}"
+      JAVA_TOOL_OPTIONS: "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"

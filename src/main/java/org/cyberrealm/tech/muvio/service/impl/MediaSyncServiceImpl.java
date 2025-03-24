@@ -2,12 +2,14 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.Movie;
+import info.movito.themoviedbapi.model.core.NamedIdElement;
 import info.movito.themoviedbapi.model.core.TvSeries;
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import info.movito.themoviedbapi.model.movies.Cast;
 import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.Crew;
 import info.movito.themoviedbapi.model.movies.MovieDb;
+import info.movito.themoviedbapi.model.tv.series.CreatedBy;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.time.Year;
 import java.util.HashSet;
@@ -61,6 +63,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final String UNDERSCORE = "_";
     private static final int FOUR = 4;
     private static final int TEN = 10;
+    private static final int DEFAULT_SERIAL_DURATION = 30;
     private boolean isRunning;
     private final TmDbService tmdbService;
     private final MediaRepository mediaRepository;
@@ -196,11 +199,12 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
+        media.setDuration(getDurations(tvSeriesDb));
         media.setPosterPath(IMAGE_PATH + tvSeriesDb.getPosterPath());
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
         media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId));
         media.setReleaseYear(getReleaseYear(tvSeriesDb.getFirstAirDate()));
-        media.setDirector(getTvDirector(credits.getCrew()));
+        media.setDirector(getTvDirector(tvSeriesDb.getCreatedBy()));
         media.setActors(getTvActors(credits.getCast()));
         final Set<GenreEntity> genres = getGenres(tvSeriesDb.getGenres());
         media.setGenres(genres);
@@ -216,6 +220,12 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId), genres));
         media.setType(Type.TV_SHOW);
         return media;
+    }
+
+    private Integer getDurations(TvSeriesDb tvSeriesDb) {
+        return tvSeriesDb.getEpisodeRunTime().stream()
+                .findFirst()
+                .orElse(DEFAULT_SERIAL_DURATION);
     }
 
     private Type putType(int duration) {
@@ -285,12 +295,10 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 .orElse(null);
     }
 
-    private String getTvDirector(
-            List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crews) {
-        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR)
-                        || crew.getJob().equalsIgnoreCase(PRODUCER))
+    private String getTvDirector(List<CreatedBy> creators) {
+        return creators.stream()
+                .map(NamedIdElement::getName)
                 .findFirst()
-                .map(info.movito.themoviedbapi.model.tv.core.credits.Crew::getName)
                 .orElse(null);
     }
 
