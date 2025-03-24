@@ -10,7 +10,7 @@ services:
       - "${SPRING_LOCAL_PORT}:${SPRING_DOCKER_PORT}"
       - "${DEBUG_PORT}:${DEBUG_PORT}"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:${PORT:-10000}/api/actuator/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:${PORT:-10000}/quick-health" ]
       interval: 10s
       timeout: 5s
       retries: 40
