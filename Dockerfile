@@ -12,5 +12,6 @@ COPY --from=builder application/dependencies/ ./
 COPY --from=builder application/spring-boot-loader/ ./
 COPY --from=builder application/snapshot-dependencies/ ./
 COPY --from=builder application/application/ ./
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
-EXPOSE 8080
+
+EXPOSE 10000
+ENTRYPOINT ["sh", "-c", "exec java -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Dserver.port=${PORT:-10000} org.springframework.boot.loader.launch.JarLauncher"]
