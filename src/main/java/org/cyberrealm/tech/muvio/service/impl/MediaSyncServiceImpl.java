@@ -52,7 +52,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 500;
+    private static final int LAST_PAGE = 400;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";

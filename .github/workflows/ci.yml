@@ -39,7 +39,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: vitalii454/muvio:latest, vitalii454/muvio:${{ github.sha }}
+          tags: vitalii454/muvio:${{ github.sha }}
 
       - name: Trigger Render Deployment
         run: |
