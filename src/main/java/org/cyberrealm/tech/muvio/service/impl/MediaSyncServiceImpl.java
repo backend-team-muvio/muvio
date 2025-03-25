@@ -51,8 +51,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
             Math.min(20, Runtime.getRuntime().availableProcessors() * 2);
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
-    private static final int ONE = 10;
-    private static final int LAST_PAGE = 1;
+    private static final int ONE = 1;
+    private static final int LAST_PAGE = 5;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
@@ -64,6 +64,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int FOUR = 4;
     private static final int TEN = 10;
     private static final int DEFAULT_SERIAL_DURATION = 30;
+    private static final int MAX_SIZE = 3;
     private boolean isRunning;
     private final TmDbService tmdbService;
     private final MediaRepository mediaRepository;
@@ -91,6 +92,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 final List<Movie> movieList =
                         tmdbService.fetchPopularMovies(fromPage, toPage, language, location, pool);
                 media = pool.submit(() -> movieList.parallelStream()
+                        .filter(movie ->
+                                !mediaRepository.existsById(String.valueOf(movie.getId())))
                         .map(movieTmDb -> createMovie(language, movieTmDb, imdbTop250,
                                 oscarWinningMovie))
                         .toList()).get();
@@ -99,6 +102,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                         tmdbService.fetchPopularTvSerials(fromPage, toPage, language,
                                 location, pool);
                 media = pool.submit(() -> tvSeriesList.parallelStream()
+                        .filter(seriesTmDb ->
+                                !mediaRepository.existsById(String.valueOf(seriesTmDb.getId())))
                         .map(seriesTmDb -> createTvSeries(language, seriesTmDb,
                                 imdbTop250, oscarWinningMovie))
                         .toList()).get();
@@ -116,7 +121,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
 
     @Override
     public void start() {
-        deleteAll();
+        //deleteAll();
         importMedia(Type.MOVIE, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTop250Movies,
                 oscarWinningMedia);
         importMedia(Type.TV_SHOW, ZERO, LAST_PAGE, LANGUAGE, REGION, imdbTop250TvShows,
@@ -246,19 +251,20 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
 
     private Map<String, Actor> getMovieActors(List<Cast> casts) {
         final Set<Actor> newActors = new HashSet<>();
-        final Map<String, Actor> actorsMap = casts.stream().collect(Collectors.toMap(cast ->
+        final Map<String, Actor> actorsMap = casts.stream()
+                .limit(MAX_SIZE)
+                .collect(Collectors.toMap(cast ->
                         cast.getCharacter().replace(POINT, UNDERSCORE), cast -> {
-                final String name = cast.getName();
-                return actorRepository.findById(name).orElseGet(() -> {
-                    final Actor actor = actorMapper.toActorEntity(cast);
-                    if (cast.getProfilePath() != null) {
-                        actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
-                    }
-                    newActors.add(actor);
-                    return actor;
-                });
-            },
-                (existingActor, duplicateActor) -> existingActor));
+                        final String name = cast.getName();
+                        return actorRepository.findById(name).orElseGet(() -> {
+                            final Actor actor = actorMapper.toActorEntity(cast);
+                            if (cast.getProfilePath() != null) {
+                                actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
+                            }
+                            newActors.add(actor);
+                            return actor;
+                        });
+                    }, (existingActor, duplicateActor) -> existingActor));
         if (!newActors.isEmpty()) {
             actorRepository.saveAll(newActors);
         }
@@ -268,19 +274,20 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private Map<String, Actor> getTvActors(
             List<info.movito.themoviedbapi.model.tv.core.credits.Cast> casts) {
         final Set<Actor> newActors = new HashSet<>();
-        final Map<String, Actor> actorsMap = casts.stream().collect(Collectors.toMap(cast ->
+        final Map<String, Actor> actorsMap = casts.stream()
+                .limit(MAX_SIZE)
+                .collect(Collectors.toMap(cast ->
                         cast.getCharacter().replace(POINT, UNDERSCORE), cast -> {
-                    final String name = cast.getName();
-                    return actorRepository.findById(name).orElseGet(() -> {
-                        final Actor actor = actorMapper.toActorEntity(cast);
-                        if (cast.getProfilePath() != null) {
-                            actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
-                        }
-                        newActors.add(actor);
-                        return actor;
-                    });
-                },
-                (existingActor, duplicateActor) -> existingActor));
+                        final String name = cast.getName();
+                        return actorRepository.findById(name).orElseGet(() -> {
+                            final Actor actor = actorMapper.toActorEntity(cast);
+                            if (cast.getProfilePath() != null) {
+                                actor.setPhoto(IMAGE_PATH + cast.getProfilePath());
+                            }
+                            newActors.add(actor);
+                            return actor;
+                        });
+                    }, (existingActor, duplicateActor) -> existingActor));
         if (!newActors.isEmpty()) {
             actorRepository.saveAll(newActors);
         }
