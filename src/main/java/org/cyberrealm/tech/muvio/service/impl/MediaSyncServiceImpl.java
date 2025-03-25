@@ -51,7 +51,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
             Math.min(20, Runtime.getRuntime().availableProcessors() * 2);
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
-    private static final int ONE = 1;
+    private static final int ONE = 10;
     private static final int LAST_PAGE = 1;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
