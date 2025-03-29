@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import info.movito.themoviedbapi.TmdbApi;
 import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
+import info.movito.themoviedbapi.TmdbSearch;
 import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import java.io.IOException;
@@ -92,6 +93,11 @@ public class SecurityConfig {
     @Bean
     public TmdbTvSeriesLists tmdbTvSeriesLists(TmdbApi tmdbApi) {
         return tmdbApi.getTvSeriesLists();
+    }
+
+    @Bean
+    public TmdbSearch tmdbSearch(TmdbApi tmdbApi) {
+        return tmdbApi.getSearch();
     }
 
     @Bean

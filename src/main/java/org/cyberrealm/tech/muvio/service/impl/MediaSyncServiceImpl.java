@@ -12,12 +12,15 @@ import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.CreatedBy;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +55,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int BATCH_SIZE = 100;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 5;
+    private static final int LAST_PAGE = 500;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
@@ -84,30 +87,39 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     @Override
     public void importMedia(Type type, int fromPage, int toPage, String language,
                             String location, Set<String> imdbTop250,
-                            Set<String> oscarWinningMovie) {
+                            Set<String> winningMedia) {
         final List<Media> media;
         try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
             if (type == Type.MOVIE) {
                 final List<Movie> movieList =
                         tmdbService.fetchPopularMovies(fromPage, toPage, language, location, pool);
                 media = pool.submit(() -> movieList.parallelStream()
-                        .map(movieTmDb -> createMovie(language, movieTmDb, imdbTop250,
-                                oscarWinningMovie))
-                        .toList()).get();
+                        .map(movieTmDb -> createMovie(language, movieTmDb.getId(), imdbTop250,
+                                winningMedia))
+                        .collect(Collectors.toCollection(ArrayList::new))).get();
+                addAdditionalMedia(imdbTop250, winningMedia, media, pool,
+                        title -> tmdbService.searchMovies(title, language, language),
+                        id -> createMovie(language, id, imdbTop250, winningMedia));
+                pool.shutdown();
             } else if (type == Type.TV_SHOW) {
                 final List<TvSeries> tvSeriesList =
                         tmdbService.fetchPopularTvSerials(fromPage, toPage, language,
                                 location, pool);
                 media = pool.submit(() -> tvSeriesList.parallelStream()
-                        .map(seriesTmDb -> createTvSeries(language, seriesTmDb,
-                                imdbTop250, oscarWinningMovie))
-                        .toList()).get();
+                        .map(seriesTmDb -> createTvSeries(language, seriesTmDb.getId(),
+                                imdbTop250, winningMedia))
+                        .collect(Collectors.toCollection(ArrayList::new))).get();
+                addAdditionalMedia(imdbTop250, winningMedia, media, pool,
+                        title -> tmdbService.searchTvSeries(title, language),
+                        id -> createTvSeries(language, id, imdbTop250, winningMedia));
+                pool.shutdown();
             } else {
                 throw new IllegalArgumentException("Unsupported media type: " + type);
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new MediaProcessingException("Failed to process media with thread pool", e);
         }
+
         for (int i = ZERO; i < media.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, media.size());
             mediaRepository.saveAll(media.subList(i, toIndex));
@@ -150,10 +162,9 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private Media createMovie(String language,
-                              Movie movieTmDb,
+                              Integer movieId,
                               Set<String> imdbTop250,
                               Set<String> oscarWinningMedia) {
-        final int movieId = movieTmDb.getId();
         final MovieDb movieDb = tmdbService.fetchMovieDetails(movieId, language);
         final List<Keyword> keywords = tmdbService.fetchMovieKeywords(movieId)
                 .getKeywords();
@@ -184,15 +195,13 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private Media createTvSeries(String language,
-                                 TvSeries tvSeriesTmDb,
+                                 Integer seriesId,
                                  Set<String> imdbTop250,
-                                 Set<String> oscarWinningMedia) {
-        final TvSeriesDb tvSeriesDb;
-        final int seriesId = tvSeriesTmDb.getId();
+                                 Set<String> emmyWinningMedia) {
         final List<Keyword> keywords = tmdbService.fetchTvSerialsKeywords(seriesId)
                 .getResults();
         final info.movito.themoviedbapi.model.tv.core.credits.Credits credits;
-        tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, language);
+        final TvSeriesDb tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, language);
         final Media media = mediaMapper.toEntity(tvSeriesDb);
         credits = tmdbService.fetchTvSerialsCredits(seriesId, language);
         final Double voteAverage = media.getRating();
@@ -216,7 +225,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, imdbTop250, title));
         media.setTopLists(topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
-                popularity, media.getReleaseYear(), oscarWinningMedia, title));
+                popularity, media.getReleaseYear(), emmyWinningMedia, title));
         media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId), genres));
         media.setType(Type.TV_SHOW);
         return media;
@@ -312,6 +321,41 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         if (releaseDate != null && releaseDate.length() == TEN) {
             return Integer.parseInt(releaseDate.substring(ZERO, FOUR));
         }
-        return null;
+        return CURRENT_YEAR;
+    }
+
+    private void addAdditionalMedia(Set<String> imdbTop250, Set<String> winningMedia,
+                                    List<Media> media, ForkJoinPool pool,
+                                    Function<String, Optional<Integer>> searchFunction,
+                                    Function<Integer, Media> createFunction) {
+        if (!imdbTop250.isEmpty()) {
+            final Set<Media> mediaSet;
+            try {
+                final Set<Integer> mediaId = pool.submit(() -> imdbTop250.parallelStream().map(
+                                searchFunction).filter(Optional::isPresent).map(Optional::get)
+                        .collect(Collectors.toSet())).get();
+                mediaSet = pool.submit(() -> mediaId.parallelStream()
+                        .map(createFunction).collect(Collectors.toSet())).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new MediaProcessingException(
+                        "Failed to process add additional top250 media with thread pool", e);
+            }
+            media.addAll(mediaSet);
+        }
+        if (!winningMedia.isEmpty()) {
+            final Set<Media> mediaSet;
+            try {
+                final Set<Integer> mediaId = pool.submit(() -> winningMedia.parallelStream().map(
+                                searchFunction)
+                        .filter(Optional::isPresent).map(Optional::get)
+                        .collect(Collectors.toSet())).get();
+                mediaSet = pool.submit(() -> mediaId.parallelStream()
+                        .map(createFunction).collect(Collectors.toSet())).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new MediaProcessingException(
+                        "Failed to process add additional winning media with thread pool", e);
+            }
+            media.addAll(mediaSet);
+        }
     }
 }
