@@ -37,7 +37,7 @@ public interface MediaMapper {
     @Mapping(source = "id", target = "id", qualifiedByName = "setTvSeriesId")
     Media toEntity(TvSeriesDb tvSeriesDb);
 
-    @Mapping(source = "actors", target = "actors", qualifiedByName = "toSetActors")
+    @Mapping(source = "actors", target = "actors", qualifiedByName = "toListActors")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
     MediaDtoWithCast toMediaDtoWithCast(MediaDtoWithCastFromDb movie);
 

@@ -9,6 +9,5 @@ import org.springframework.data.domain.Pageable;
 public interface MediaRepositoryCustom {
     List<Media> getAllMediaByVibes(MediaVibeRequestDto query);
 
-    List<Media> getAllForGallery(MediaGalleryRequestDto requestDto,
-                                 Pageable pageable);
+    List<Media> getAllForGallery(MediaGalleryRequestDto requestDto, Pageable pageable);
 }
