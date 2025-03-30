@@ -53,4 +53,8 @@ public interface TmDbService {
     Optional<Integer> searchMovies(String query, String language, String region);
 
     Optional<Integer> searchTvSeries(String query, String language);
+
+    List<Movie> getFilteredMovies(int year, double minRating, double voteCount);
+
+    List<TvSeries> getFilteredTvShows(int year, double minRating, double voteCount);
 }
