@@ -1,9 +1,12 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import info.movito.themoviedbapi.TmdbDiscover;
 import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
+import info.movito.themoviedbapi.TmdbSearch;
 import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.TmdbTvSeriesLists;
+import info.movito.themoviedbapi.model.core.IdElement;
 import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.core.ReviewResultsPage;
@@ -18,6 +21,10 @@ import info.movito.themoviedbapi.model.movies.ReleaseDate;
 import info.movito.themoviedbapi.model.tv.series.ContentRating;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import info.movito.themoviedbapi.tools.TmdbException;
+import info.movito.themoviedbapi.tools.builders.discover.DiscoverMovieParamBuilder;
+import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
+import info.movito.themoviedbapi.tools.sortby.DiscoverMovieSortBy;
+import info.movito.themoviedbapi.tools.sortby.DiscoverTvSortBy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -53,6 +60,10 @@ public class TmDbServiceImpl implements TmDbService {
     private final TmdbTvSeries tmdbTvSeries;
     private final TmdbMovieLists tmdbMovieLists;
     private final TmdbTvSeriesLists tmdbTvSeriesLists;
+    private final TmdbSearch tmdbSearch;
+    private final TmdbDiscover tmdbDiscover;
+    private final DiscoverMovieParamBuilder discoverMovieParamBuilder;
+    private final DiscoverTvParamBuilder discoverTvParamBuilder;
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
@@ -282,6 +293,60 @@ public class TmDbServiceImpl implements TmDbService {
                     .map(ReleaseDate::getCertification)).collect(Collectors.toSet());
         } catch (TmdbException e) {
             throw new TmdbServiceException("Failed to fetch release info from TmDb", e);
+        }
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public Optional<Integer> searchMovies(String query, String language, String region) {
+        try {
+            return tmdbSearch.searchMovie(query, false, language, null, FIRST_PAGE, region, null)
+                    .getResults().stream().filter(movie -> movie.getTitle().equals(query))
+                    .map(IdElement::getId).findFirst();
+        } catch (TmdbException e) {
+            throw new TmdbServiceException("Failed to find movie info from TmDb", e);
+        }
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public Optional<Integer> searchTvSeries(String query, String language) {
+        try {
+            return tmdbSearch.searchTv(query, null, false, language, FIRST_PAGE, null)
+                    .getResults().stream().filter(series -> series.getName().equals(query))
+                    .map(IdElement::getId).findFirst();
+        } catch (TmdbException e) {
+            throw new TmdbServiceException("Failed to find tv series info from TmDb", e);
+        }
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public List<Movie> getFilteredMovies(int year, double minRating, double voteCount) {
+        final DiscoverMovieParamBuilder discoverMovieParamBuilder1 = discoverMovieParamBuilder
+                .year(year).voteAverageGte(minRating).voteCountGte(voteCount)
+                .sortBy(DiscoverMovieSortBy.VOTE_AVERAGE_DESC);
+        try {
+            return tmdbDiscover.getMovie(discoverMovieParamBuilder1).getResults();
+        } catch (TmdbException e) {
+            throw new TmdbServiceException("Failed to filter movies from TmDb", e);
+        }
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public List<TvSeries> getFilteredTvShows(int year, double minRating, double voteCount) {
+        final DiscoverTvParamBuilder discoverTvParamBuilder1 = discoverTvParamBuilder
+                .firstAirDateYear(year).voteAverageGte(minRating).voteCountGte(voteCount)
+                .sortBy(DiscoverTvSortBy.VOTE_AVERAGE_DESC);
+        try {
+            return tmdbDiscover.getTv(discoverTvParamBuilder1).getResults();
+        } catch (TmdbException e) {
+            throw new TmdbServiceException("Failed to filter tv shows from TmDb", e);
         }
     }
 

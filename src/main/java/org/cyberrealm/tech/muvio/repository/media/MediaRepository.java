@@ -17,20 +17,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MediaRepository extends MongoRepository<Media, String> {
-
-    @Query("{ 'releaseYear': { '$gte': ?0, '$lte': ?1 }, 'type': { '$in': ?2 }, 'vibes': ?3, "
-            + "'categories': { '$in': ?4 } }")
-    Set<MediaDtoFromDb> getAllMediaByVibe(int startYear, int endYear, Set<String> type,
-                                          String vibe, Set<String> categories);
-
-    @Aggregation(pipeline = {
-            "{ $match: { releaseYear: { $gte: ?0, $lte: ?1 } } }",
-            "{ $match: { title: { $regex: ?2, $options: 'i' } } }",
-            "{ $match: { type: { $in: ?3 } } }"
-    })
-    Slice<MediaBaseDto> getAllForGallery(int startYear, int endYear, String title, Set<String> type,
-                                         Pageable pageable);
+public interface MediaRepository extends MongoRepository<Media, String>, MediaRepositoryCustom {
 
     @Aggregation(pipeline = {
             "{ '$sample': { 'size': ?0 } }"

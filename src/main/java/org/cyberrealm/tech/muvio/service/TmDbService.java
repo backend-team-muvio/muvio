@@ -9,6 +9,7 @@ import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 
@@ -48,4 +49,12 @@ public interface TmDbService {
     Set<String> fetchTmDbTvRatings(int seriesId);
 
     Set<String> fetchTmDbMovieRatings(int movieId);
+
+    Optional<Integer> searchMovies(String query, String language, String region);
+
+    Optional<Integer> searchTvSeries(String query, String language);
+
+    List<Movie> getFilteredMovies(int year, double minRating, double voteCount);
+
+    List<TvSeries> getFilteredTvShows(int year, double minRating, double voteCount);
 }

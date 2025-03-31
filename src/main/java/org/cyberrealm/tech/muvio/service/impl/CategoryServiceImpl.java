@@ -506,6 +506,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
         if (imdbTop250.contains(title)) {
             categories.add(Category.IMD_TOP_250_MOVIES);
+            imdbTop250.remove(title);
         }
         return categories;
     }

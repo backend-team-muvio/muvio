@@ -1,33 +1,38 @@
 package org.cyberrealm.tech.muvio.mapper;
 
 import info.movito.themoviedbapi.model.movies.Cast;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
 import org.cyberrealm.tech.muvio.dto.ActorDto;
 import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.RoleActor;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 @Mapper(config = MapperConfig.class)
 public interface ActorMapper {
+    String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
+
+    @Mapping(target = "photo", expression =
+            "java(cast.getProfilePath() != null ? IMAGE_PATH + cast.getProfilePath() : null)")
+    @Mapping(target = "name", source = "name")
     Actor toActorEntity(Cast cast);
 
+    @Mapping(target = "photo", expression =
+            "java(cast.getProfilePath() != null ? IMAGE_PATH + cast.getProfilePath() : null)")
+    @Mapping(target = "name", source = "name")
     Actor toActorEntity(info.movito.themoviedbapi.model.tv.core.credits.Cast cast);
 
     @Named("toActorDto")
-    default Set<ActorDto> toActorDto(Map<String, Actor> actors) {
-        return actors.entrySet().stream()
-                .map(actor -> new ActorDto(actor.getKey(), actor.getValue().getName(),
-                        actor.getValue().getPhoto()))
-                .collect(Collectors.toSet());
+    default List<ActorDto> toActorDto(List<RoleActor> actors) {
+        return actors.stream().map(roleActor -> new ActorDto(roleActor.getRole(),
+                        roleActor.getActor().getName(), roleActor.getActor().getPhoto()))
+                .toList();
     }
 
-    @Named("toSetActors")
-    default Set<String> toSetActors(Map<String, Actor> actors) {
-        return actors.values().stream()
-                .map(Actor::getName)
-                .collect(Collectors.toSet());
+    @Named("toListActors")
+    default List<String> toSetActors(List<RoleActor> actors) {
+        return actors.stream().map(roleActor -> roleActor.getActor().getName()).toList();
     }
 }

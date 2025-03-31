@@ -88,6 +88,7 @@ public class TopListServiceImpl implements TopListService {
                                       Set<String> oscarWinningMedia) {
         if (oscarWinningMedia.contains(title)) {
             topLists.add(TopLists.TOP_OSCAR_WINNING_MASTERPIECES);
+            oscarWinningMedia.remove(title);
         }
     }
 
