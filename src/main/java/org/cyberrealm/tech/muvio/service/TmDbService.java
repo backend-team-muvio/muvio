@@ -1,9 +1,7 @@
 package org.cyberrealm.tech.muvio.service;
 
-import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.core.TvKeywords;
-import info.movito.themoviedbapi.model.core.TvSeries;
 import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
@@ -15,8 +13,8 @@ import java.util.concurrent.ForkJoinPool;
 
 public interface TmDbService {
 
-    List<Movie> fetchPopularMovies(int fromPage, int toPage, String language, String location,
-                                   ForkJoinPool pool);
+    Set<Integer> fetchPopularMovies(int fromPage, int toPage, String language, String location,
+                                    ForkJoinPool pool);
 
     MovieDb fetchMovieDetails(int movieId, String language);
 
@@ -30,8 +28,8 @@ public interface TmDbService {
 
     List<Review> fetchMovieReviews(String language, int movieId);
 
-    List<TvSeries> fetchPopularTvSerials(int fromPage, int toPage, String language, String location,
-                                         ForkJoinPool pool);
+    Set<Integer> fetchPopularTvSerials(int fromPage, int toPage, String language, String location,
+                                       ForkJoinPool pool);
 
     TvSeriesDb fetchTvSerialsDetails(int serialId, String language);
 
@@ -54,7 +52,7 @@ public interface TmDbService {
 
     Optional<Integer> searchTvSeries(String query, String language);
 
-    List<Movie> getFilteredMovies(int year, double minRating, double voteCount);
+    Set<Integer> getFilteredMovies(int year, int page);
 
-    List<TvSeries> getFilteredTvShows(int year, double minRating, double voteCount);
+    Set<Integer> getFilteredTvShows(int year, int page);
 }
