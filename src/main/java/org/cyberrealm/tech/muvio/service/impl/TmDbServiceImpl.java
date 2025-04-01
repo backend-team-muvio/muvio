@@ -7,11 +7,9 @@ import info.movito.themoviedbapi.TmdbSearch;
 import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import info.movito.themoviedbapi.model.core.IdElement;
-import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.core.ReviewResultsPage;
 import info.movito.themoviedbapi.model.core.TvKeywords;
-import info.movito.themoviedbapi.model.core.TvSeries;
 import info.movito.themoviedbapi.model.core.image.Artwork;
 import info.movito.themoviedbapi.model.core.video.VideoResults;
 import info.movito.themoviedbapi.model.movies.Credits;
@@ -49,6 +47,7 @@ import org.springframework.stereotype.Service;
 public class TmDbServiceImpl implements TmDbService {
     public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     public static final double MIN_RATE = 5.0;
+    private static final double MIN_VOTE_COUNT = 100;
     private static final int MAX_ATTEMPTS = 12;
     private static final int BACK_OFF = 10000;
     private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
@@ -68,8 +67,8 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<Movie> fetchPopularMovies(int fromPage, int toPage, String language,
-                                          String location, ForkJoinPool pool) {
+    public Set<Integer> fetchPopularMovies(int fromPage, int toPage, String language,
+                                           String location, ForkJoinPool pool) {
         return fetchPopularItems(
                 fromPage,
                 toPage,
@@ -89,7 +88,7 @@ public class TmDbServiceImpl implements TmDbService {
                     }
                 },
                 pool
-        );
+        ).stream().map(IdElement::getId).collect(Collectors.toSet());
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -170,8 +169,8 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<TvSeries> fetchPopularTvSerials(int fromPage, int toPage, String language,
-                                                String location, ForkJoinPool pool) {
+    public Set<Integer> fetchPopularTvSerials(int fromPage, int toPage, String language,
+                                              String location, ForkJoinPool pool) {
         return fetchPopularItems(
                 fromPage,
                 toPage,
@@ -190,7 +189,7 @@ public class TmDbServiceImpl implements TmDbService {
                     }
                 },
                 pool
-        );
+        ).stream().map(IdElement::getId).collect(Collectors.toSet());
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -325,12 +324,13 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<Movie> getFilteredMovies(int year, double minRating, double voteCount) {
+    public Set<Integer> getFilteredMovies(int year, int page) {
         final DiscoverMovieParamBuilder discoverMovieParamBuilder1 = discoverMovieParamBuilder
-                .year(year).voteAverageGte(minRating).voteCountGte(voteCount)
+                .year(year).voteAverageGte(MIN_RATE).voteCountGte(MIN_VOTE_COUNT).page(page)
                 .sortBy(DiscoverMovieSortBy.VOTE_AVERAGE_DESC);
         try {
-            return tmdbDiscover.getMovie(discoverMovieParamBuilder1).getResults();
+            return tmdbDiscover.getMovie(discoverMovieParamBuilder1).getResults().stream()
+                    .map(IdElement::getId).collect(Collectors.toSet());
         } catch (TmdbException e) {
             throw new TmdbServiceException("Failed to filter movies from TmDb", e);
         }
@@ -339,12 +339,13 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public List<TvSeries> getFilteredTvShows(int year, double minRating, double voteCount) {
+    public Set<Integer> getFilteredTvShows(int year, int page) {
         final DiscoverTvParamBuilder discoverTvParamBuilder1 = discoverTvParamBuilder
-                .firstAirDateYear(year).voteAverageGte(minRating).voteCountGte(voteCount)
-                .sortBy(DiscoverTvSortBy.VOTE_AVERAGE_DESC);
+                .firstAirDateYear(year).voteAverageGte(MIN_RATE).voteCountGte(MIN_VOTE_COUNT)
+                .page(page).sortBy(DiscoverTvSortBy.VOTE_AVERAGE_DESC);
         try {
-            return tmdbDiscover.getTv(discoverTvParamBuilder1).getResults();
+            return tmdbDiscover.getTv(discoverTvParamBuilder1).getResults().stream()
+                    .map(IdElement::getId).collect(Collectors.toSet());
         } catch (TmdbException e) {
             throw new TmdbServiceException("Failed to filter tv shows from TmDb", e);
         }
