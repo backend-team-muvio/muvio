@@ -7,20 +7,20 @@ import org.cyberrealm.tech.muvio.model.Media;
 
 public interface MediaSyncService {
 
-    void importMedia(int fromPage, int toPage, String language, String location, int currentYear,
-                     Set<String> imdbTop250, Set<String> winningMedia, Map<Integer,
-                    Actor> actors, Map<String, Media> medias, boolean isMovies);
+    void importMedia(String language, String location, int currentYear, Set<String> imdbTop250,
+                     Set<String> winningMedia, Map<Integer, Actor> actorStorage, Map<String,
+                    Media> mediaStorage, boolean isMovies);
 
     void importByFindingTitles(String language, String region, int currentYear,
-                               Map<Integer, Actor> actors, Map<String, Media> medias,
+                               Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
                                Set<String> imdbTop250,
                                Set<String> winningMedia, boolean isMovies);
 
     void importMediaByFilter(String language, int currentYear, Set<String> imdbTop250,
-                             Set<String> winningMedia, Map<String, Media> media,
-                             Map<Integer, Actor> actors, boolean isMovies);
+                             Set<String> winningMedia, Map<String, Media> mediaStorage,
+                             Map<Integer, Actor> actorStorage, boolean isMovies);
 
     void deleteAll();
 
-    void saveAll(Map<Integer, Actor> actors, Map<String, Media> medias);
+    void saveAll(Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage);
 }
