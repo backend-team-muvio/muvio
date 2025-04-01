@@ -78,7 +78,7 @@ public class MediaController {
                     + "filtering parameters"
     )
     public Slice<MediaDtoWithPoints> getAllMediaByVibe(
-            @RequestBody @Valid MediaVibeRequestDto requestDto, Pageable pageable) {
+            @Valid MediaVibeRequestDto requestDto, Pageable pageable) {
         return mediaService.getAllMediaByVibe(requestDto, pageable);
     }
 
@@ -87,7 +87,7 @@ public class MediaController {
             summary = "Get media for gallery view",
             description = "Retrieve a paginated slice of media items suitable for gallery display"
     )
-    public Slice<MediaBaseDto> getAllForGallery(@RequestBody MediaGalleryRequestDto requestDto,
+    public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
                                                 Pageable pageable) {
         return mediaService.getAllForGallery(requestDto, pageable);
     }
