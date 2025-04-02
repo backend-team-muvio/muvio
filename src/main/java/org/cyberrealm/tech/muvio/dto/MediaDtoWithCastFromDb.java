@@ -1,10 +1,10 @@
 package org.cyberrealm.tech.muvio.dto;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
-import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.RoleActor;
 
 public record MediaDtoWithCastFromDb(String id, String title, Set<String> genres, Double rating,
                                      String posterPath, Integer duration, String director,
-                                     Map<String, Actor> actors) {
+                                     List<RoleActor> actors) {
 }

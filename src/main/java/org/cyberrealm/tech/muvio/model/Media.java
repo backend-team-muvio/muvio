@@ -1,9 +1,7 @@
 package org.cyberrealm.tech.muvio.model;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
@@ -32,12 +29,9 @@ public class Media {
     private Integer duration;
     private String director;
     private Type type;
-
     private Set<GenreEntity> genres = new HashSet<>();
     private Set<String> photos;
-
-    @DBRef
-    private Map<String, Actor> actors = new HashMap<>();
+    private List<RoleActor> actors;
     private List<Review> reviews;
     private Set<Vibe> vibes = new HashSet<>();
     private Set<Category> categories = new HashSet<>();

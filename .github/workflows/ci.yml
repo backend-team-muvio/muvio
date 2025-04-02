@@ -2,9 +2,9 @@ name: Java CI and Docker Build & Push
 
 on:
   push:
-    branches: [ firstRelease ]
+    branches: [ secondRelease ]
   pull_request:
-    branches: [ firstRelease ]
+    branches: [ secondRelease ]
 
 jobs:
   build:

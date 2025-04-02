@@ -16,17 +16,11 @@ public class TopListServiceImpl implements TopListService {
     private static final int POPULARITY_LIMIT = 4;
     private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
-    private static final int CURRENT_YEAR = Year.now().getValue();
-    private static final int DECADE_YEAR;
     private static final int LIMIT_REVENUE = 50_000_000;
     private static final int TWO = 2;
     private static final double IMDB_TOP_RATING_LIMIT = 8.0;
-    private static final int PREVIOUS_YEAR;
-
-    static {
-        DECADE_YEAR = CURRENT_YEAR - 10;
-        PREVIOUS_YEAR = CURRENT_YEAR - 1;
-    }
+    private static final int TEN = 10;
+    private static final int ONE = 1;
 
     @Override
     public Set<TopLists> putTopLists(List<Keyword> keywords, Double voteAverage,
@@ -52,6 +46,7 @@ public class TopListServiceImpl implements TopListService {
                                               Integer releaseYear, Set<String> emmyWinningSerials,
                                               String title) {
         Set<TopLists> topLists = new HashSet<>();
+
         putSuperheroMovies(topLists, keywords, voteAverage);
         putIconicMovies(topLists, voteAverage, voteCount, popularity, releaseYear);
         putBlockbustersDecadeForTvShows(topLists, releaseYear, voteAverage, voteCount, popularity);
@@ -66,7 +61,8 @@ public class TopListServiceImpl implements TopListService {
     private void putBlockbustersDecade(Set<TopLists> topLists, Integer releaseYear,
                                        Double voteAverage, Integer voteCount, Double popularity,
                                        Integer budget, Long revenue) {
-        if (releaseYear >= DECADE_YEAR && voteAverage >= RATING_LIMIT
+        final int decadeYear = Year.now().getValue() - TEN;
+        if (releaseYear >= decadeYear && voteAverage >= RATING_LIMIT
                 && voteCount >= VOTE_COUNT_LIMIT && popularity >= POPULARITY_LIMIT
                 && revenue >= LIMIT_REVENUE) {
             final double profitabilityRatio = (double) revenue / budget;
@@ -78,7 +74,8 @@ public class TopListServiceImpl implements TopListService {
 
     private void putBlockbustersDecadeForTvShows(Set<TopLists> topLists, Integer releaseYear,
                                        Double voteAverage, Integer voteCount, Double popularity) {
-        if (releaseYear >= DECADE_YEAR && voteAverage >= RATING_LIMIT
+        final int decadeYear = Year.now().getValue() - TEN;
+        if (releaseYear >= decadeYear && voteAverage >= RATING_LIMIT
                 && voteCount >= VOTE_COUNT_LIMIT && popularity >= POPULARITY_LIMIT) {
             topLists.add(TopLists.TOP_MOST_WATCHED_BLOCKBUSTERS_OF_THE_DECADE);
         }
@@ -88,6 +85,7 @@ public class TopListServiceImpl implements TopListService {
                                       Set<String> oscarWinningMedia) {
         if (oscarWinningMedia.contains(title)) {
             topLists.add(TopLists.TOP_OSCAR_WINNING_MASTERPIECES);
+            oscarWinningMedia.remove(title);
         }
     }
 
@@ -117,8 +115,9 @@ public class TopListServiceImpl implements TopListService {
 
     private void putTopRatedImdbMovies(Set<TopLists> topLists, Integer releaseYear,
                                        Double voteAverage, Integer voteCount) {
+        final int previousYear = Year.now().getValue() - ONE;
         if (voteAverage >= IMDB_TOP_RATING_LIMIT
-                && voteCount >= VOTE_COUNT_LIMIT && releaseYear <= (PREVIOUS_YEAR)) {
+                && voteCount >= VOTE_COUNT_LIMIT && releaseYear <= (previousYear)) {
             topLists.add(TopLists.TOP_RATED_IMDB_MOVIES_OF_All_TIME);
         }
     }
