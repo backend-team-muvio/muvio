@@ -9,12 +9,10 @@ import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 
 public interface TmDbService {
 
-    Set<Integer> fetchPopularMovies(int fromPage, int toPage, String language, String location,
-                                    ForkJoinPool pool);
+    Set<Integer> fetchPopularMovies(String language, int page, String location);
 
     MovieDb fetchMovieDetails(int movieId, String language);
 
@@ -28,8 +26,7 @@ public interface TmDbService {
 
     List<Review> fetchMovieReviews(String language, int movieId);
 
-    Set<Integer> fetchPopularTvSerials(int fromPage, int toPage, String language, String location,
-                                       ForkJoinPool pool);
+    Set<Integer> fetchPopularTvSerials(String language, int page);
 
     TvSeriesDb fetchTvSerialsDetails(int serialId, String language);
 

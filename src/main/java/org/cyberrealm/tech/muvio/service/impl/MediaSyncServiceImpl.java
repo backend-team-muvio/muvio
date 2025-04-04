@@ -18,13 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
-import org.cyberrealm.tech.muvio.exception.MediaProcessingException;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
@@ -52,8 +49,6 @@ import org.springframework.stereotype.Service;
 public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int SHORT_DURATION = 40;
     private static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
-    private static final int LIMIT_THREADS =
-            Math.min(20, Runtime.getRuntime().availableProcessors() * 2);
     private static final int BATCH_SIZE = 500;
     private static final int ZERO = 0;
     private static final int ONE = 1;
@@ -61,7 +56,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
-    private static final String PRODUCER = "Producer";
     private static final String DEFAULT_LANGUAGE = "null";
     private static final int FIRST_YEAR = 1920;
     private static final int TEN = 10;
@@ -87,59 +81,45 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                             Set<String> imdbTop250, Set<String> winningMedia,
                             Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
                             boolean isMovies) {
-        try (final ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
-            final Set<Integer> movieList = isMovies
-                    ? new HashSet<>(tmdbService.fetchPopularMovies(ZERO, LAST_PAGE, language,
-                    location, pool))
-                    : new HashSet<>(tmdbService.fetchPopularTvSerials(ZERO, LAST_PAGE, language,
-                    location, pool));
-            pool.submit(() -> movieList.parallelStream()
-                    .filter(id -> !mediaStorage.containsKey((isMovies ? EMPTY : TV) + id))
-                    .peek(id -> sleep()).forEach(id -> {
-                        final Media movie = isMovies
-                                ? createMovie(language, currentYear, id, imdbTop250,
-                                winningMedia, actorStorage)
-                                : createTvSeries(language, currentYear, id, imdbTop250,
-                                winningMedia, actorStorage);
-                        mediaStorage.put(movie.getId(), movie);
-                    })).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new MediaProcessingException("Failed to process movie with thread pool", e);
-        }
+        final Set<Integer> ids = IntStream.rangeClosed(ZERO, LAST_PAGE).parallel()
+                .mapToObj(page -> isMovies
+                        ? tmdbService.fetchPopularMovies(language, page, location)
+                        : tmdbService.fetchPopularTvSerials(language, page))
+                .flatMap(Collection::stream).filter(id -> isNewIds(id, isMovies, mediaStorage))
+                .collect(Collectors.toSet());
+        ids.parallelStream().forEach(id -> {
+            final Media media = isMovies
+                    ? createMovie(language, currentYear, id, imdbTop250,
+                    winningMedia, actorStorage)
+                    : createTvSeries(language, currentYear, id, imdbTop250,
+                    winningMedia, actorStorage);
+            mediaStorage.put(media.getId(), media);
+        });
     }
 
     @Override
     public void importMediaByFilter(String language, int currentYear, Set<String> imdbTop250,
                                     Set<String> winningMedia, Map<String, Media> mediaStorage,
                                     Map<Integer, Actor> actorStorage, boolean isMovies) {
-        try (ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
-            final Set<Integer> ids = pool.submit(
-                    () -> IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel()
-                            .peek(year -> sleep()).boxed().flatMap(year -> IntStream.iterate(
-                                    ONE, page -> page <= LAST_PAGE, page -> page + ONE)
-                                    .mapToObj(page -> {
-                                        final Set<Integer> filteredMovies = isMovies
-                                                ? new HashSet<>(tmdbService
-                                                .getFilteredMovies(year, page))
-                                                : new HashSet<>(tmdbService
-                                                .getFilteredTvShows(year, page));
-                                        return filteredMovies.stream().filter(id -> !mediaStorage
-                                                        .containsKey((isMovies ? EMPTY : TV) + id))
-                                        .collect(Collectors.toSet());
-                                    }).takeWhile(set -> !set.isEmpty())).flatMap(Collection::stream)
-                    .collect(Collectors.toSet())).get();
-            pool.submit(() -> ids.parallelStream().peek(id -> sleep()).forEach(id -> {
-                final Media newMedia = isMovies
-                        ? createMovie(language, currentYear, id, imdbTop250, winningMedia,
-                        actorStorage)
-                        : createTvSeries(language, currentYear, id, imdbTop250,
-                        winningMedia, actorStorage);
-                mediaStorage.put(newMedia.getId(), newMedia);
-            })).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new MediaProcessingException(
-                    "Failed to process serials with thread pool in filter", e);
-        }
+        final Set<Integer> ids =
+                IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel()
+                        .boxed().flatMap(year -> IntStream.iterate(
+                                ONE, page -> page <= LAST_PAGE, page -> page + ONE)
+                                .mapToObj(page -> (isMovies
+                                        ? tmdbService.getFilteredMovies(year, page)
+                                        : tmdbService.getFilteredTvShows(year, page)))
+                                .takeWhile(set -> !set.isEmpty()))
+                        .flatMap(Collection::stream)
+                        .filter(id -> isNewIds(id, isMovies, mediaStorage))
+                        .collect(Collectors.toSet());
+        ids.parallelStream().forEach(id -> {
+            final Media newMedia = isMovies
+                    ? createMovie(language, currentYear, id, imdbTop250, winningMedia,
+                    actorStorage)
+                    : createTvSeries(language, currentYear, id, imdbTop250,
+                    winningMedia, actorStorage);
+            mediaStorage.put(newMedia.getId(), newMedia);
+        });
     }
 
     @Override
@@ -153,21 +133,15 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         if (mediaId.isEmpty()) {
             return;
         }
-        try (ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
-            pool.submit(() -> mediaId.parallelStream()
-                    .filter(id -> !mediaStorage.containsKey((isMovies ? EMPTY : TV) + id))
-                    .peek(id -> sleep()).forEach(id -> {
-                        final Media newMedia = isMovies
-                                ? createMovie(language, currentYear, id, imdbTop250, winningMedia,
-                                actorStorage)
-                                : createTvSeries(language, currentYear, id, imdbTop250,
-                                winningMedia, actorStorage);
-                        mediaStorage.put(newMedia.getId(), newMedia);
-                    })).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new MediaProcessingException(
-                    "Failed to process create and save medias in import by finding titles", e);
-        }
+        mediaId.parallelStream().filter(id -> isNewIds(id, isMovies, mediaStorage))
+                .forEach(id -> {
+                    final Media newMedia = isMovies
+                            ? createMovie(language, currentYear, id, imdbTop250, winningMedia,
+                            actorStorage)
+                            : createTvSeries(language, currentYear, id, imdbTop250,
+                            winningMedia, actorStorage);
+                    mediaStorage.put(newMedia.getId(), newMedia);
+                });
     }
 
     @Override
@@ -348,8 +322,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private String getMovieDirector(List<Crew> crews) {
-        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR)
-                || crew.getJob().equalsIgnoreCase(PRODUCER))
+        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR))
                 .findFirst()
                 .map(Crew::getName)
                 .orElse(null);
@@ -376,25 +349,16 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private void findMediasIdsByTitles(String language, String region, Set<String> titles,
                                        boolean isMovies, Set<Integer> mediaId) {
         if (!titles.isEmpty()) {
-            try (ForkJoinPool pool = new ForkJoinPool(LIMIT_THREADS)) {
-                pool.submit(() -> titles.parallelStream().peek(title -> sleep())
-                        .map(title -> isMovies
-                                ? tmdbService.searchMovies(title, language, region)
-                                : tmdbService.searchTvSeries(title, language))
-                        .filter(Optional::isPresent)
-                        .forEach(id -> mediaId.add(id.get()))).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new MediaProcessingException(
-                        "Failed to process find mediasIds by titles in thread pool", e);
-            }
+            titles.parallelStream()
+                    .map(title -> isMovies
+                            ? tmdbService.searchMovies(title, language, region)
+                            : tmdbService.searchTvSeries(title, language))
+                    .filter(Optional::isPresent)
+                    .forEach(id -> mediaId.add(id.get()));
         }
     }
 
-    private void sleep() {
-        try {
-            Thread.sleep(TEN);
-        } catch (InterruptedException e) {
-            throw new MediaProcessingException("Failed to sleep", e);
-        }
+    private boolean isNewIds(int id, boolean isMovies, Map<String, Media> mediaStorage) {
+        return !mediaStorage.containsKey((isMovies ? EMPTY : TV) + id);
     }
 }
