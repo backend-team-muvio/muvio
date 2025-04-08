@@ -16,6 +16,7 @@ import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.movies.ReleaseDate;
+import info.movito.themoviedbapi.model.reviews.AuthorDetails;
 import info.movito.themoviedbapi.model.tv.series.ContentRating;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import info.movito.themoviedbapi.tools.TmdbException;
@@ -24,6 +25,7 @@ import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
 import info.movito.themoviedbapi.tools.sortby.DiscoverMovieSortBy;
 import info.movito.themoviedbapi.tools.sortby.DiscoverTvSortBy;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -52,7 +54,8 @@ public class TmDbServiceImpl implements TmDbService {
     private static final String TRAILER = "Trailer";
     private static final String TEASER = "Teaser";
     private static final int FIRST_PAGE = 1;
-    private static final int MAX_NUMBER_OF_RECORDS = 6;
+    private static final int MAX_NUMBER_OF_PHOTOS = 6;
+    private static final int MAX_NUMBER_OF_REVIEWS = 3;
     private static final Semaphore SEMAPHORE = new Semaphore(100, true);
     private final TmdbMovies tmdbMovies;
     private final TmdbTvSeries tmdbTvSeries;
@@ -287,8 +290,20 @@ public class TmDbServiceImpl implements TmDbService {
             }
         }
         return allReviews.stream()
+                .sorted(getReviewComparator())
+                .limit(MAX_NUMBER_OF_REVIEWS)
                 .map(this::updateReviewAvatar)
                 .collect(Collectors.toList());
+    }
+
+    private Comparator<Review> getReviewComparator() {
+        return Comparator.comparing(
+                review -> Optional.ofNullable(review.getAuthorDetails())
+                        .map(AuthorDetails::getRating)
+                        .map(Double::parseDouble)
+                        .orElse(null),
+                Comparator.nullsLast(Comparator.reverseOrder())
+        );
     }
 
     private String fetchTrailer(Supplier<VideoResults> videoSupplier) {
@@ -304,7 +319,7 @@ public class TmDbServiceImpl implements TmDbService {
     private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier) {
         List<Artwork> artworks = imagesSupplier.get();
         return artworks.stream()
-                .limit(MAX_NUMBER_OF_RECORDS)
+                .limit(MAX_NUMBER_OF_PHOTOS)
                 .peek(artwork -> artwork.setFilePath(IMAGE_PATH + artwork.getFilePath()))
                 .map(Artwork::getFilePath)
                 .collect(Collectors.toSet());
