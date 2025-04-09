@@ -136,6 +136,17 @@ public class MediaServiceImpl implements MediaService {
         return mediaMapper.toMovieDto(mediaRepository.findByTitle(title));
     }
 
+    @Override
+    public List<MediaBaseDto> getAll() {
+        return mediaRepository.getAll().stream().peek(media -> media.setDuration(
+                mediaMapper.toDuration(Integer.valueOf(media.getDuration())))).toList();
+    }
+
+    @Override
+    public long count() {
+        return mediaRepository.count();
+    }
+
     private void addRecommendationsByTypeAndGenre(
             Type type, String genre, int minYear, Pageable pageable,
             List<MediaBaseDto> recommendations) {

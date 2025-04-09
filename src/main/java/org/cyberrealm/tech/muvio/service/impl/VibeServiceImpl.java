@@ -117,10 +117,10 @@ public class VibeServiceImpl implements VibeService {
 
     private Map<Vibe, Integer> calculateVibesFromGenres(Set<GenreEntity> genresMdb) {
         if (genresMdb == null || genresMdb.isEmpty()) {
-            return new HashMap<>(); // Повертаємо порожню мапу, якщо жанрів немає
+            return new HashMap<>();
         }
         return genresMdb.stream()
-                .filter(Objects::nonNull) // Фільтруємо можливі null
+                .filter(Objects::nonNull)
                 .flatMap(genreDb -> GENRE_TO_VIBE_MAP
                         .getOrDefault(genreDb, Map.of()).entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
