@@ -28,7 +28,6 @@ import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
 import org.cyberrealm.tech.muvio.model.RoleActor;
-import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.repository.actors.ActorRepository;
 import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
 import org.cyberrealm.tech.muvio.service.AwardService;
@@ -45,18 +44,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int SHORT_DURATION = 40;
-    private static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     private static final int BATCH_SIZE = 500;
     private static final int ZERO = 0;
     private static final int ONE = 1;
-    private static final int LAST_PAGE = 500;
+    private static final int LAST_PAGE = 5;
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
     private static final String DIRECTOR = "Director";
     private static final String DEFAULT_LANGUAGE = "null";
     private static final int FIRST_YEAR = 1920;
-    private static final int TEN = 10;
-    private static final int DEFAULT_SERIAL_DURATION = 30;
     private static final String TV = "TV";
     private static final String CRON_WEEKLY = "0 0 3 ? * MON";
     private static final String EMPTY = "";
@@ -219,10 +215,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
-        media.setPosterPath(IMAGE_PATH + movieDb.getPosterPath());
         media.setTrailer(tmdbService.fetchMovieTrailer(movieId, language));
         media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId));
-        media.setReleaseYear(getReleaseYear(movieDb.getReleaseDate(), currentYear));
         media.setDirector(getMovieDirector(credits.getCrew()));
         media.setActors(getMovieActors(credits.getCast(), actors));
         media.setReviews(getReviews(() ->
@@ -231,7 +225,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 media.getGenres()));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, imdbTop250, title));
-        media.setType(putType(media.getDuration()));
         media.setTopLists(topListService.putTopLists(keywords, voteAverage, voteCount, popularity,
                 media.getReleaseYear(), oscarWinningMedia, title, movieDb.getBudget(),
                 movieDb.getRevenue()));
@@ -244,19 +237,16 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                                  Set<String> emmyWinningMedia, Map<Integer, Actor> actors) {
         final List<Keyword> keywords = tmdbService.fetchTvSerialsKeywords(seriesId)
                 .getResults();
-        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits;
         final TvSeriesDb tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, language);
         final Media media = mediaMapper.toEntity(tvSeriesDb);
-        credits = tmdbService.fetchTvSerialsCredits(seriesId, language);
+        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
+                = tmdbService.fetchTvSerialsCredits(seriesId, language);
         final Double voteAverage = media.getRating();
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
-        media.setDuration(getDurations(tvSeriesDb));
-        media.setPosterPath(IMAGE_PATH + tvSeriesDb.getPosterPath());
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
         media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId));
-        media.setReleaseYear(getReleaseYear(tvSeriesDb.getFirstAirDate(), currentYear));
         media.setDirector(getTvDirector(tvSeriesDb.getCreatedBy()));
         media.setActors(getTvActors(credits.getCast(), actors));
         media.setReviews(getReviews(() ->
@@ -267,22 +257,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 popularity, media.getReleaseYear(), emmyWinningMedia, title));
         media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId),
                 media.getGenres()));
-        media.setType(Type.TV_SHOW);
         return media;
-    }
-
-    private Integer getDurations(TvSeriesDb tvSeriesDb) {
-        return tvSeriesDb.getEpisodeRunTime().stream()
-                .findFirst()
-                .orElse(DEFAULT_SERIAL_DURATION);
-    }
-
-    private Type putType(int duration) {
-        if (duration < SHORT_DURATION && duration != ZERO) {
-            return Type.SHORTS;
-        } else {
-            return Type.MOVIE;
-        }
     }
 
     private List<Review> getReviews(
@@ -327,11 +302,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 .map(NamedIdElement::getName)
                 .findFirst()
                 .orElse(null);
-    }
-
-    private Integer getReleaseYear(String releaseDate, int currentYear) {
-        return Optional.ofNullable(releaseDate).filter(date -> date.length() == TEN)
-                .map(date -> Integer.parseInt(date.substring(0, 4))).orElse(currentYear);
     }
 
     private void findMediasIdsByTitles(String language, String region, Set<String> titles,

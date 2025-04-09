@@ -128,7 +128,7 @@ public class VibeServiceImpl implements VibeService {
 
     private Map<Vibe, Integer> addVibesFromRatings(
             Set<String> ratings, Map<Vibe, Integer> vibeCount) {
-        ratings.stream().filter(RATINGS::contains)
+        ratings.stream().distinct().filter(RATINGS::contains)
                 .forEach(rating -> RATING_TO_VIBE_MAP.getOrDefault(rating, Map.of())
                         .forEach((vibe, score) -> vibeCount.merge(vibe, score, Integer::sum)));
         return vibeCount;
