@@ -63,8 +63,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final String DEFAULT_LANGUAGE = "null";
     private static final String DIRECTOR = "Director";
     private static final String TV = "TV";
-    @Value("${sync.cron.time}")
-    private String cronExpression;
 
     private boolean isRunning;
 
@@ -191,7 +189,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         isRunning = true;
     }
 
-    @Scheduled(cron = "#{@scheduler.cronExpression}")
+    @Scheduled(cron = "${sync.cron.time}")
     public void worker() {
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
