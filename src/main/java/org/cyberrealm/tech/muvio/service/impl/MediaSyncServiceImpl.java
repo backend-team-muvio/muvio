@@ -37,6 +37,7 @@ import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.cyberrealm.tech.muvio.service.TopListService;
 import org.cyberrealm.tech.muvio.service.VibeService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final int ONE = 1;
     private static final int MAX_NUMBER_OF_ACTORS = 3;
     private static final int DATA_END_INDEX = 4;
-    private static final int LAST_PAGE = 5;
+    private static final int LAST_PAGE = 500;
     private static final int DEFAULT_DATA_SIZE = 10;
     private static final int DEFAULT_SERIAL_DURATION = 30;
     private static final int SHORT_DURATION = 40;
@@ -62,7 +63,8 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private static final String DEFAULT_LANGUAGE = "null";
     private static final String DIRECTOR = "Director";
     private static final String TV = "TV";
-    private static final String CRON_WEEKLY = "0 0 3 ? * MON";
+    @Value("${sync.cron.time}")
+    private String cronExpression;
 
     private boolean isRunning;
 
@@ -173,23 +175,23 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
 
     @Override
     public void start() {
-        final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
-        final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
-        final int currentYear = Year.now().getValue();
-        final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
-        final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
-        final Set<String> imdbTop250TvShows = awardService.getImdbTop250TvShows();
-        final Set<String> emmyWinningTvShows = awardService.getEmmyWinningTvShows();
-        importMedia(LANGUAGE, REGION, currentYear, imdbTop250Movies, oscarWinningMovies,
-                actorStorage, mediaStorage, true);
-        importMedia(LANGUAGE, REGION, currentYear, imdbTop250TvShows, emmyWinningTvShows,
-                actorStorage, mediaStorage, false);
-        deleteAll();
-        saveAll(actorStorage, mediaStorage);
+        //        final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
+        //        final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
+        //        final int currentYear = Year.now().getValue();
+        //        final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
+        //        final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
+        //        final Set<String> imdbTop250TvShows = awardService.getImdbTop250TvShows();
+        //        final Set<String> emmyWinningTvShows = awardService.getEmmyWinningTvShows();
+        //        importMedia(LANGUAGE, REGION, currentYear, imdbTop250Movies, oscarWinningMovies,
+        //                actorStorage, mediaStorage, true);
+        //        importMedia(LANGUAGE, REGION, currentYear, imdbTop250TvShows, emmyWinningTvShows,
+        //                actorStorage, mediaStorage, false);
+        //        deleteAll();
+        //        saveAll(actorStorage, mediaStorage);
         isRunning = true;
     }
 
-    @Scheduled(cron = CRON_WEEKLY)
+    @Scheduled(cron = "#{@scheduler.cronExpression}")
     public void worker() {
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
