@@ -1,5 +1,6 @@
 package org.cyberrealm.tech.muvio.service;
 
+import java.util.List;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
@@ -39,4 +40,8 @@ public interface MediaService {
     Slice<TitleDto> findAllTitles(Pageable pageable);
 
     MediaDto findByTitle(String title);
+
+    List<MediaBaseDto> getAll();
+
+    long count();
 }

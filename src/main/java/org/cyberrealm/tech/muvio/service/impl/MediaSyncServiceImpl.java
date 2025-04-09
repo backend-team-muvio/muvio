@@ -1,6 +1,5 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import info.movito.themoviedbapi.model.core.Genre;
 import info.movito.themoviedbapi.model.core.NamedIdElement;
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import info.movito.themoviedbapi.model.movies.Cast;
@@ -23,11 +22,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
-import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
 import org.cyberrealm.tech.muvio.model.Actor;
-import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
 import org.cyberrealm.tech.muvio.model.RoleActor;
@@ -69,7 +66,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private final ActorRepository actorRepository;
     private final CategoryService categoryService;
     private final VibeService vibeService;
-    private final GenreMapper genreMapper;
     private final MediaMapper mediaMapper;
     private final ActorMapper actorMapper;
     private final ReviewMapper reviewMapper;
@@ -229,11 +225,10 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         media.setReleaseYear(getReleaseYear(movieDb.getReleaseDate(), currentYear));
         media.setDirector(getMovieDirector(credits.getCrew()));
         media.setActors(getMovieActors(credits.getCast(), actors));
-        final Set<GenreEntity> genres = getGenres(movieDb.getGenres());
-        media.setGenres(genres);
         media.setReviews(getReviews(() ->
                 tmdbService.fetchMovieReviews(language, movieId)));
-        media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbMovieRatings(movieId), genres));
+        media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbMovieRatings(movieId),
+                media.getGenres()));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, imdbTop250, title));
         media.setType(putType(media.getDuration()));
@@ -264,15 +259,14 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         media.setReleaseYear(getReleaseYear(tvSeriesDb.getFirstAirDate(), currentYear));
         media.setDirector(getTvDirector(tvSeriesDb.getCreatedBy()));
         media.setActors(getTvActors(credits.getCast(), actors));
-        final Set<GenreEntity> genres = getGenres(tvSeriesDb.getGenres());
-        media.setGenres(genres);
         media.setReviews(getReviews(() ->
                 tmdbService.fetchTvSerialsReviews(language, seriesId)));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, imdbTop250, title));
         media.setTopLists(topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
                 popularity, media.getReleaseYear(), emmyWinningMedia, title));
-        media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId), genres));
+        media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId),
+                media.getGenres()));
         media.setType(Type.TV_SHOW);
         return media;
     }
@@ -333,12 +327,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 .map(NamedIdElement::getName)
                 .findFirst()
                 .orElse(null);
-    }
-
-    private Set<GenreEntity> getGenres(List<Genre> genres) {
-        return genres.stream()
-                .map(genreMapper::toGenreEntity)
-                .collect(Collectors.toSet());
     }
 
     private Integer getReleaseYear(String releaseDate, int currentYear) {

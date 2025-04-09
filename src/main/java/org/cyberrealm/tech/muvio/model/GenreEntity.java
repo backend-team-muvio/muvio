@@ -24,7 +24,7 @@ public enum GenreEntity {
     POLITICS("Politics"),
     REALITY("Reality"),
     ROMANCE("Romance"),
-    SCIENCE_FICTION("Science Fiction"),
+    SCIENCE_FICTION("Science Fiction", "Sci-Fi"),
     SCRIPTED("Scripted"),
     SOAP("Soap"),
     THRILLER("Thriller"),
@@ -36,19 +36,24 @@ public enum GenreEntity {
 
     private static final Map<String, GenreEntity> NAME_TO_ENUM = new HashMap<>();
     private final String name;
+    private final String[] aliases;
 
     static {
         for (GenreEntity genreEntity : values()) {
-            NAME_TO_ENUM.put(genreEntity.name, genreEntity);
+            NAME_TO_ENUM.put(genreEntity.name.toLowerCase(), genreEntity);
+            for (String alias : genreEntity.aliases) {
+                NAME_TO_ENUM.put(alias.toLowerCase(), genreEntity);
+            }
         }
     }
 
-    GenreEntity(String name) {
+    GenreEntity(String name, String... aliases) {
         this.name = name;
+        this.aliases = aliases;
     }
 
     public static GenreEntity fromString(String name) {
-        return NAME_TO_ENUM.get(name);
+        return NAME_TO_ENUM.get(name.toLowerCase());
     }
 }
 

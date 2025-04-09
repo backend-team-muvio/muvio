@@ -62,7 +62,7 @@ public class MediaRepositoryCustomImpl implements MediaRepositoryCustom {
     }
 
     private void addCriteriaType(String type, Query query) {
-        Optional.ofNullable(type).filter(type1 -> !type1.isEmpty())
+        Optional.ofNullable(type)
                 .ifPresent(type1 -> query.addCriteria(Criteria.where(TYPE).is(type1)));
     }
 }
