@@ -37,7 +37,6 @@ import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.cyberrealm.tech.muvio.service.TopListService;
 import org.cyberrealm.tech.muvio.service.VibeService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -107,7 +106,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         final Set<Integer> ids =
                 IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel()
                         .boxed().flatMap(year -> IntStream.iterate(
-                                ONE, page -> page <= LAST_PAGE, page -> page + ONE)
+                                        ONE, page -> page <= LAST_PAGE, page -> page + ONE)
                                 .mapToObj(page -> (isMovies
                                         ? tmdbService.getFilteredMovies(year, page)
                                         : tmdbService.getFilteredTvShows(year, page)))
