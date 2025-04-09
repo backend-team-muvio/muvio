@@ -28,13 +28,14 @@ public interface MediaMapper {
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
     @Mapping(source = "movieDb.runtime", target = "duration")
     @Mapping(source = "movieDb.voteAverage", target = "rating")
+    @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
     Media toEntity(MovieDb movieDb);
 
     @Mapping(source = "tvSeriesDb.name", target = "title")
     @Mapping(source = "tvSeriesDb.voteAverage", target = "rating")
-    @Mapping(source = "genres", target = "genres", ignore = true)
     @Mapping(source = "type", target = "type", ignore = true)
     @Mapping(source = "id", target = "id", qualifiedByName = "setTvSeriesId")
+    @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
     Media toEntity(TvSeriesDb tvSeriesDb);
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toListActors")
@@ -45,6 +46,9 @@ public interface MediaMapper {
     @Mapping(source = "media.duration", target = "duration", qualifiedByName = "toDuration")
     @Mapping(target = "points", expression = "java(calculatePoints(media, categories))")
     MediaDtoWithPoints toMediaDtoWithPoints(Media media, Set<String> categories);
+
+    @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
+    MediaBaseDto toMediaBaseDto(Media media);
 
     @Named("toDuration")
     default String toDuration(Integer duration) {
@@ -70,7 +74,4 @@ public interface MediaMapper {
         }
         return points;
     }
-
-    @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
-    MediaBaseDto toMediaBaseDto(Media media);
 }

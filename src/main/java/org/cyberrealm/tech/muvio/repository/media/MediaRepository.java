@@ -1,5 +1,6 @@
 package org.cyberrealm.tech.muvio.repository.media;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
@@ -42,4 +43,8 @@ public interface MediaRepository extends MongoRepository<Media, String>, MediaRe
     Slice<TitleDto> findAllTitles(Pageable pageable);
 
     MediaDtoFromDb findByTitle(String title);
+
+    @Query(value = "{}", fields = "{ 'id': 1, 'title': 1, 'genres': 1, 'rating': 1, "
+            + "'posterPath': 1, 'duration': 1, 'releaseYear': 1  'type': 1 }")
+    List<MediaBaseDto> getAll();
 }

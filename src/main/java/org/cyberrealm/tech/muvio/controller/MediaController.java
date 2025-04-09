@@ -3,6 +3,7 @@ package org.cyberrealm.tech.muvio.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
@@ -69,6 +70,24 @@ public class MediaController {
     )
     public Media updateMedia(@PathVariable String id, @RequestBody Media media) {
         return mediaService.updateMedia(id, media);
+    }
+
+    @Operation(
+            summary = "Get all",
+            description = "Retrieve all medias in the format of MediaBaseDto"
+    )
+    @GetMapping("/all")
+    public List<MediaBaseDto> getAll() {
+        return mediaService.getAll();
+    }
+
+    @Operation(
+            summary = "Count",
+            description = "Retrieve  number of all medias"
+    )
+    @GetMapping("/count")
+    public long count() {
+        return mediaService.count();
     }
 
     @GetMapping("/vibe")
