@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: muvio-backend
-    env: docker
-    dockerfilePath: ./Dockerfile
-    region: us
-    buildCommand: ""
-    startCommand: "java -jar app.jar --server.port=$PORT"

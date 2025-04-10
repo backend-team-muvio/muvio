@@ -44,31 +44,37 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
-    private static final int SHORT_DURATION = 40;
-    private static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
-    private static final int BATCH_SIZE = 500;
     private static final int ZERO = 0;
     private static final int ONE = 1;
+    private static final int MAX_NUMBER_OF_ACTORS = 3;
+    private static final int DATA_END_INDEX = 4;
     private static final int LAST_PAGE = 500;
+    private static final int DEFAULT_DATA_SIZE = 10;
+    private static final int DEFAULT_SERIAL_DURATION = 30;
+    private static final int SHORT_DURATION = 40;
+    private static final int BATCH_SIZE = 500;
+    private static final int FIRST_YEAR = 1946;
+
+    private static final String EMPTY = "";
+    private static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
     private static final String REGION = "US";
     private static final String LANGUAGE = "en";
-    private static final String DIRECTOR = "Director";
     private static final String DEFAULT_LANGUAGE = "null";
-    private static final int FIRST_YEAR = 1920;
-    private static final int TEN = 10;
-    private static final int DEFAULT_SERIAL_DURATION = 30;
+    private static final String DIRECTOR = "Director";
     private static final String TV = "TV";
-    private static final String CRON_WEEKLY = "0 0 3 ? * MON";
-    private static final String EMPTY = "";
+
     private boolean isRunning;
+
     private final TmDbService tmdbService;
     private final MediaRepository mediaRepository;
     private final ActorRepository actorRepository;
     private final CategoryService categoryService;
     private final VibeService vibeService;
+
     private final MediaMapper mediaMapper;
     private final ActorMapper actorMapper;
     private final ReviewMapper reviewMapper;
+
     private final TopListService topListService;
     private final AwardService awardService;
 
@@ -100,7 +106,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
         final Set<Integer> ids =
                 IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel()
                         .boxed().flatMap(year -> IntStream.iterate(
-                                ONE, page -> page <= LAST_PAGE, page -> page + ONE)
+                                        ONE, page -> page <= LAST_PAGE, page -> page + ONE)
                                 .mapToObj(page -> (isMovies
                                         ? tmdbService.getFilteredMovies(year, page)
                                         : tmdbService.getFilteredTvShows(year, page)))
@@ -153,20 +159,37 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     @Override
     public void saveAll(Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage) {
         List<Actor> actorList = new ArrayList<>(actorStorage.values());
-        for (int i = 0; i < actorList.size(); i += BATCH_SIZE) {
+        for (int i = ZERO; i < actorList.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, actorList.size());
             actorRepository.saveAll(actorList.subList(i, toIndex));
         }
         List<Media> mediaList = new ArrayList<>(mediaStorage.values());
-        for (int i = 0; i < mediaList.size(); i += BATCH_SIZE) {
+        for (int i = ZERO; i < mediaList.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, mediaList.size());
             mediaRepository.saveAll(mediaList.subList(i, toIndex));
         }
     }
 
-    @Scheduled(cron = CRON_WEEKLY)
     @Override
     public void start() {
+        //        final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
+        //        final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
+        //        final int currentYear = Year.now().getValue();
+        //        final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
+        //        final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
+        //        final Set<String> imdbTop250TvShows = awardService.getImdbTop250TvShows();
+        //        final Set<String> emmyWinningTvShows = awardService.getEmmyWinningTvShows();
+        //        importMedia(LANGUAGE, REGION, currentYear, imdbTop250Movies, oscarWinningMovies,
+        //                actorStorage, mediaStorage, true);
+        //        importMedia(LANGUAGE, REGION, currentYear, imdbTop250TvShows, emmyWinningTvShows,
+        //                actorStorage, mediaStorage, false);
+        //        deleteAll();
+        //        saveAll(actorStorage, mediaStorage);
+        isRunning = true;
+    }
+
+    @Scheduled(cron = "${sync.cron.time}")
+    public void worker() {
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
         final int currentYear = Year.now().getValue();
@@ -188,7 +211,6 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
                 mediaStorage, actorStorage, false);
         deleteAll();
         saveAll(actorStorage, mediaStorage);
-        isRunning = true;
     }
 
     @Override
@@ -294,7 +316,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private List<RoleActor> getMovieActors(List<Cast> casts, Map<Integer, Actor> actors) {
-        return casts.stream().map(cast -> {
+        return casts.stream().limit(MAX_NUMBER_OF_ACTORS).map(cast -> {
             final RoleActor roleActor = new RoleActor();
             roleActor.setRole(cast.getCharacter());
             roleActor.setActor(actors.computeIfAbsent(
@@ -306,7 +328,7 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     private List<RoleActor> getTvActors(
             List<info.movito.themoviedbapi.model.tv.core.credits.Cast> casts,
             Map<Integer, Actor> actors) {
-        return casts.stream().map(cast -> {
+        return casts.stream().limit(MAX_NUMBER_OF_ACTORS).map(cast -> {
             final RoleActor roleActor = new RoleActor();
             roleActor.setRole(cast.getCharacter());
             roleActor.setActor(actors.computeIfAbsent(cast.getId(),
@@ -330,8 +352,9 @@ public class MediaSyncServiceImpl implements MediaSyncService, SmartLifecycle {
     }
 
     private Integer getReleaseYear(String releaseDate, int currentYear) {
-        return Optional.ofNullable(releaseDate).filter(date -> date.length() == TEN)
-                .map(date -> Integer.parseInt(date.substring(0, 4))).orElse(currentYear);
+        return Optional.ofNullable(releaseDate).filter(date -> date.length() == DEFAULT_DATA_SIZE)
+                .map(date -> Integer.parseInt(date.substring(ZERO, DATA_END_INDEX)))
+                .orElse(currentYear);
     }
 
     private void findMediasIdsByTitles(String language, String region, Set<String> titles,

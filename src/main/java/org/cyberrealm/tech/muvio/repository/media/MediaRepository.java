@@ -39,7 +39,7 @@ public interface MediaRepository extends MongoRepository<Media, String>, MediaRe
     @Query(value = "{ 'posterPath': { '$ne': null } }", fields = "{ 'id': 1, 'posterPath': 1 }")
     Slice<PosterDto> findAllPosters(Pageable pageable);
 
-    @Query(value = "{}", fields = "{ 'title': 1 }")
+    @Query(value = "{}", fields = "{ 'id': 1, 'title': 1 }")
     Slice<TitleDto> findAllTitles(Pageable pageable);
 
     MediaDtoFromDb findByTitle(String title);
