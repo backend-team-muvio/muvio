@@ -2,9 +2,9 @@ name: Java CI and Docker Build & Push
 
 on:
   push:
-    branches: [ docker ]
+    branches: [ secondRelease ]
   pull_request:
-    branches: [ docker ]
+    branches: [ secondRelease ]
 
 jobs:
   build:
@@ -39,7 +39,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: vitalii454/muvio:latest, vitalii454/muvio:${{ github.sha }}
+          tags: vitalii454/muvio:latest
 
       - name: Trigger Render Deployment
         run: |
