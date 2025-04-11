@@ -1,5 +1,9 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.MINUS_ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,9 +17,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PaginationUtilImpl implements PaginationUtil {
-    private static final int ZERO = 0;
-    private static final int ONE = 1;
-    private static final int MINUS_ONE = -1;
 
     @Override
     public <T> Page<T> paginateList(Pageable pageable, List<T> list) {

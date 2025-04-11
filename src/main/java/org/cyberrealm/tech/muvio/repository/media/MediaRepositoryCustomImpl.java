@@ -1,5 +1,10 @@
 package org.cyberrealm.tech.muvio.repository.media;
 
+import static org.cyberrealm.tech.muvio.common.Constants.NINE;
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +24,8 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class MediaRepositoryCustomImpl implements MediaRepositoryCustom {
     private static final String SPLIT_PATTERN = "-";
-    private static final int ZERO = 0;
-    private static final int ONE = 1;
-    private static final int NINE = 9;
     private static final String VIBES = "vibes";
     private static final String CATEGORIES = "categories";
-    private static final String TITLE = "title";
     private static final String REGEX_FLAG_IGNORE_CASE = "i";
     private static final String RELEASE_YEAR = "releaseYear";
     private static final String TYPE = "type";

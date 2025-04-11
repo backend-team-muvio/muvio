@@ -19,8 +19,4 @@ public interface MediaSyncService {
     void importMediaByFilter(String language, int currentYear, Set<String> imdbTop250,
                              Set<String> winningMedia, Map<String, Media> mediaStorage,
                              Map<Integer, Actor> actorStorage, boolean isMovies);
-
-    void deleteAll();
-
-    void saveAll(Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage);
 }

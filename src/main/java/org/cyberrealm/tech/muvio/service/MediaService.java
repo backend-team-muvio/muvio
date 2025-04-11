@@ -10,19 +10,12 @@ import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
-import org.cyberrealm.tech.muvio.model.Media;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
 public interface MediaService {
 
     MediaDto getMediaById(String id);
-
-    Media saveMedia(Media media);
-
-    void deleteMediaById(String id);
-
-    Media updateMedia(String id, Media updatedMedia);
 
     Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
                                                 Pageable pageable);
