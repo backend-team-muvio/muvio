@@ -1,5 +1,9 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.TEN;
+import static org.cyberrealm.tech.muvio.common.Constants.TWO;
+
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import java.time.Year;
 import java.util.HashSet;
@@ -17,10 +21,7 @@ public class TopListServiceImpl implements TopListService {
     private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
     private static final int LIMIT_REVENUE = 50_000_000;
-    private static final int TWO = 2;
     private static final double IMDB_TOP_RATING_LIMIT = 8.0;
-    private static final int TEN = 10;
-    private static final int ONE = 1;
 
     @Override
     public Set<TopLists> putTopLists(List<Keyword> keywords, Double voteAverage,

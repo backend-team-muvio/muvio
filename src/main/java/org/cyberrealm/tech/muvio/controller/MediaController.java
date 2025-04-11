@@ -14,16 +14,11 @@ import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
-import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.service.MediaService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,33 +38,6 @@ public class MediaController {
     )
     public MediaDto getMediaById(@PathVariable String id) {
         return mediaService.getMediaById(id);
-    }
-
-    @PostMapping
-    @Operation(
-            summary = "Save new media",
-            description = "Create and store a new media resource"
-    )
-    public Media saveMedia(@RequestBody Media media) {
-        return mediaService.saveMedia(media);
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(
-            summary = "Delete media by ID",
-            description = "Remove a media resource identified by its unique identifier"
-    )
-    public void deleteMediaById(@PathVariable String id) {
-        mediaService.deleteMediaById(id);
-    }
-
-    @PutMapping("/{id}")
-    @Operation(
-            summary = "Update media by ID",
-            description = "Update an existing media resource by its unique identifier"
-    )
-    public Media updateMedia(@PathVariable String id, @RequestBody Media media) {
-        return mediaService.updateMedia(id, media);
     }
 
     @Operation(

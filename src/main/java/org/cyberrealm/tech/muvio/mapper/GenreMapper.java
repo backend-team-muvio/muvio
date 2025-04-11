@@ -1,5 +1,7 @@
 package org.cyberrealm.tech.muvio.mapper;
 
+import static org.cyberrealm.tech.muvio.common.Constants.AMPERSAND;
+
 import info.movito.themoviedbapi.model.core.Genre;
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +14,6 @@ import org.mapstruct.Named;
 
 @Mapper(config = MapperConfig.class)
 public interface GenreMapper {
-    String AMPERSAND = "&";
 
     @Named("toGenreEntity")
     default Set<GenreEntity> toGenreEntity(List<Genre> genres) {

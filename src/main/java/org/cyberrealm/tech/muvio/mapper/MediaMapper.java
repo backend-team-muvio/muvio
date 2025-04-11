@@ -1,5 +1,11 @@
 package org.cyberrealm.tech.muvio.mapper;
 
+import static org.cyberrealm.tech.muvio.common.Constants.DEFAULT_SERIAL_DURATION;
+import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
+import static org.cyberrealm.tech.muvio.common.Constants.SHORT_DURATION;
+import static org.cyberrealm.tech.muvio.common.Constants.TEN;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.time.Year;
@@ -23,13 +29,6 @@ import org.mapstruct.Named;
 
 @Mapper(config = MapperConfig.class, uses = {ActorMapper.class, GenreMapper.class})
 public interface MediaMapper {
-    String TV = "TV";
-    String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
-    int TEN = 10;
-    int ZERO = 0;
-    int FOUR = 4;
-    int SHORT_DURATION = 40;
-    int DEFAULT_SERIAL_DURATION = 30;
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
@@ -39,7 +38,8 @@ public interface MediaMapper {
     @Mapping(source = "movieDb.runtime", target = "duration")
     @Mapping(source = "movieDb.voteAverage", target = "rating")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
-    @Mapping(target = "posterPath", expression = "java(IMAGE_PATH + movieDb.getPosterPath())")
+    @Mapping(target = "posterPath", expression = "java(org.cyberrealm.tech.muvio.common.Constants"
+            + ".IMAGE_PATH + movieDb.getPosterPath())")
     @Mapping(source = "releaseDate", target = "releaseYear", qualifiedByName = "getReleaseYear")
     @Mapping(source = "movieDb.runtime", target = "type", qualifiedByName = "putType")
     Media toEntity(MovieDb movieDb);
@@ -47,10 +47,12 @@ public interface MediaMapper {
     @Mapping(source = "tvSeriesDb.name", target = "title")
     @Mapping(source = "tvSeriesDb.voteAverage", target = "rating")
     @Mapping(target = "type", expression = "java(org.cyberrealm.tech.muvio.model.Type.TV_SHOW)")
-    @Mapping(target = "id", expression = "java(TV + tvSeriesDb.getId())")
+    @Mapping(target = "id", expression =
+            "java(org.cyberrealm.tech.muvio.common.Constants.TV + tvSeriesDb.getId())")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
     @Mapping(source = "episodeRunTime", target = "duration", qualifiedByName = "getDurations")
-    @Mapping(target = "posterPath", expression = "java(IMAGE_PATH + tvSeriesDb.getPosterPath())")
+    @Mapping(target = "posterPath", expression = "java(org.cyberrealm.tech.muvio.common.Constants"
+            + ".IMAGE_PATH + tvSeriesDb.getPosterPath())")
     @Mapping(source = "firstAirDate", target = "releaseYear", qualifiedByName = "getReleaseYear")
     Media toEntity(TvSeriesDb tvSeriesDb);
 
@@ -70,12 +72,12 @@ public interface MediaMapper {
     default String toDuration(Integer duration) {
         long hours = TimeUnit.MINUTES.toHours(duration);
         long minutes = duration - TimeUnit.HOURS.toMinutes(hours);
-        return hours > 0 ? String.format("%dh %02dm", hours, minutes)
+        return hours > ZERO ? String.format("%dh %02dm", hours, minutes)
                 : String.format("%02dm", minutes);
     }
 
     default int calculatePoints(Media media, Set<String> categories) {
-        int points = 0;
+        int points = ZERO;
         if (categories != null && !categories.isEmpty()) {
             for (Category category : media.getCategories()) {
                 if (categories.contains(category.name())) {

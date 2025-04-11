@@ -1,5 +1,8 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
+
 import info.movito.themoviedbapi.TmdbDiscover;
 import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
@@ -45,12 +48,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class TmDbServiceImpl implements TmDbService {
-    public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
-    public static final double MIN_RATE = 5.0;
+    private static final double MIN_RATE = 5.0;
     private static final double MIN_VOTE_COUNT = 100;
     private static final int MAX_ATTEMPTS = 12;
     private static final int BACK_OFF = 10000;
-    private static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
     private static final String TRAILER = "Trailer";
     private static final String TEASER = "Teaser";
     private static final int FIRST_PAGE = 1;

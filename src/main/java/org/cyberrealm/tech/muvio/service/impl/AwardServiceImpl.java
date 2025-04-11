@@ -1,5 +1,8 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -37,7 +40,6 @@ public class AwardServiceImpl implements AwardService {
     private static final String BINDINGS = "bindings";
     private static final String AWARD_WORK_LABEL = "awardWorkLabel";
     private static final String VALUE = "value";
-    private static final int ZERO = 0;
     private static final String QUERY = "?query=";
     private static final String FORMAT_JSON = "&format=json";
     private static final String GET = "GET";
@@ -46,7 +48,6 @@ public class AwardServiceImpl implements AwardService {
     private static final String ROWS_TR = "tr";
     private static final String ROWS_TD = "td";
     private static final String ROWS_I = "i";
-    private static final String TITLE = "title";
     @Value("${top250.movie.url}")
     private String top250MovieUrl;
     @Value("${top250.tvShow.url}")

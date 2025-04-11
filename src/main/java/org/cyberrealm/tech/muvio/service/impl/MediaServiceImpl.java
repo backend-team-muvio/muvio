@@ -1,5 +1,8 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.SIX;
+import static org.cyberrealm.tech.muvio.common.Constants.THREE;
+
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
-    private static final int THREE = 3;
-    private static final int SIX = 6;
     private static final String RATING = "rating";
     private static final List<String> TOP_GENRES = List.of("CRIME", "DRAMA", "COMEDY");
     private final MediaRepository mediaRepository;
@@ -46,28 +47,6 @@ public class MediaServiceImpl implements MediaService {
         return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
                 .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
                         + id)));
-    }
-
-    @Override
-    public Media saveMedia(Media media) {
-        return mediaRepository.save(media);
-    }
-
-    @Override
-    public void deleteMediaById(String id) {
-        mediaRepository.deleteById(id);
-    }
-
-    @Override
-    public Media updateMedia(String id, Media updatedMedia) {
-        final Media media = mediaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
-                        + id));
-        media.setTitle(updatedMedia.getTitle());
-        media.setGenres(updatedMedia.getGenres());
-        media.setRating(updatedMedia.getRating());
-        media.setTrailer(updatedMedia.getTrailer());
-        return mediaRepository.save(media);
     }
 
     @Override

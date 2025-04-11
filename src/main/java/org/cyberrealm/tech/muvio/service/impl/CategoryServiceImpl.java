@@ -1,5 +1,9 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.TWO;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
 import info.movito.themoviedbapi.model.core.NamedIdElement;
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import java.util.HashMap;
@@ -24,16 +28,13 @@ public class CategoryServiceImpl implements CategoryService {
             Math.min(50, Runtime.getRuntime().availableProcessors() * 3);
     private static final String BEFORE_KEYWORD = ".*\\b";
     private static final String AFTER_KEYWORD = "\\b.*";
-    private static final int ZERO = 0;
-    private static final int TWO = 2;
-    private static final int ONE = 1;
     private static final int POPULARITY_LIMIT = 4;
     private static final int VOTE_COUNT_LIMIT = 1000;
     private static final int RATING_LIMIT = 7;
     private static final Map<Category, Set<String>> CATEGORY_KEYWORDS = new HashMap<>();
 
     static {
-        CATEGORY_KEYWORDS.put(Category.MOVIES_BASED_ON_A_TRUE_STORY, new HashSet<>(Set.of(
+        CATEGORY_KEYWORDS.put(Category.BASED_ON_A_TRUE_STORY, new HashSet<>(Set.of(
                 "based on true story", "true story", "real story", "biography", "biopic",
                 "historical", "true events", "real events", "true crime", "true murder",
                 "inspired by true events", "docudrama", "historical drama", "real life",
@@ -133,7 +134,7 @@ public class CategoryServiceImpl implements CategoryService {
                 "famous sports story", "success story", "real-life heroics", "exposé",
                 "revolution story", "outstanding people", "based on diaries", "real disaster",
                 "sensational case")));
-        CATEGORY_KEYWORDS.put(Category.SPY_MOVIES_AND_COP_MOVIES, new HashSet<>(Set.of("spy",
+        CATEGORY_KEYWORDS.put(Category.SPY_AND_COP_PLOTS, new HashSet<>(Set.of("spy",
                 "secret agent", "undercover", "espionage", "CIA", "MI6", "FBI", "police",
                 "detective", "investigation", "crime", "law enforcement", "special agent",
                 "intelligence", "covert operations", "counterterrorism", "agent", "surveillance",
@@ -210,7 +211,7 @@ public class CategoryServiceImpl implements CategoryService {
                 "political detective", "insider information", "government corruption",
                 "organized crime", "consequences", "professional assassin", "neo-noir",
                 "japanese mafia", "condemned to certain death", "eliminated", "plot")));
-        CATEGORY_KEYWORDS.put(Category.MOVIES_BASED_ON_A_BOOK, new HashSet<>(Set.of(
+        CATEGORY_KEYWORDS.put(Category.BASED_ON_A_BOOK, new HashSet<>(Set.of(
                 "based on novel", "book adaptation", "literature", "author", "novel",
                 "classic literature", "fiction adaptation", "written by", "inspired by book",
                 "bestselling novel", "based on bestseller", "literary adaptation",
@@ -272,7 +273,7 @@ public class CategoryServiceImpl implements CategoryService {
                 "cult novel", "intellectual prose", "book franchise", "engaging plot",
                 "popular novel", "modern prose", "notable work", "literary myth", "book series",
                 "poetic novel")));
-        CATEGORY_KEYWORDS.put(Category.GIRL_POWER_MOVIES, new HashSet<>(Set.of("female lead",
+        CATEGORY_KEYWORDS.put(Category.GIRL_POWER, new HashSet<>(Set.of("female lead",
                 "strong woman", "feminist", "empowerment", "women empowerment", "girl power",
                 "women's rights", "female protagonist", "strong female character",
                 "independent woman", "woman leader", "women in power", "heroine", "empowering",
@@ -438,7 +439,7 @@ public class CategoryServiceImpl implements CategoryService {
                 "car accident", "demon", "evil", "self-harm", "body horror", "admiring",
                 "out of it", "cannibal", "cannibal cult", "ghost"
                 )));
-        CATEGORY_KEYWORDS.put(Category.SPORT_LIFE_MOVIES, new HashSet<>(Set.of(
+        CATEGORY_KEYWORDS.put(Category.SPORT_LIFE_PLOTS, new HashSet<>(Set.of(
                 "sport", "athlete", "competition", "coach", "championship", "sports drama",
                 "training", "underdog", "victory", "olympics", "soccer", "basketball", "baseball",
                 "football", "boxing", "wrestling", "martial arts", "racing", "tennis", "hockey",
@@ -505,7 +506,7 @@ public class CategoryServiceImpl implements CategoryService {
             categories.add(Category.MUST_WATCH_LIST);
         }
         if (imdbTop250.contains(title)) {
-            categories.add(Category.IMD_TOP_250_MOVIES);
+            categories.add(Category.IMD_TOP_250);
             imdbTop250.remove(title);
         }
         return categories;
