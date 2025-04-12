@@ -6,22 +6,18 @@ import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
 import org.cyberrealm.tech.muvio.service.AwardService;
+import org.cyberrealm.tech.muvio.service.SparqlClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -40,10 +36,6 @@ public class AwardServiceImpl implements AwardService {
     private static final String BINDINGS = "bindings";
     private static final String AWARD_WORK_LABEL = "awardWorkLabel";
     private static final String VALUE = "value";
-    private static final String QUERY = "?query=";
-    private static final String FORMAT_JSON = "&format=json";
-    private static final String GET = "GET";
-    private static final String PATTERN_A = "\\A";
     private static final String SELECT_TABLE = "table.wikitable";
     private static final String ROWS_TR = "tr";
     private static final String ROWS_TD = "td";
@@ -59,6 +51,7 @@ public class AwardServiceImpl implements AwardService {
     @Value("${emmy.winners.url}")
     private String emmyWinnersUrl;
     private final HttpClient httpClient;
+    private final SparqlClient sparqlClient;
 
     @Override
     public Set<String> getImdbTop250Movies() {
@@ -73,8 +66,8 @@ public class AwardServiceImpl implements AwardService {
     @Override
     public Set<String> getOscarWinningMovies() {
         final Set<String> oscarWorks = new HashSet<>();
-        final JSONArray results = new JSONObject(executeSparqlQuery()).getJSONObject(RESULTS)
-                .getJSONArray(BINDINGS);
+        final JSONArray results = new JSONObject(sparqlClient.executeQuery(sparqlQuery))
+                .getJSONObject(RESULTS).getJSONArray(BINDINGS);
         for (int i = ZERO; i < results.length(); i++) {
             final JSONObject filmObj = results.getJSONObject(i);
             if (filmObj.has(AWARD_WORK_LABEL)) {
@@ -140,20 +133,5 @@ public class AwardServiceImpl implements AwardService {
             throw new NetworkRequestException("Failed to fetch the IMDB Top 250 page", e);
         }
         return imdbTop250;
-    }
-
-    private String executeSparqlQuery() {
-        try {
-            final String queryUrl = sparqlEndpoint + QUERY + URLEncoder
-                    .encode(sparqlQuery, StandardCharsets.UTF_8) + FORMAT_JSON;
-            final HttpURLConnection connection = (HttpURLConnection) new URI(queryUrl).toURL()
-                    .openConnection();
-            connection.setRequestMethod(GET);
-            try (Scanner scanner = new Scanner(connection.getInputStream())) {
-                return scanner.useDelimiter(PATTERN_A).next();
-            }
-        } catch (IOException | URISyntaxException e) {
-            throw new NetworkRequestException("Error during SPARQL query execution", e);
-        }
     }
 }
