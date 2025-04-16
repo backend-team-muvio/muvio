@@ -29,13 +29,13 @@ public class MediaSyncServiceImpl implements MediaSyncService {
     private final MediaFactory mediaFactory;
 
     @Override
-    public void importMedia(String language, String location, int currentYear,
+    public void importMedia(String language, String region, int currentYear,
                             Set<String> imdbTop250, Set<String> winningMedia,
                             Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
                             boolean isMovies) {
         final Set<Integer> ids = IntStream.rangeClosed(ZERO, LAST_PAGE).parallel()
                 .mapToObj(page -> isMovies
-                        ? tmdbService.fetchPopularMovies(language, page, location)
+                        ? tmdbService.fetchPopularMovies(language, page, region)
                         : tmdbService.fetchPopularTvSerials(language, page))
                 .flatMap(Collection::stream).filter(id -> isNewIds(id, isMovies, mediaStorage))
                 .collect(Collectors.toSet());

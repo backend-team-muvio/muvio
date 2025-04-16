@@ -1,5 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
+
 import info.movito.themoviedbapi.model.core.NamedIdElement;
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import info.movito.themoviedbapi.model.movies.Cast;
@@ -32,7 +34,6 @@ import org.springframework.stereotype.Component;
 public class MediaFactoryImpl implements MediaFactory {
     private static final String DEFAULT_LANGUAGE = "null";
     private static final int MAX_NUMBER_OF_ACTORS = 3;
-    private static final String DIRECTOR = "Director";
     private final TmDbService tmdbService;
     private final CategoryService categoryService;
     private final VibeService vibeService;

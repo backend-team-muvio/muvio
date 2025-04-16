@@ -12,7 +12,7 @@ import java.util.Set;
 
 public interface TmDbService {
 
-    Set<Integer> fetchPopularMovies(String language, int page, String location);
+    Set<Integer> fetchPopularMovies(String language, int page, String region);
 
     MovieDb fetchMovieDetails(int movieId, String language);
 

@@ -17,6 +17,15 @@ public final class Constants {
     public static final int TEN = 10;
     public static final int SHORT_DURATION = 40;
     public static final int DEFAULT_SERIAL_DURATION = 30;
+    public static final String LANGUAGE_EN = "en";
+    public static final String REGION_US = "US";
+    public static final String MEDIA_1 = "Media1";
+    public static final String DIRECTOR = "Director";
+    public static final String TRUE_STORY = "true story";
+    public static final String AUTHOR = "author";
+    public static final String CONTENT = "content";
+    public static final String ID_STRING = "id";
+    public static final String OVERVIEW = "overview";
 
     private Constants() {
 

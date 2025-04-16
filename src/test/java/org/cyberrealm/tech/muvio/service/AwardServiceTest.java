@@ -1,6 +1,7 @@
 package org.cyberrealm.tech.muvio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.cyberrealm.tech.muvio.common.Constants.MEDIA_1;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -19,6 +20,7 @@ import org.cyberrealm.tech.muvio.service.impl.AwardServiceImpl;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,7 +31,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class AwardServiceTest {
-    private static final String MEDIA_1 = "Media1";
     private static final String MEDIA_2 = "Media2";
     private static final String MEDIA_3 = "Media3";
     private static final Set<String> MEDIA_TEST = Set.of(MEDIA_1, MEDIA_2, MEDIA_3);
@@ -117,7 +118,8 @@ public class AwardServiceTest {
 
     @SneakyThrows
     @Test
-    public void getImdbTop250Movies_ValidResponse_ReturnSet() {
+    @DisplayName("Verify getImdbTop250Movies() method works")
+    public void getImdbTop250Movies_ValidResponse_ReturnSetTitles() {
         ReflectionTestUtils.setField(awardService, TOP_250_MOVIE_URL, TEST_URL);
         when(response.body()).thenReturn(JSON_RESPONSE_MOVIES);
         when(httpClient.send(any(HttpRequest.class), eq(HttpResponse.BodyHandlers.ofString())))
@@ -127,7 +129,8 @@ public class AwardServiceTest {
 
     @SneakyThrows
     @Test
-    public void getImdbTop250TvShows_ValidResponse_ReturnSet() {
+    @DisplayName("Verify getImdbTop250TvShows() method works")
+    public void getImdbTop250TvShows_ValidResponse_ReturnSetTitles() {
         ReflectionTestUtils.setField(awardService, TOP_250_TV_SHOWS_URL, TEST_URL);
         when(response.body()).thenReturn(JSON_RESPONSE_TV_SHOWS);
         when(httpClient.send(any(HttpRequest.class), eq(HttpResponse.BodyHandlers.ofString())))
@@ -137,7 +140,8 @@ public class AwardServiceTest {
 
     @SneakyThrows
     @Test
-    void getOscarWinningMovies_ValidResponse_ReturnsSet() {
+    @DisplayName("Verify getOscarWinningMovies() method works")
+    void getOscarWinningMovies_ValidResponse_ReturnsSetTitles() {
         ReflectionTestUtils.setField(awardService, SPARQL_QUERY, TEST_URL);
         when(sparqlClient.executeQuery(anyString())).thenReturn(SPARQL_JSON);
         final Set<String> actual = awardService.getOscarWinningMovies();
@@ -146,7 +150,8 @@ public class AwardServiceTest {
     }
 
     @Test
-    void getEmmyWinningTvShows_ValidResponse_ReturnsSet() {
+    @DisplayName("Verify getEmmyWinningTvShows() method works")
+    void getEmmyWinningTvShows_ValidResponse_ReturnsSetTitles() {
         ReflectionTestUtils.setField(awardService, EMMY_WINNING_URL, TEST_URL);
         final Document mockDocument = Jsoup.parse(HTML);
         try (MockedStatic<Jsoup> jsoupMock = mockStatic(Jsoup.class)) {

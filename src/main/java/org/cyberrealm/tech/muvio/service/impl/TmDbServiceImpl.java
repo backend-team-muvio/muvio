@@ -70,8 +70,8 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<Integer> fetchPopularMovies(String language, int page, String location) {
-        return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, location)
+    public Set<Integer> fetchPopularMovies(String language, int page, String region) {
+        return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, region)
                                 .getResults().stream().filter(
                                         movie -> movie.getVoteAverage() > MIN_RATE
                                                 && movie.getVideo() != null
