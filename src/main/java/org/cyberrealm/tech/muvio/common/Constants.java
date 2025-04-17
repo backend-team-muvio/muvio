@@ -26,6 +26,12 @@ public final class Constants {
     public static final String CONTENT = "content";
     public static final String ID_STRING = "id";
     public static final String OVERVIEW = "overview";
+    public static final String TRAILER = "Trailer";
+    public static final String TEASER = "Teaser";
+    public static final double VOTE_AVERAGE_8 = 8.0;
+    public static final String POSTER_PATH = "posterPath";
+    public static final String DIRECTOR_NAME = "directorName";
+    public static final int YEAR_2020 = 2020;
 
     private Constants() {
 

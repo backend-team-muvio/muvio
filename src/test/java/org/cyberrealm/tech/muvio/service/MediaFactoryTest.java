@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.AUTHOR;
 import static org.cyberrealm.tech.muvio.common.Constants.CONTENT;
 import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
+import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR_NAME;
 import static org.cyberrealm.tech.muvio.common.Constants.ID_STRING;
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
@@ -44,7 +45,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class MediaFactoryTest {
     private static final String ACTOR_NAME = "ActorName";
-    private static final String DIRECTOR_NAME = "directorName";
 
     @Mock
     private TmDbService tmdbService;

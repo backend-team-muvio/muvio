@@ -3,6 +3,7 @@ package org.cyberrealm.tech.muvio.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.MEDIA_1;
 import static org.cyberrealm.tech.muvio.common.Constants.TRUE_STORY;
+import static org.cyberrealm.tech.muvio.common.Constants.VOTE_AVERAGE_8;
 
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import java.util.ArrayList;
@@ -19,7 +20,6 @@ public class CategoryServiceTest {
     private static final String OVERVIEW = "Film based on true story";
     private static final List<Keyword> KEYWORDS = new ArrayList<>();
     private static final Keyword KEYWORD = new Keyword();
-    private static final double RATING = 9;
     private static final double POPULARITY = 5;
     private static final int VOTE_COUNT = 2000;
     private static final Set<String> IMDB_TOP_250 = new HashSet<>();
@@ -35,7 +35,7 @@ public class CategoryServiceTest {
     @Test
     @DisplayName("Verify putCategories() method works")
     public void putCategories_ValidResponse_ReturnSetCategories() {
-        assertThat(categoryService.putCategories(OVERVIEW, KEYWORDS, RATING, VOTE_COUNT,
+        assertThat(categoryService.putCategories(OVERVIEW, KEYWORDS, VOTE_AVERAGE_8, VOTE_COUNT,
                 POPULARITY, IMDB_TOP_250, MEDIA_1)).containsExactlyInAnyOrder(
                         Category.BASED_ON_A_TRUE_STORY, Category.IMD_TOP_250,
                 Category.MUST_WATCH_LIST);

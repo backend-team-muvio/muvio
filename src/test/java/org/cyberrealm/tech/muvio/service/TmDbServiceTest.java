@@ -8,10 +8,14 @@ import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.common.Constants.POSTER_PATH;
 import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
 import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
+import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.TRUE_STORY;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
+import static org.cyberrealm.tech.muvio.common.Constants.VOTE_AVERAGE_8;
+import static org.cyberrealm.tech.muvio.common.Constants.YEAR_2020;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -64,12 +68,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class TmDbServiceTest {
     private static final String PATH = "path";
-    private static final String POSTER_PATH = "posterPath";
     private static final String RELEASE_DATE = "2020.11.11";
-    private static final String TRAILER = "Trailer";
-    private static final double VOTE_AVERAGE = 8.0;
     private static final String AGE_RATING_G = "G";
-    private static final int YEAR_2020 = 2020;
 
     @Mock
     private TmdbMovies tmdbMovies;
@@ -336,7 +336,7 @@ public class TmDbServiceTest {
         TvSeries tvSeries = new TvSeries();
         tvSeries.setId(TWO);
         tvSeries.setOverview(OVERVIEW);
-        tvSeries.setVoteAverage(VOTE_AVERAGE);
+        tvSeries.setVoteAverage(VOTE_AVERAGE_8);
         tvSeries.setPosterPath(POSTER_PATH);
         tvSeries.setFirstAirDate(RELEASE_DATE);
         tvSeries.setName(TITLE);
@@ -383,7 +383,7 @@ public class TmDbServiceTest {
         final Movie movie = new Movie();
         movie.setId(ONE);
         movie.setOverview(OVERVIEW);
-        movie.setVoteAverage(VOTE_AVERAGE);
+        movie.setVoteAverage(VOTE_AVERAGE_8);
         movie.setPosterPath(POSTER_PATH);
         movie.setReleaseDate(RELEASE_DATE);
         movie.setVideo(true);
