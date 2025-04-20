@@ -1,12 +1,16 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.ONE_HUNDRED;
+import static org.cyberrealm.tech.muvio.common.Constants.RATING;
 import static org.cyberrealm.tech.muvio.common.Constants.SIX;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
@@ -20,11 +24,13 @@ import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
+import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaService;
 import org.cyberrealm.tech.muvio.service.PaginationUtil;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -36,8 +42,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
-    private static final String RATING = "rating";
-    private static final List<String> TOP_GENRES = List.of("CRIME", "DRAMA", "COMEDY");
     private final MediaRepository mediaRepository;
     private final MediaMapper mediaMapper;
     private final PaginationUtil paginationUtil;
@@ -75,20 +79,32 @@ public class MediaServiceImpl implements MediaService {
 
     @Transactional
     @Override
-    public Slice<MediaBaseDto> getRecommendations(Pageable pageable) {
-        int minYear = Year.now().getValue() - THREE;
+    public Slice<MediaBaseDto> getRecommendations(int page) {
+        boolean stop = true;
+        final int minYear = Year.now().getValue() - THREE;
+        List<Stack<MediaBaseDto>> stacks = List.of(
+                fetchMedia(Type.MOVIE, GenreEntity.CRIME, minYear),
+                fetchMedia(Type.MOVIE, GenreEntity.DRAMA, minYear),
+                fetchMedia(Type.MOVIE, GenreEntity.COMEDY, minYear),
+                fetchMedia(Type.TV_SHOW, GenreEntity.CRIME, minYear),
+                fetchMedia(Type.TV_SHOW, GenreEntity.DRAMA, minYear),
+                fetchMedia(Type.TV_SHOW, GenreEntity.COMEDY, minYear)
+        );
         final List<MediaBaseDto> recommendations = new ArrayList<>();
-        TOP_GENRES.forEach(genre -> {
-            addRecommendationsByTypeAndGenre(Type.MOVIE, genre, minYear, pageable,
-                    recommendations);
-            addRecommendationsByTypeAndGenre(Type.TV_SHOW, genre, minYear, pageable,
-                    recommendations);
-        });
-        if (recommendations.size() != SIX) {
-            return null;
+        while (stop) {
+            for (Stack<MediaBaseDto> stack : stacks) {
+                if (!stack.isEmpty()) {
+                    addNewMedia(recommendations, stack);
+                } else {
+                    stop = false;
+                    break;
+                }
+            }
         }
         updateDuration(recommendations);
-        return new SliceImpl<>(recommendations, pageable, !recommendations.isEmpty());
+        final Page<MediaBaseDto> mediaPage = paginationUtil
+                .paginateList(PageRequest.of(page, SIX), recommendations);
+        return mediaPage.getContent().size() < SIX ? null : mediaPage;
     }
 
     @Override
@@ -126,22 +142,24 @@ public class MediaServiceImpl implements MediaService {
         return mediaRepository.count();
     }
 
-    private void addRecommendationsByTypeAndGenre(
-            Type type, String genre, int minYear, Pageable pageable,
-            List<MediaBaseDto> recommendations) {
-        List<MediaBaseDto> mediaList = fetchMedia(type, genre, minYear, pageable);
-        if (!mediaList.isEmpty() && recommendations.contains(mediaList.getFirst())) {
-            mediaList = fetchMedia(type, genre, minYear, pageable.next());
+    private void addNewMedia(List<MediaBaseDto> recommendations, Stack<MediaBaseDto> media) {
+        while (!media.isEmpty()) {
+            final MediaBaseDto candidate = media.pop();
+            if (!recommendations.contains(candidate)) {
+                recommendations.add(candidate);
+                break;
+            }
         }
-        recommendations.addAll(mediaList);
     }
 
-    private List<MediaBaseDto> fetchMedia(Type type, String genre, int minYear,
-                                          Pageable pageable) {
-        Pageable sortedPageRequest = PageRequest.of(pageable.getPageNumber(),
-                pageable.getPageSize(), Sort.by(RATING).descending());
-        return mediaRepository.findMoviesByTypeGenreAndYears(type, genre, minYear,
-                sortedPageRequest).getContent();
+    private Stack<MediaBaseDto> fetchMedia(Type type, GenreEntity genre, int minYear) {
+        final Pageable sortedPageRequest = PageRequest.of(ZERO, ONE_HUNDRED, Sort.by(RATING));
+        final List<MediaBaseDto> content = mediaRepository
+                .findMoviesByTypeGenreAndYears(type, genre, minYear, sortedPageRequest)
+                .getContent();
+        final Stack<MediaBaseDto> stack = new Stack<>();
+        stack.addAll(content);
+        return stack;
     }
 
     private <T extends MediaBaseDto> void updateDuration(Iterable<T> mediaList) {

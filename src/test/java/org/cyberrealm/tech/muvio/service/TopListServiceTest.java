@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 public class TopListServiceTest {
     private static final List<Keyword> KEYWORDS = new ArrayList<>();
     private static final Keyword SUPERHERO = new Keyword();
-    private static final double RATING = 9;
+    private static final double RATING_9 = 9;
     private static final double POPULARITY = 5;
     private static final int VOTE_COUNT = 2000;
     private static final Set<String> WINNING_MEDIA = new HashSet<>();
@@ -44,7 +44,7 @@ public class TopListServiceTest {
     @Test
     @DisplayName("Verify putTopLists() method works")
     public void putTopLists_ValidResponse_ReturnSetTopLists() {
-        assertThat(topListService.putTopLists(KEYWORDS, RATING, VOTE_COUNT, POPULARITY,
+        assertThat(topListService.putTopLists(KEYWORDS, RATING_9, VOTE_COUNT, POPULARITY,
                 releaseYear, WINNING_MEDIA, MEDIA_1, BUDGET, REVENUE)).containsExactlyInAnyOrder(
                 TopLists.ICONIC_MOVIES_OF_THE_21ST_CENTURY,
                 TopLists.TOP_OSCAR_WINNING_MASTERPIECES,
@@ -55,7 +55,7 @@ public class TopListServiceTest {
     @Test
     @DisplayName("Verify putTopListsForTvShow() method works")
     public void putTopListsForTvShow_ValidResponse_ReturnSetTopLists() {
-        assertThat(topListService.putTopListsForTvShow(KEYWORDS, RATING, VOTE_COUNT, POPULARITY,
+        assertThat(topListService.putTopListsForTvShow(KEYWORDS, RATING_9, VOTE_COUNT, POPULARITY,
                 releaseYear, WINNING_MEDIA, MEDIA_1)).containsExactlyInAnyOrder(
                 TopLists.ICONIC_MOVIES_OF_THE_21ST_CENTURY, TopLists.TOP_EMMY_WINNING_MASTERPIECES,
                 TopLists.TOP_MOST_WATCHED_BLOCKBUSTERS_OF_THE_DECADE,

@@ -6,18 +6,24 @@ import static org.cyberrealm.tech.muvio.common.Constants.ID_STRING;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.OVERVIEW;
 import static org.cyberrealm.tech.muvio.common.Constants.POSTER_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.SIX;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.VOTE_AVERAGE_8;
 import static org.cyberrealm.tech.muvio.common.Constants.YEAR_2020;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -57,6 +63,18 @@ public class MediaServiceTest {
     private static final String YEAR_2020_STRING = "2020";
     private static final String TOP_LIST = "topList";
     private static final long COUNT = 3;
+    private static final String TITLE_1 = "Title 1";
+    private static final String TITLE_2 = "Title 2";
+    private static final String TITLE_3 = "Title 3";
+    private static final String TITLE_4 = "Title 4";
+    private static final String TITLE_5 = "Title 5";
+    private static final String TITLE_6 = "Title 6";
+    private static final String STRING_1 = "1";
+    private static final String STRING_2 = "2";
+    private static final String STRING_3 = "3";
+    private static final String STRING_4 = "4";
+    private static final String STRING_5 = "5";
+    private static final String STRING_6 = "6";
 
     @Mock
     private MediaRepository mediaRepository;
@@ -169,6 +187,54 @@ public class MediaServiceTest {
     void count_validResponse_returnLong() {
         when(mediaRepository.count()).thenReturn(COUNT);
         assertThat(mediaService.count()).isEqualTo(COUNT);
+    }
+
+    @Test
+    @DisplayName("Verify getRecommendations() method works")
+    void getRecommendations_validResponse_returnSliceMediaBaseDto() {
+        when(mediaRepository.findMoviesByTypeGenreAndYears(
+                any(), any(), anyInt(), any(Pageable.class))
+        ).thenReturn(new PageImpl<>(getListMediaBaseDto()));
+        when(paginationUtil.paginateList(any(PageRequest.class), anyList()))
+                .thenReturn(new PageImpl<>(Arrays.asList(getListMediaBaseDto().toArray())));
+        final Slice<MediaBaseDto> actual = mediaService.getRecommendations(ZERO);
+        assertNotNull(actual);
+        assertEquals(SIX, actual.getContent().size());
+        assertEquals(TITLE_1, actual.getContent().getFirst().getTitle());
+    }
+
+    @Test
+    @DisplayName("Return null for insufficient recommendations")
+    void getRecommendations_nullResponse_returnNull() {
+        MediaBaseDto media1 = new MediaBaseDto();
+        media1.setId(STRING_1);
+        media1.setTitle(TITLE_1);
+        List<MediaBaseDto> shortList = List.of(media1);
+        when(mediaRepository.findMoviesByTypeGenreAndYears(
+                any(), any(), anyInt(), any(Pageable.class))
+        ).thenReturn(new PageImpl<>(shortList));
+        when(paginationUtil.paginateList(any(PageRequest.class), anyList()))
+                .thenReturn(new PageImpl<>(List.of(media1)));
+        Slice<MediaBaseDto> result = mediaService.getRecommendations(ZERO);
+        assertNull(result);
+    }
+
+    private List<MediaBaseDto> getListMediaBaseDto() {
+        final List<MediaBaseDto> list = new ArrayList<>();
+        list.add(createMedia(STRING_1, TITLE_1));
+        list.add(createMedia(STRING_2, TITLE_2));
+        list.add(createMedia(STRING_3, TITLE_3));
+        list.add(createMedia(STRING_4, TITLE_4));
+        list.add(createMedia(STRING_5, TITLE_5));
+        list.add(createMedia(STRING_6, TITLE_6));
+        return list;
+    }
+
+    private MediaBaseDto createMedia(String id, String title) {
+        MediaBaseDto media = new MediaBaseDto();
+        media.setId(id);
+        media.setTitle(title);
+        return media;
     }
 
     private Media getMedia() {

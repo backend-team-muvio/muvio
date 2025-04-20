@@ -15,6 +15,7 @@ public final class Constants {
     public static final int SIX = 6;
     public static final int NINE = 9;
     public static final int TEN = 10;
+    public static final int ONE_HUNDRED = 100;
     public static final int SHORT_DURATION = 40;
     public static final int DEFAULT_SERIAL_DURATION = 30;
     public static final String LANGUAGE_EN = "en";
@@ -32,6 +33,7 @@ public final class Constants {
     public static final String POSTER_PATH = "posterPath";
     public static final String DIRECTOR_NAME = "directorName";
     public static final int YEAR_2020 = 2020;
+    public static final String RATING = "rating";
 
     private Constants() {
 

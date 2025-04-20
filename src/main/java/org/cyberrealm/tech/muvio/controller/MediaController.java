@@ -20,6 +20,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Media Management", description = "Endpoints for managing media assets such as movies "
@@ -94,8 +95,8 @@ public class MediaController {
             description = "Retrieve a paginated list of recommended media items based "
                     + "on media rating"
     )
-    public Slice<MediaBaseDto> getRecommendations(Pageable pageable) {
-        return mediaService.getRecommendations(pageable);
+    public Slice<MediaBaseDto> getRecommendations(@RequestParam(defaultValue = "0")int page) {
+        return mediaService.getRecommendations(page);
     }
 
     @GetMapping("/top-list/{topList}")

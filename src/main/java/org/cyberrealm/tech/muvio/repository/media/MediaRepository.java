@@ -8,6 +8,7 @@ import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
+import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +30,7 @@ public interface MediaRepository extends MongoRepository<Media, String>, MediaRe
             "{ '$match': { 'type': ?0, 'genres': ?1, 'releaseYear': { $gte: ?2 } } }",
             "{ '$sort': { 'rating': -1 } }"
     })
-    Slice<MediaBaseDto> findMoviesByTypeGenreAndYears(Type type, String genre, int minYear,
+    Slice<MediaBaseDto> findMoviesByTypeGenreAndYears(Type type, GenreEntity genre, int minYear,
                                                       Pageable pageable);
 
     Optional<MediaDtoFromDb> findMovieById(String id);
