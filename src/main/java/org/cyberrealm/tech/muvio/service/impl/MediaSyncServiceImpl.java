@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class MediaSyncServiceImpl implements MediaSyncService {
-    private static final int LAST_PAGE = 2;
+    private static final int LAST_PAGE = 500;
     private static final int FIRST_YEAR = 1946;
     private static final String EMPTY = "";
     private final TmDbService tmdbService;
