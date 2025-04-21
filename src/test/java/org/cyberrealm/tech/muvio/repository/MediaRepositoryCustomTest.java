@@ -1,0 +1,104 @@
+package org.cyberrealm.tech.muvio.repository;
+
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.cyberrealm.tech.muvio.common.Constants.STRING_1;
+import static org.cyberrealm.tech.muvio.common.Constants.TEN;
+import static org.cyberrealm.tech.muvio.common.Constants.TITLE_1;
+import static org.cyberrealm.tech.muvio.common.Constants.YEAR_2020;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
+import java.util.List;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
+import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
+import org.cyberrealm.tech.muvio.model.Category;
+import org.cyberrealm.tech.muvio.model.GenreEntity;
+import org.cyberrealm.tech.muvio.model.Media;
+import org.cyberrealm.tech.muvio.model.Type;
+import org.cyberrealm.tech.muvio.model.Vibe;
+import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
+import org.cyberrealm.tech.muvio.repository.media.MediaRepositoryCustomImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.TestConstructor;
+
+@DataMongoTest
+@RequiredArgsConstructor
+@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
+public class MediaRepositoryCustomTest {
+    private static final String YEARS = "2010-2020";
+    private static final String UNKNOWN = "unknown";
+    private final MediaRepository mediaRepository;
+    private final MediaRepositoryCustomImpl mediaRepositoryCustom;
+
+    @BeforeEach
+    void setUp() {
+        mediaRepository.deleteAll();
+        mediaRepository.save(getMedia());
+    }
+
+    @Test
+    @DisplayName("Should return media by vibe, category, type and years")
+    void getAllMediaByVibes_FilteredParams_ReturnListMediaVibeRequestDto() {
+        final MediaVibeRequestDto request = new MediaVibeRequestDto(
+                Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(),
+                Set.of(Category.BASED_ON_A_TRUE_STORY.name()));
+        final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
+        assertThat(actual).isEqualTo(List.of(getMedia()));
+    }
+
+    @Test
+    @DisplayName("Should ignore null/empty categories and still return by vibe")
+    void getAllMediaByVibes_EmptyCategories_ReturnListMedia() {
+        final MediaVibeRequestDto request = new MediaVibeRequestDto(
+                Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(), Set.of());
+        final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
+        assertThat(actual).isEqualTo(List.of(getMedia()));
+    }
+
+    @Test
+    @DisplayName("Should return media by partial title, type, and years")
+    void getAllForGallery_ValidParams_ReturnListMedia() {
+        final MediaGalleryRequestDto request = new MediaGalleryRequestDto(
+                TITLE_1, YEARS, Type.MOVIE.name());
+        final List<Media> actual = mediaRepositoryCustom.getAllForGallery(
+                request, PageRequest.of(ZERO, TEN));
+        assertThat(actual).isEqualTo(List.of(getMedia()));
+    }
+
+    @Test
+    @DisplayName("Should return empty list if title does not match")
+    void getAllForGallery_TitleNoMatch_ReturnEmpty() {
+        final MediaGalleryRequestDto request = new MediaGalleryRequestDto(
+                UNKNOWN, YEARS, Type.MOVIE.name());
+        final List<Media> actual = mediaRepositoryCustom
+                .getAllForGallery(request, PageRequest.of(ZERO, TEN));
+        assertThat(actual).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should handle invalid or missing year range")
+    void getAllMediaByVibes_EmptyYears_ReturnListMedia() {
+        final MediaVibeRequestDto request = new MediaVibeRequestDto(
+                Vibe.BLOW_MY_MIND.name(), null, Type.MOVIE.name(),
+                Set.of(Category.BASED_ON_A_TRUE_STORY.name()));
+        final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
+        assertThat(actual).isEqualTo(List.of(getMedia()));
+    }
+
+    private Media getMedia() {
+        final Media media = new Media();
+        media.setId(STRING_1);
+        media.setTitle(TITLE_1);
+        media.setType(Type.MOVIE);
+        media.setGenres(Set.of(GenreEntity.SCIENCE_FICTION));
+        media.setReleaseYear(YEAR_2020);
+        media.setVibes(Set.of(Vibe.BLOW_MY_MIND));
+        media.setCategories(Set.of(Category.BASED_ON_A_TRUE_STORY));
+        return media;
+    }
+}
