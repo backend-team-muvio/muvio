@@ -9,7 +9,7 @@ import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
 import java.util.List;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.config.AbstractMongoTest;
 import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.model.Category;
@@ -22,18 +22,18 @@ import org.cyberrealm.tech.muvio.repository.media.MediaRepositoryCustomImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.TestConstructor;
 
-@DataMongoTest
-@RequiredArgsConstructor
-@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-public class MediaRepositoryCustomTest {
+@DataMongoTest(properties = {"spring.data.mongodb.database=test-db-2"})
+public class MediaRepositoryCustomTest extends AbstractMongoTest {
     private static final String YEARS = "2010-2020";
     private static final String UNKNOWN = "unknown";
-    private final MediaRepository mediaRepository;
-    private final MediaRepositoryCustomImpl mediaRepositoryCustom;
+    @Autowired
+    private MediaRepository mediaRepository;
+    @Autowired
+    private MediaRepositoryCustomImpl mediaRepositoryCustom;
 
     @BeforeEach
     void setUp() {

@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.config.AbstractMongoTest;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
@@ -27,21 +27,20 @@ import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
-import org.springframework.test.context.TestConstructor;
 
-@DataMongoTest
-@RequiredArgsConstructor
-@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-public class MediaRepositoryTest {
+@DataMongoTest(properties = {"spring.data.mongodb.database=test-db-1"})
+public class MediaRepositoryTest extends AbstractMongoTest {
     private static final String POSTER_PATH_1 = "posterPath 1";
     private static final String POSTER_PATH_2 = "posterPath 2";
     private static final int RELEASE_YEAR_2010 = 2010;
     private static final int RELEASE_YEAR_1999 = 1999;
     private static final int MIN_YEAR_2000 = 2000;
-    private final MediaRepository mediaRepository;
+    @Autowired
+    private MediaRepository mediaRepository;
 
     @BeforeEach
     void setUp() {
