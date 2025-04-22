@@ -1,6 +1,8 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
+import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 
 import info.movito.themoviedbapi.TmdbDiscover;
@@ -52,8 +54,6 @@ public class TmDbServiceImpl implements TmDbService {
     private static final double MIN_VOTE_COUNT = 100;
     private static final int MAX_ATTEMPTS = 12;
     private static final int BACK_OFF = 10000;
-    private static final String TRAILER = "Trailer";
-    private static final String TEASER = "Teaser";
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_PHOTOS = 6;
     private static final int MAX_NUMBER_OF_REVIEWS = 3;
@@ -70,8 +70,8 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<Integer> fetchPopularMovies(String language, int page, String location) {
-        return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, location)
+    public Set<Integer> fetchPopularMovies(String language, int page, String region) {
+        return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, region)
                                 .getResults().stream().filter(
                                         movie -> movie.getVoteAverage() > MIN_RATE
                                                 && movie.getVideo() != null

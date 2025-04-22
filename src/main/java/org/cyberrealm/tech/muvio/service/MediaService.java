@@ -24,7 +24,7 @@ public interface MediaService {
 
     Set<MediaDto> getAllLuck(int size);
 
-    Slice<MediaBaseDto> getRecommendations(Pageable pageable);
+    Slice<MediaBaseDto> getRecommendations(int page);
 
     Slice<MediaDtoWithCast> findMediaByTopLists(String topList, Pageable pageable);
 

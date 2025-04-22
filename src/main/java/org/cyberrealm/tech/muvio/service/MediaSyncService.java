@@ -7,7 +7,7 @@ import org.cyberrealm.tech.muvio.model.Media;
 
 public interface MediaSyncService {
 
-    void importMedia(String language, String location, int currentYear, Set<String> imdbTop250,
+    void importMedia(String language, String region, int currentYear, Set<String> imdbTop250,
                      Set<String> winningMedia, Map<Integer, Actor> actorStorage, Map<String,
                     Media> mediaStorage, boolean isMovies);
 
