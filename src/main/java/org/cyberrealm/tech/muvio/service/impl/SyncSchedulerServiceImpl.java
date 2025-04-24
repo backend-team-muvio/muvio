@@ -1,7 +1,6 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
-import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
 
 import java.time.Year;
@@ -15,17 +14,20 @@ import org.cyberrealm.tech.muvio.service.AwardService;
 import org.cyberrealm.tech.muvio.service.MediaStorageService;
 import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.SyncSchedulerService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class SyncSchedulerServiceImpl implements SyncSchedulerService {
-    private boolean isRunning;
     private final AwardService awardService;
     private final MediaSyncService mediaSyncService;
     private final MediaStorageService mediaStorageService;
 
+    @Scheduled(initialDelay = 500)
+    @ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true",
+            matchIfMissing = true)
     @Override
     public void start() {
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
@@ -41,7 +43,6 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, actorStorage, mediaStorage, false);
         mediaStorageService.deleteAll();
         mediaStorageService.saveAll(actorStorage, mediaStorage);
-        isRunning = true;
     }
 
     @Scheduled(cron = "${sync.cron.time}")
@@ -68,21 +69,5 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, mediaStorage, actorStorage, false);
         mediaStorageService.deleteAll();
         mediaStorageService.saveAll(actorStorage, mediaStorage);
-        isRunning = true;
-    }
-
-    @Override
-    public void stop() {
-        isRunning = false;
-    }
-
-    @Override
-    public boolean isRunning() {
-        return isRunning;
-    }
-
-    @Override
-    public int getPhase() {
-        return ONE;
     }
 }
