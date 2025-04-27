@@ -37,6 +37,7 @@ public final class TestConstants {
     // Global settings
     public static final String EN_LANGUAGE = "en";
     public static final String US_REGION = "US";
+    public static final int CURRENT_YEAR = 2025;
     // Error and status messages.
     public static final String SERVICE_UNAVAILABLE_MESSAGE = "Service unavailable";
     // Release years and durations.
