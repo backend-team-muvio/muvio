@@ -1,16 +1,16 @@
 package org.cyberrealm.tech.muvio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.AUTHOR;
-import static org.cyberrealm.tech.muvio.common.Constants.CONTENT;
 import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
-import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR_NAME;
-import static org.cyberrealm.tech.muvio.common.Constants.ID_STRING;
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
-import static org.cyberrealm.tech.muvio.common.Constants.OVERVIEW;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
+import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
+import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
+import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -139,7 +139,7 @@ public class MediaFactoryTest {
                 = new info.movito.themoviedbapi.model.core.Review();
         review.setAuthor(AUTHOR);
         review.setId(ID_STRING);
-        review.setContent(CONTENT);
+        review.setContent(CONTENT_STRING);
         return List.of(review);
     }
 
@@ -147,7 +147,7 @@ public class MediaFactoryTest {
         final Review review = new Review();
         review.setAuthor(AUTHOR);
         review.setId(ID_STRING);
-        review.setContent(CONTENT);
+        review.setContent(CONTENT_STRING);
         return review;
     }
 

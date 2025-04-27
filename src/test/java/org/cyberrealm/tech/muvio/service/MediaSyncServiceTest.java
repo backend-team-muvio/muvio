@@ -1,8 +1,7 @@
-package org.cyberrealm.tech.muvio.service.impl;
+package org.cyberrealm.tech.muvio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.cyberrealm.tech.muvio.util.TestConstants.CURRENT_YEAR;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EMPTY;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EN_LANGUAGE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EXPECTED_SIZE_ONE;
@@ -45,6 +44,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Year;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,8 +55,8 @@ import java.util.Set;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
-import org.cyberrealm.tech.muvio.service.MediaFactory;
-import org.cyberrealm.tech.muvio.service.TmDbService;
+import org.cyberrealm.tech.muvio.service.impl.MediaSyncServiceImpl;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,18 +66,23 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class MediaSyncServiceImplTest {
+class MediaSyncServiceTest {
+    private static int currentYear;
     @Mock
     private TmDbService tmdbService;
     @Mock
     private MediaFactory mediaFactory;
     @InjectMocks
     private MediaSyncServiceImpl mediaSyncService;
-
     private Map<String, Media> mediaStorage;
     private Map<Integer, Actor> actorStorage;
     private Set<String> imdbTop250;
     private Set<String> winningMedia;
+
+    @BeforeAll
+    static void beforeAll() {
+        currentYear = Year.now().getValue();
+    }
 
     @BeforeEach
     void setUp() {
@@ -100,7 +105,7 @@ class MediaSyncServiceImplTest {
                 });
 
         // When
-        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250, winningMedia,
+        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, currentYear, imdbTop250, winningMedia,
                 actorStorage, mediaStorage, IS_MOVIES);
 
         // Then
@@ -124,7 +129,7 @@ class MediaSyncServiceImplTest {
                 });
 
         // When
-        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250, winningMedia,
+        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, currentYear, imdbTop250, winningMedia,
                 actorStorage, mediaStorage, IS_TV_SHOW);
 
         // Then
@@ -148,7 +153,7 @@ class MediaSyncServiceImplTest {
                 });
 
         // When
-        mediaSyncService.importMediaByFilter(EN_LANGUAGE, CURRENT_YEAR, imdbTop250, winningMedia,
+        mediaSyncService.importMediaByFilter(EN_LANGUAGE, currentYear, imdbTop250, winningMedia,
                 mediaStorage, actorStorage, IS_MOVIES);
 
         // Then
@@ -172,7 +177,7 @@ class MediaSyncServiceImplTest {
                 });
 
         // When
-        mediaSyncService.importByFindingTitles(EN_LANGUAGE, US_REGION, CURRENT_YEAR, actorStorage,
+        mediaSyncService.importByFindingTitles(EN_LANGUAGE, US_REGION, currentYear, actorStorage,
                 mediaStorage, imdbTop250, winningMedia, IS_MOVIES);
 
         // Then
@@ -192,7 +197,7 @@ class MediaSyncServiceImplTest {
         winningMedia.clear();
 
         // When
-        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250,
+        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, currentYear, imdbTop250,
                 winningMedia, actorStorage, mediaStorage, IS_MOVIES);
 
         // Then
@@ -206,7 +211,7 @@ class MediaSyncServiceImplTest {
         when(tmdbService.getFilteredMovies(anyInt(), anyInt())).thenReturn(Set.of());
 
         // When
-        mediaSyncService.importMediaByFilter(EN_LANGUAGE, CURRENT_YEAR, imdbTop250, winningMedia,
+        mediaSyncService.importMediaByFilter(EN_LANGUAGE, currentYear, imdbTop250, winningMedia,
                 mediaStorage, actorStorage, IS_MOVIES);
 
         // Then
@@ -223,7 +228,7 @@ class MediaSyncServiceImplTest {
                 .thenReturn(Optional.empty());
 
         // When
-        mediaSyncService.importByFindingTitles(EN_LANGUAGE, US_REGION, CURRENT_YEAR, actorStorage,
+        mediaSyncService.importByFindingTitles(EN_LANGUAGE, US_REGION, currentYear, actorStorage,
                 mediaStorage, imdbTop250, winningMedia, IS_MOVIES);
 
         // Then
@@ -243,7 +248,7 @@ class MediaSyncServiceImplTest {
 
         // Then
         assertThatThrownBy(() ->
-                mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250,
+                mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, currentYear, imdbTop250,
                         winningMedia, actorStorage, mediaStorage, IS_MOVIES))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining(SERVICE_UNAVAILABLE_MESSAGE);

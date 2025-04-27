@@ -1,11 +1,11 @@
 package org.cyberrealm.tech.muvio.repository;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.STRING_1;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
-import static org.cyberrealm.tech.muvio.common.Constants.TITLE_1;
-import static org.cyberrealm.tech.muvio.common.Constants.YEAR_2020;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
 
 import java.util.List;
 import java.util.Set;
@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.domain.PageRequest;
 
-@DataMongoTest(properties = {"spring.data.mongodb.database=test-db-2"})
+@DataMongoTest
 public class MediaRepositoryCustomTest extends AbstractMongoTest {
     private static final String YEARS = "2010-2020";
     private static final String UNKNOWN = "unknown";

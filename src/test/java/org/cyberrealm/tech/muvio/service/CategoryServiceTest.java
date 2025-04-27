@@ -1,9 +1,9 @@
 package org.cyberrealm.tech.muvio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.MEDIA_1;
-import static org.cyberrealm.tech.muvio.common.Constants.TRUE_STORY;
-import static org.cyberrealm.tech.muvio.common.Constants.VOTE_AVERAGE_8;
+import static org.cyberrealm.tech.muvio.util.TestConstants.MEDIA_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TRUE_STORY;
+import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
 
 import info.movito.themoviedbapi.model.keywords.Keyword;
 import java.util.ArrayList;
