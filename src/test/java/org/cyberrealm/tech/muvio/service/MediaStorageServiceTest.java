@@ -1,9 +1,9 @@
 package org.cyberrealm.tech.muvio.service;
 
-import static org.cyberrealm.tech.muvio.common.Constants.MEDIA_TITLE;
-import static org.cyberrealm.tech.muvio.common.Constants.TEST_SIZE;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+import static org.cyberrealm.tech.muvio.util.TestConstants.MEDIA_TITLE;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TEST_SIZE;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

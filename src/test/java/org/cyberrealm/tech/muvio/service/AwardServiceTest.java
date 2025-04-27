@@ -1,8 +1,8 @@
 package org.cyberrealm.tech.muvio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.MEDIA_1;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
+import static org.cyberrealm.tech.muvio.util.TestConstants.MEDIA_1;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;

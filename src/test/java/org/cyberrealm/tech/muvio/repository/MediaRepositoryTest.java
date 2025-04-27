@@ -2,14 +2,14 @@ package org.cyberrealm.tech.muvio.repository;
 
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
-import static org.cyberrealm.tech.muvio.common.Constants.STRING_1;
-import static org.cyberrealm.tech.muvio.common.Constants.STRING_2;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
-import static org.cyberrealm.tech.muvio.common.Constants.TITLE_1;
-import static org.cyberrealm.tech.muvio.common.Constants.TITLE_2;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
-import static org.cyberrealm.tech.muvio.common.Constants.VOTE_AVERAGE_8;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_2;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_2;
+import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 
-@DataMongoTest(properties = {"spring.data.mongodb.database=test-db-1"})
+@DataMongoTest
 public class MediaRepositoryTest extends AbstractMongoTest {
     private static final String POSTER_PATH_1 = "posterPath 1";
     private static final String POSTER_PATH_2 = "posterPath 2";

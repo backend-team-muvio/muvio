@@ -1,22 +1,22 @@
 package org.cyberrealm.tech.muvio.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.AUTHOR;
-import static org.cyberrealm.tech.muvio.common.Constants.CONTENT;
-import static org.cyberrealm.tech.muvio.common.Constants.ID_STRING;
 import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
-import static org.cyberrealm.tech.muvio.common.Constants.OVERVIEW;
-import static org.cyberrealm.tech.muvio.common.Constants.POSTER_PATH;
 import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
 import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
-import static org.cyberrealm.tech.muvio.common.Constants.TRUE_STORY;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
-import static org.cyberrealm.tech.muvio.common.Constants.VOTE_AVERAGE_8;
-import static org.cyberrealm.tech.muvio.common.Constants.YEAR_2020;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
+import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
+import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.util.TestConstants.POSTER_PATH;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TRUE_STORY;
+import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
+import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -360,7 +360,7 @@ public class TmDbServiceTest {
     private List<Review> getListReviews() {
         final Review review = new Review();
         review.setAuthor(AUTHOR);
-        review.setContent(CONTENT);
+        review.setContent(CONTENT_STRING);
         review.setId(ID_STRING);
         return List.of(review);
     }

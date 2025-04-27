@@ -98,6 +98,30 @@ public final class TestConstants {
     public static final String CRITERIA_YEARS_PERIOD = "2010-2015";
     public static final String CONTENT_STRING = "content";
 
+    public static final String MEDIA_1 = "Media1";
+    public static final String TRUE_STORY = "true story";
+    public static final String MEDIA_TITLE = "Media ";
+    public static final String AUTHOR = "author";
+    public static final String ID_STRING = "id";
+    public static final String OVERVIEW = "overview";
+    public static final double VOTE_AVERAGE_8 = 8.0;
+    public static final String POSTER_PATH = "posterPath";
+    public static final String DIRECTOR_NAME = "directorName";
+    public static final int YEAR_2020 = 2020;
+    public static final int TEST_SIZE = 1200;
+    public static final String TITLE_1 = "Title 1";
+    public static final String TITLE_2 = "Title 2";
+    public static final String TITLE_3 = "Title 3";
+    public static final String TITLE_4 = "Title 4";
+    public static final String TITLE_5 = "Title 5";
+    public static final String TITLE_6 = "Title 6";
+    public static final String STRING_1 = "1";
+    public static final String STRING_2 = "2";
+    public static final String STRING_3 = "3";
+    public static final String STRING_4 = "4";
+    public static final String STRING_5 = "5";
+    public static final String STRING_6 = "6";
+
     private TestConstants() {
     }
 }
