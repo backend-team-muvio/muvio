@@ -57,14 +57,16 @@ public class MediaServiceImpl implements MediaService {
     public Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
                                                        Pageable pageable) {
         final List<MediaDtoWithPoints> mediasWithPoints = mediaRepository
-                .getAllMediaByVibes(requestDto).stream().map(media ->
-                        mediaMapper.toMediaDtoWithPoints(media, requestDto.categories())).toList();
+                .getAllMediaByVibes(requestDto).stream()
+                .map(media -> mediaMapper.toMediaDtoWithPoints(media,
+                        getCategories(requestDto.categories())))
+                .toList();
         return paginationUtil.paginateList(pageable, mediasWithPoints);
     }
 
     @Override
-        public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
-                Pageable pageable) {
+    public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
+                                                Pageable pageable) {
         final List<Media> mediaForGallery = mediaRepository.getAllForGallery(requestDto, pageable);
         final List<MediaBaseDto> listMedias = mediaForGallery.stream()
                 .map(mediaMapper::toMediaBaseDto).toList();
@@ -132,8 +134,8 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public List<MediaBaseDto> getAll() {
-        return mediaRepository.getAll().stream().peek(media -> media.setDuration(
+    public List<MediaBaseDto> getAll(Pageable pageable) {
+        return mediaRepository.getAll(pageable).stream().peek(media -> media.setDuration(
                 mediaMapper.toDuration(Integer.valueOf(media.getDuration())))).toList();
     }
 
@@ -169,5 +171,11 @@ public class MediaServiceImpl implements MediaService {
                         mediaMapper.toDuration(Integer.parseInt(media.getDuration())));
             }
         });
+    }
+
+    private Set<String> getCategories(Set<String> categories) {
+        return categories != null
+                ? categories.stream().map(String::toUpperCase).collect(Collectors.toSet())
+                : Set.of();
     }
 }

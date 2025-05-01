@@ -8,7 +8,9 @@ import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
@@ -42,8 +44,8 @@ public class MediaRepositoryCustomImpl implements MediaRepositoryCustom {
         Optional.ofNullable(requestDto.categories())
                 .filter(category -> !category.isEmpty())
                 .ifPresent(category ->
-                        query.addCriteria(Criteria.where(CATEGORIES).in(category)));
-        query.addCriteria(Criteria.where(VIBES).is(requestDto.vibe()));
+                        query.addCriteria(Criteria.where(CATEGORIES).in(getCategories(category))));
+        query.addCriteria(Criteria.where(VIBES).is(requestDto.vibe().toUpperCase()));
         return mongoTemplate.find(query, Media.class);
     }
 
@@ -90,5 +92,11 @@ public class MediaRepositoryCustomImpl implements MediaRepositoryCustom {
                     query.addCriteria(Criteria.where(TYPE).regex(regexPattern,
                             REGEX_FLAG_IGNORE_CASE));
                 });
+    }
+
+    private Set<String> getCategories(Set<String> categories) {
+        return categories != null
+                ? categories.stream().map(String::toUpperCase).collect(Collectors.toSet())
+                : Set.of();
     }
 }
