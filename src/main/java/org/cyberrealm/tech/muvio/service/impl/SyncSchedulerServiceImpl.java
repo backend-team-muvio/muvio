@@ -8,16 +8,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.service.AwardService;
 import org.cyberrealm.tech.muvio.service.MediaStorageService;
 import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.SyncSchedulerService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SyncSchedulerServiceImpl implements SyncSchedulerService {
@@ -25,11 +26,10 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
     private final MediaSyncService mediaSyncService;
     private final MediaStorageService mediaStorageService;
 
-    @Scheduled(initialDelay = 500)
-    @ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true",
-            matchIfMissing = true)
+    //@Scheduled(initialDelay = 500)
     @Override
     public void start() {
+        log.info("Initiating the initial media synchronization");
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
         final int currentYear = Year.now().getValue();
@@ -43,11 +43,13 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, actorStorage, mediaStorage, false);
         mediaStorageService.deleteAll();
         mediaStorageService.saveAll(actorStorage, mediaStorage);
+        log.info("Initial media synchronization completed successfully");
     }
 
     @Scheduled(cron = "${sync.cron.time}")
     @Override
     public void worker() {
+        log.info("Starting the weekly media update");
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
         final int currentYear = Year.now().getValue();
@@ -69,5 +71,6 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, mediaStorage, actorStorage, false);
         mediaStorageService.deleteAll();
         mediaStorageService.saveAll(actorStorage, mediaStorage);
+        log.info("Weekly media update completed successfully");
     }
 }
