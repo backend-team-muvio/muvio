@@ -47,5 +47,5 @@ public interface MediaRepository extends MongoRepository<Media, String>, MediaRe
 
     @Query(value = "{}", fields = "{ 'id': 1, 'title': 1, 'genres': 1, 'rating': 1, "
             + "'posterPath': 1, 'duration': 1, 'releaseYear': 1  'type': 1 }")
-    List<MediaBaseDto> getAll();
+    List<MediaBaseDto> getAll(Pageable pageable);
 }

@@ -10,6 +10,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_2;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_1;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_2;
 import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
+import static org.cyberrealm.tech.muvio.util.TestUtil.PAGEABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ public class MediaRepositoryTest extends AbstractMongoTest {
     @Test
     @DisplayName("Should return all MediaBaseDto with getAll()")
     void getAll_ValidResponse_ReturnListMediaBaseDto() {
-        final List<MediaBaseDto> actual = mediaRepository.getAll();
+        final List<MediaBaseDto> actual = mediaRepository.getAll(PAGEABLE);
         assertEquals(TWO, actual.size());
         assertEquals(actual, getListMediaBaseDto());
     }

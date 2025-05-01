@@ -25,6 +25,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_5;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_6;
 import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
 import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
+import static org.cyberrealm.tech.muvio.util.TestUtil.PAGEABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -177,9 +178,9 @@ public class MediaServiceTest {
     @DisplayName("Verify getAll() method works")
     void getAll_validResponse_returnListMediaBaseDto() {
         final List<MediaBaseDto> mediaBaseDto = List.of(getMediaBaseDto());
-        when(mediaRepository.getAll()).thenReturn(mediaBaseDto);
+        when(mediaRepository.getAll(PAGEABLE)).thenReturn(mediaBaseDto);
         when(mediaMapper.toDuration(anyInt())).thenReturn(DURATION_90_STRING);
-        assertThat(mediaService.getAll()).isEqualTo(mediaBaseDto);
+        assertThat(mediaService.getAll(PAGEABLE)).isEqualTo(mediaBaseDto);
     }
 
     @Test

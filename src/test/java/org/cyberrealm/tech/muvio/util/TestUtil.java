@@ -34,6 +34,7 @@ import org.cyberrealm.tech.muvio.model.RoleActor;
 import org.cyberrealm.tech.muvio.model.TopLists;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.model.Vibe;
+import org.springframework.data.domain.Pageable;
 
 public final class TestUtil {
     public static final RoleActor firstActor = new RoleActor();
@@ -79,6 +80,8 @@ public final class TestUtil {
             .overview(SECOND_MOVIE_OVERVIEW)
             .type(Type.MOVIE)
             .build();
+
+    public static final Pageable PAGEABLE = Pageable.unpaged();
 
     private TestUtil() {
     }
