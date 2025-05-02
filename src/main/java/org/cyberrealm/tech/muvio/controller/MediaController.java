@@ -46,8 +46,8 @@ public class MediaController {
             description = "Retrieve all medias in the format of MediaBaseDto"
     )
     @GetMapping("/all")
-    public List<MediaBaseDto> getAll() {
-        return mediaService.getAll();
+    public List<MediaBaseDto> getAll(Pageable pageable) {
+        return mediaService.getAll(pageable);
     }
 
     @Operation(
@@ -95,7 +95,7 @@ public class MediaController {
             description = "Retrieve a paginated list of recommended media items based "
                     + "on media rating"
     )
-    public Slice<MediaBaseDto> getRecommendations(@RequestParam(defaultValue = "0")int page) {
+    public Slice<MediaBaseDto> getRecommendations(@RequestParam(defaultValue = "0") int page) {
         return mediaService.getRecommendations(page);
     }
 

@@ -34,7 +34,7 @@ public interface MediaService {
 
     MediaDto findByTitle(String title);
 
-    List<MediaBaseDto> getAll();
+    List<MediaBaseDto> getAll(Pageable pageable);
 
     long count();
 }

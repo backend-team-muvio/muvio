@@ -2,9 +2,9 @@ name: Java CI and Docker Build & Push
 
 on:
   push:
-    branches: [ secondRelease ]
+    branches: [ master ]
   pull_request:
-    branches: [ secondRelease ]
+    branches: [ master ]
 
 jobs:
   build:
@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'adopt'
@@ -33,17 +33,17 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: vitalii454/muvio:latest
-
-      - name: Trigger Render Deployment
-        run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }} \
-          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-          -H "Content-Type: application/json" \
-          -d '{}'
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v3
+#        with:
+#          context: .
+#          file: Dockerfile
+#          push: true
+#          tags: vitalii454/muvio:latest
+#
+#      - name: Trigger Render Deployment
+#        run: |
+#          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }} \
+#          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+#          -H "Content-Type: application/json" \
+#          -d '{}'
