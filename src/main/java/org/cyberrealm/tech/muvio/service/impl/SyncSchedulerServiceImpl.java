@@ -26,7 +26,7 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
     private final MediaSyncService mediaSyncService;
     private final MediaStorageService mediaStorageService;
 
-    @Scheduled(initialDelay = 500)
+    //@Scheduled(initialDelay = 500)
     @Override
     public void start() {
         log.info("Initiating the initial media synchronization");
