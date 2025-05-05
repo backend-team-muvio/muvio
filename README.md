@@ -1,4 +1,4 @@
-# task-management-app
+# Backend-moodie
 ## Introduction
 Backend-moodie is a Java-based application that helps users find movies or TV shows to watch based on their preferences, mood, year of release, type (movie or series), and other filters. Media content is loaded from the TMDB API and stored in the database.
 
@@ -41,4 +41,4 @@ cd "path of backend-moodie on the pc"
 mvn clean package
 docker-compose up
 ```
-Swagger is available for testing at http://localhost:{SPRING_LOCAL_PORT}/api/swagger-ui/index.html#/. To sign in can to use admin.
+Swagger is available for testing at http://localhost:{SPRING_LOCAL_PORT}/api/swagger-ui/index.html#/.
