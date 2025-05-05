@@ -35,8 +35,9 @@ Explore the deployed frontend: https://furart.github.io/Team_project_FE/#/
 * In most situations ports put: PORT=8080, SPRING_LOCAL_PORT=8081, SPRING_DOCKER_PORT=8080, DEBUG_PORT=5005, MONGO_PORT=27017.
 * TMDB_API_TOKEN= - You must registered on TMDB and generated API Read Access Token and put in this field. Link: https://www.themoviedb.org/settings/api
 5. In docker-compose.yml you must uncommitted mongodb.
-6. Run the following commands:
+6. Run the following commands in command line:
 ```json
+cd "path of backend-moodie on the pc"
 mvn clean package
 docker-compose up
 ```
