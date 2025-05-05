@@ -1,6 +1,19 @@
-version: "3.8"
+
 
 services:
+
+#  mongodb:
+#   image: mongo:7.0
+#    container_name: mongodb
+#    env_file: ./.env
+#    ports:
+#      - "${MONGO_PORT}:${MONGO_PORT}"
+#    healthcheck:
+#      test: echo 'db.runCommand("ping").ok' | mongosh localhost:${MONGO_PORT}/test --quiet
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
   app:
     restart: on-failure
     image: muvio
