@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.util.TestConstants.MEDIA_1;
@@ -11,12 +11,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.model.Category;
-import org.cyberrealm.tech.muvio.service.impl.CategoryServiceImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class CategoryServiceTest {
+public class CategoryServiceImplTest {
     private static final String OVERVIEW = "Film based on true story";
     private static final List<Keyword> KEYWORDS = new ArrayList<>();
     private static final Keyword KEYWORD = new Keyword();

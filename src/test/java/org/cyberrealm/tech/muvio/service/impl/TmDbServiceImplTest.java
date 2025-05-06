@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
-import org.cyberrealm.tech.muvio.service.impl.TmDbServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,7 +65,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class TmDbServiceTest {
+public class TmDbServiceImplTest {
     private static final String PATH = "path";
     private static final String RELEASE_DATE = "2020.11.11";
     private static final String AGE_RATING_G = "G";

@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
@@ -12,9 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
-import org.cyberrealm.tech.muvio.repository.actors.ActorRepository;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
-import org.cyberrealm.tech.muvio.service.impl.MediaStorageServiceImpl;
+import org.cyberrealm.tech.muvio.repository.ActorRepository;
+import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class MediaStorageServiceTest {
+public class MediaStorageServiceImplTest {
     private static final String ACTOR_NAME = "Actor ";
     @Mock
     private MediaRepository mediaRepository;

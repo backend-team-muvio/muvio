@@ -41,7 +41,7 @@ import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.TopLists;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.model.Vibe;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
+import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.util.TestUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
-import org.cyberrealm.tech.muvio.service.impl.PaginationUtilImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
@@ -37,7 +36,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-public class PaginationUtilTest {
+class PaginationUtilImplTest {
     private static final String NON_EXISTENT_FIELD = "nonExistentField";
     private final PaginationUtilImpl paginationUtil = new PaginationUtilImpl();
 
