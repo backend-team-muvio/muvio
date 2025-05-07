@@ -61,7 +61,7 @@ public class MediaServiceImpl implements MediaService {
                 .map(media -> mediaMapper.toMediaDtoWithPoints(media,
                         getCategories(requestDto.categories())))
                 .toList();
-        return paginationUtil.paginateList(pageable, mediasWithPoints);
+        return paginationUtil.paginateListWithOneRandomBefore(pageable, mediasWithPoints);
     }
 
     @Override

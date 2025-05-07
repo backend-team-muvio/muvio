@@ -6,4 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface PaginationUtil {
     <T> Page<T> paginateList(final Pageable pageable, List<T> list);
+
+    <T> Page<T> paginateListWithOneRandomBefore(
+            Pageable pageable, List<T> list);
 }
