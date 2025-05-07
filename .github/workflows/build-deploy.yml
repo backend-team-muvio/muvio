@@ -23,6 +23,16 @@ jobs:
         env:
           MONGO_URL: ${{ secrets.MONGO_URL }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
+          CRON_WEEKLY: ${{ secrets.CRON_WEEKLY }}
+          CRON_SECONDS: ${{ secrets.CRON_SECONDS }}
+          TOP250_MOVIE_URL: ${{ secrets.TOP250_MOVIE_URL }}
+          TOP250_TV_SHOW_URL: ${{ secrets.TOP250_TV_SHOW_URL }}
+          SPARQL_ENDPOINT: ${{ secrets.SPARQL_ENDPOINT }}
+          EMMY_WINNERS_URL: ${{ secrets.EMMY_WINNERS_URL }}
+          SPARQL_QUERY: ${{ secrets.SPARQL_QUERY }}
+
+
+
 
   deploy:
     name: Deploy to Fly.io
@@ -46,6 +56,13 @@ jobs:
         env:
           MONGO_URL: ${{ secrets.MONGO_URL }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
+          CRON_WEEKLY: ${{ secrets.CRON_WEEKLY }}
+          CRON_SECONDS: ${{ secrets.CRON_SECONDS }}
+          TOP250_MOVIE_URL: ${{ secrets.TOP250_MOVIE_URL }}
+          TOP250_TV_SHOW_URL: ${{ secrets.TOP250_TV_SHOW_URL }}
+          SPARQL_ENDPOINT: ${{ secrets.SPARQL_ENDPOINT }}
+          EMMY_WINNERS_URL: ${{ secrets.EMMY_WINNERS_URL }}
+          SPARQL_QUERY: ${{ secrets.SPARQL_QUERY }}
 
       - name: Set up Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
