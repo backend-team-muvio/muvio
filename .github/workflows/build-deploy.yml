@@ -19,7 +19,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn clean package --batch-mode --update-snapshots
+        run: mvn --batch-mode --update-snapshots verify
         env:
           MONGO_URL: ${{ secrets.MONGO_URL }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
