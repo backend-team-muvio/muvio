@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
@@ -16,7 +16,7 @@ import java.net.http.HttpResponse;
 import java.util.Set;
 import lombok.SneakyThrows;
 import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
-import org.cyberrealm.tech.muvio.service.impl.AwardServiceImpl;
+import org.cyberrealm.tech.muvio.service.SparqlClient;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -30,7 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-public class AwardServiceTest {
+public class AwardServiceImplTest {
     private static final String MEDIA_2 = "Media2";
     private static final String MEDIA_3 = "Media3";
     private static final Set<String> MEDIA_TEST = Set.of(MEDIA_1, MEDIA_2, MEDIA_3);

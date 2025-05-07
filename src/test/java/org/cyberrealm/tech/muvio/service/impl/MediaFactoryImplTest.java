@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
@@ -34,7 +34,10 @@ import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
-import org.cyberrealm.tech.muvio.service.impl.MediaFactoryImpl;
+import org.cyberrealm.tech.muvio.service.CategoryService;
+import org.cyberrealm.tech.muvio.service.TmDbService;
+import org.cyberrealm.tech.muvio.service.TopListService;
+import org.cyberrealm.tech.muvio.service.VibeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +46,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class MediaFactoryTest {
+public class MediaFactoryImplTest {
     private static final String ACTOR_NAME = "ActorName";
 
     @Mock

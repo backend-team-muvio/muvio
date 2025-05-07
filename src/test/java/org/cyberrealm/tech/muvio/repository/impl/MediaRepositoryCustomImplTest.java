@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.repository;
+package org.cyberrealm.tech.muvio.repository.impl;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
@@ -17,8 +17,7 @@ import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.model.Vibe;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepositoryCustomImpl;
+import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,7 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.domain.PageRequest;
 
 @DataMongoTest
-public class MediaRepositoryCustomTest extends AbstractMongoTest {
+public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     private static final String YEARS = "2010-2020";
     private static final String UNKNOWN = "unknown";
     @Autowired

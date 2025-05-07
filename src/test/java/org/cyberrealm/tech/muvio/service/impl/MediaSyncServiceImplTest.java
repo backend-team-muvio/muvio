@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,7 +55,8 @@ import java.util.Set;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
-import org.cyberrealm.tech.muvio.service.impl.MediaSyncServiceImpl;
+import org.cyberrealm.tech.muvio.service.MediaFactory;
+import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,13 +66,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class MediaSyncServiceTest {
+class MediaSyncServiceImplTest {
     @Mock
     private TmDbService tmdbService;
     @Mock
     private MediaFactory mediaFactory;
     @InjectMocks
     private MediaSyncServiceImpl mediaSyncService;
+
     private Map<String, Media> mediaStorage;
     private Map<Integer, Actor> actorStorage;
     private Set<String> imdbTop250;

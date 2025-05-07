@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.repository.media;
+package org.cyberrealm.tech.muvio.repository;
 
 import java.util.List;
 import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;

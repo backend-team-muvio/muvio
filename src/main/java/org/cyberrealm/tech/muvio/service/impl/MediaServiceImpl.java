@@ -27,7 +27,7 @@ import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
+import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaService;
 import org.cyberrealm.tech.muvio.service.PaginationUtil;
 import org.springframework.data.domain.Page;

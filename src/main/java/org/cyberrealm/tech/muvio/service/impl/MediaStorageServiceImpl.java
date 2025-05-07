@@ -8,8 +8,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
-import org.cyberrealm.tech.muvio.repository.actors.ActorRepository;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
+import org.cyberrealm.tech.muvio.repository.ActorRepository;
+import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaStorageService;
 import org.springframework.stereotype.Service;
 

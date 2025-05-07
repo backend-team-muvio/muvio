@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.repository.media;
+package org.cyberrealm.tech.muvio.repository.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.NINE;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
@@ -16,6 +16,7 @@ import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
+import org.cyberrealm.tech.muvio.repository.MediaRepositoryCustom;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;

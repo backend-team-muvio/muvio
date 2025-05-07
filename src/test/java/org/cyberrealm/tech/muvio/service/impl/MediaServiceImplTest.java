@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
@@ -52,8 +52,8 @@ import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.model.Media;
-import org.cyberrealm.tech.muvio.repository.media.MediaRepository;
-import org.cyberrealm.tech.muvio.service.impl.MediaServiceImpl;
+import org.cyberrealm.tech.muvio.repository.MediaRepository;
+import org.cyberrealm.tech.muvio.service.PaginationUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,7 +67,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class MediaServiceTest {
+public class MediaServiceImplTest {
     private static final String COMEDY = "COMEDY";
     private static final String TYPE_MOVIE = "MOVIE";
     private static final String DURATION_90_STRING = "90";

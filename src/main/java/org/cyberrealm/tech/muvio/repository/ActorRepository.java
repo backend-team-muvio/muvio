@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.repository.actors;
+package org.cyberrealm.tech.muvio.repository;
 
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.springframework.data.mongodb.repository.MongoRepository;

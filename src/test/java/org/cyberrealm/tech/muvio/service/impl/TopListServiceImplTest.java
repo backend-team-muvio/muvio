@@ -1,4 +1,4 @@
-package org.cyberrealm.tech.muvio.service;
+package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
@@ -11,13 +11,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.model.TopLists;
-import org.cyberrealm.tech.muvio.service.impl.TopListServiceImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class TopListServiceTest {
+public class TopListServiceImplTest {
     private static final List<Keyword> KEYWORDS = new ArrayList<>();
     private static final Keyword SUPERHERO = new Keyword();
     private static final double RATING_9 = 9;
