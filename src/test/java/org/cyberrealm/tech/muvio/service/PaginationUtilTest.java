@@ -1,7 +1,7 @@
 package org.cyberrealm.tech.muvio.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
-import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.SIX;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
@@ -51,13 +51,13 @@ public class PaginationUtilTest {
     }
 
     @Test
-    @DisplayName("Should return paged list without sorting")
+    @DisplayName("Should return paged list with sorting")
     void paginateList_validPageable_returnsCorrectPage() {
-        final Pageable pageable = PageRequest.of(ONE, THREE);
+        final Pageable pageable = PageRequest.of(ZERO, THREE);
         final Page<MediaBaseDto> page = paginationUtil.paginateList(
                 pageable, getMediaBaseDtoList());
         assertEquals(THREE, page.getContent().size());
-        assertEquals(TITLE_4, page.getContent().getFirst().getTitle());
+        assertEquals(TITLE_1, page.getContent().getFirst().getTitle());
     }
 
     @Test
@@ -95,6 +95,17 @@ public class PaginationUtilTest {
         Pageable pageable = PageRequest.of(ZERO, TWO, Sort.by(NON_EXISTENT_FIELD));
         assertThrows(EntityNotFoundException.class, () ->
                 paginationUtil.paginateList(pageable, mediaBaseDtoList));
+    }
+
+    @Test
+    @DisplayName("Should return paged list with sorting and one random item on the first place")
+    void paginateListWithOneRandomBefore_validPageable_returnsCorrectPage() {
+        final Pageable pageable = PageRequest.of(ZERO, SIX, Sort.by(ID_STRING).ascending());
+        final List<MediaBaseDto> mediaBaseDtoList = getMediaBaseDtoList();
+        final Page<MediaBaseDto> page = paginationUtil.paginateListWithOneRandomBefore(
+                pageable, mediaBaseDtoList);
+        assertEquals(mediaBaseDtoList.size(), page.getContent().size());
+        assertThat(mediaBaseDtoList).containsAll(page.getContent());
     }
 
     private MediaBaseDto createMediaBaseDto(String id, String title) {

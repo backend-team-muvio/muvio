@@ -107,7 +107,7 @@ public class MediaServiceTest {
                 .thenReturn(List.of(getMedia()));
         when(mediaMapper.toMediaDtoWithPoints(any(Media.class), any()))
                 .thenReturn(mediaDtoWithPoints);
-        when(paginationUtil.paginateList(any(), anyList())).thenReturn(
+        when(paginationUtil.paginateListWithOneRandomBefore(any(), anyList())).thenReturn(
                 new PageImpl<>(List.of(mediaDtoWithPoints)));
         final List<MediaDtoWithPoints> actual = mediaService.getAllMediaByVibe(
                 new MediaVibeRequestDto(VIBE, null, null,
