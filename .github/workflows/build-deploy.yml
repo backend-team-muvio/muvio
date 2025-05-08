@@ -1,6 +1,6 @@
 name: Java CI/CD with Fly.io
 
-on: [push, pull_request]
+#on: [push, pull_request]
 
 jobs:
   build:
@@ -64,10 +64,10 @@ jobs:
           EMMY_WINNERS_URL: ${{ secrets.EMMY_WINNERS_URL }}
           SPARQL_QUERY: ${{ secrets.SPARQL_QUERY }}
 
-#      - name: Set up Flyctl
-#        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Set up Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
-#      - name: Deploy to Fly.io
-#        run: flyctl deploy --remote-only
-#        env:
-#          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
