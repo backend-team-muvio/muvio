@@ -59,7 +59,6 @@ TMDB_API_TOKEN=your_tmdb_token_here
 - [Maven 3.9+](https://maven.apache.org/install.html) – used to build the .jar
 
 **Run the app:**  
-
 ```bash
   mvn clean package
   docker-compose up
@@ -74,7 +73,9 @@ TMDB_API_TOKEN=your_tmdb_token_here
 **Requirements:**  
 - [Java 21](https://jdk.java.net/21/)
 - [Maven 3.9+](https://maven.apache.org/install.html)
-- [MongoDB](https://www.mongodb.com/try/download/community) running locally 
+- [MongoDB](https://www.mongodb.com/try/download/community) running locally
+- Set the MONGO_URL in your .env file to:  
+mongodb://localhost:27017/muvio?retryWrites=true&w=majority&connectTimeoutMS=10000&socketTimeoutMS=20000 
 
 **Run the app:**  
 ```bash  
