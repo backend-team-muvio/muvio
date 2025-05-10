@@ -1,9 +1,6 @@
 name: Java CI/CD with Fly.io
 
-on:
-  push:
-    branches: [master]
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   build:
