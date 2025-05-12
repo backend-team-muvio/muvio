@@ -26,7 +26,7 @@ Backend-moodie is a Java-based application that helps users find movies or TV sh
 1. Clone the repository:
 
 ```bash
-  git clone https://github.com/OleksiiKolinko/backend-moodie.git
+  git clone https://github.com/backend-team-muvio/muvio.git
   cd backend-moodie
 ```
 
