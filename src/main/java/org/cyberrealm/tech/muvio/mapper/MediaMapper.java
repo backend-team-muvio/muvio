@@ -6,6 +6,7 @@ import static org.cyberrealm.tech.muvio.common.Constants.SHORT_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
+import info.movito.themoviedbapi.model.core.ProductionCountry;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.time.Year;
@@ -42,6 +43,8 @@ public interface MediaMapper {
             + ".IMAGE_PATH + movieDb.getPosterPath())")
     @Mapping(source = "releaseDate", target = "releaseYear", qualifiedByName = "getReleaseYear")
     @Mapping(source = "movieDb.runtime", target = "type", qualifiedByName = "putType")
+    @Mapping(source = "movieDb.productionCountries", target = "countries",
+            qualifiedByName = "putCountries")
     Media toEntity(MovieDb movieDb);
 
     @Mapping(source = "tvSeriesDb.name", target = "title")
@@ -54,6 +57,8 @@ public interface MediaMapper {
     @Mapping(target = "posterPath", expression = "java(org.cyberrealm.tech.muvio.common.Constants"
             + ".IMAGE_PATH + tvSeriesDb.getPosterPath())")
     @Mapping(source = "firstAirDate", target = "releaseYear", qualifiedByName = "getReleaseYear")
+    @Mapping(source = "tvSeriesDb.productionCountries", target = "countries",
+            qualifiedByName = "putCountries")
     Media toEntity(TvSeriesDb tvSeriesDb);
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toListActors")
@@ -109,5 +114,10 @@ public interface MediaMapper {
         return episodeRunTime.stream()
                 .findFirst()
                 .orElse(DEFAULT_SERIAL_DURATION);
+    }
+
+    @Named("putCountries")
+    default List<String> putCountries(List<ProductionCountry> productionCountries) {
+        return productionCountries.stream().map(ProductionCountry::getName).toList();
     }
 }

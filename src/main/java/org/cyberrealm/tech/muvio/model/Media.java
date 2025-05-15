@@ -21,6 +21,7 @@ public class Media {
     private String title;
     private String overview;
     private Integer releaseYear;
+    private List<String> countries;
     private String posterPath;
     private String trailer;
     private Double rating;
