@@ -15,6 +15,7 @@ import org.cyberrealm.tech.muvio.service.AwardService;
 import org.cyberrealm.tech.muvio.service.MediaStorageService;
 import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.SyncSchedulerService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
     private final MediaStorageService mediaStorageService;
 
     @Scheduled(initialDelayString = "${sync.initial.cron.time}")
+    @CacheEvict(value = "mediaStatistics", allEntries = true)
     @Override
     public void start() {
         log.info("Initiating the initial media synchronization");
@@ -47,6 +49,7 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
     }
 
     @Scheduled(cron = "${sync.cron.time}")
+    @CacheEvict(value = "mediaStatistics", allEntries = true)
     @Override
     public void worker() {
         log.info("Starting the weekly media update");

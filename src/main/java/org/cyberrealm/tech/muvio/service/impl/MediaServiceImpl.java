@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.dto.MainPageInfoDto;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
@@ -27,9 +28,11 @@ import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
+import org.cyberrealm.tech.muvio.repository.ActorRepository;
 import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaService;
 import org.cyberrealm.tech.muvio.service.PaginationUtil;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
     private final MediaRepository mediaRepository;
+    private final ActorRepository actorRepository;
     private final MediaMapper mediaMapper;
     private final PaginationUtil paginationUtil;
 
@@ -142,6 +146,16 @@ public class MediaServiceImpl implements MediaService {
     @Override
     public long count() {
         return mediaRepository.count();
+    }
+
+    @Cacheable(value = "mediaStatistics", unless = "#result == null")
+    @Override
+    public MainPageInfoDto getMainPageInfo() {
+        return new MainPageInfoDto(count(), getGenreCount(), actorRepository.count());
+    }
+
+    private int getGenreCount() {
+        return GenreEntity.values().length;
     }
 
     private void addNewMedia(List<MediaBaseDto> recommendations, Stack<MediaBaseDto> media) {
