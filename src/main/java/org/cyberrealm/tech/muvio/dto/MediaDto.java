@@ -7,5 +7,5 @@ public record MediaDto(
         String id, String title, Set<String> genres, Double rating, String trailer,
         String posterPath, String duration, String director, Set<String> photos,
         List<ActorDto> actors, List<ReviewDto> reviews, Integer releaseYear,
-        String overview, String type) {
+        List<String> countries, String overview, String type) {
 }

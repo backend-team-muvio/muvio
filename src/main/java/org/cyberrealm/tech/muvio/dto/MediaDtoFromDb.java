@@ -6,7 +6,7 @@ import org.cyberrealm.tech.muvio.model.RoleActor;
 
 public record MediaDtoFromDb(String id, String title, Set<String> genres, Double rating,
                              String trailer, String posterPath, Integer duration, String director,
-                             Set<String> photos, List<RoleActor> actors,
-                             List<ReviewDto> reviews, Integer releaseYear, String overview,
+                             Set<String> photos, List<RoleActor> actors, List<ReviewDto> reviews,
+                             Integer releaseYear, List<String> countries, String overview,
                              String type, Set<String> categories) {
 }
