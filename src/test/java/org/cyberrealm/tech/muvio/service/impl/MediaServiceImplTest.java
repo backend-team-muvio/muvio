@@ -274,12 +274,12 @@ public class MediaServiceImplTest {
     private MediaDtoFromDb getMediaDtoFromDb() {
         return new MediaDtoFromDb(ID_STRING, TITLE, Set.of(COMEDY), VOTE_AVERAGE_8,
                 TRAILER, POSTER_PATH, DURATION_90, DIRECTOR_NAME, Set.of(), List.of(), List.of(),
-                YEAR_2020, OVERVIEW, TYPE_MOVIE, Set.of());
+                YEAR_2020, List.of(), OVERVIEW, TYPE_MOVIE, Set.of());
     }
 
     private MediaDto getMediaDto() {
         return new MediaDto(ID_STRING, TITLE, Set.of(COMEDY), VOTE_AVERAGE_8,
                 TRAILER, POSTER_PATH,DURATION_90_STRING, DIRECTOR_NAME, Set.of(), List.of(),
-                List.of(), YEAR_2020, OVERVIEW, TYPE_MOVIE);
+                List.of(), YEAR_2020, List.of(), OVERVIEW, TYPE_MOVIE);
     }
 }

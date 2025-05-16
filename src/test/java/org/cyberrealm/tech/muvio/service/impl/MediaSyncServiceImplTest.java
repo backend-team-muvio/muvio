@@ -253,7 +253,7 @@ class MediaSyncServiceImplTest {
         return new Media(
                 id,
                 titlePrefics + id,
-                null, RELEASE_YEAR_2022, null,
+                null, RELEASE_YEAR_2022, List.of(), null,
                 null, null, FIRST_POPULAR_MEDIA_DURATION, EMPTY,
                 type, Set.of(), Set.of(), List.of(),
                 List.of(), Set.of(), Set.of(), Set.of());
