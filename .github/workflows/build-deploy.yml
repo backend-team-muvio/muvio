@@ -1,4 +1,4 @@
-name: Java CI/CD with Fly.io
+name: Java CI/CD with Render
 
 on: [push, pull_request]
 

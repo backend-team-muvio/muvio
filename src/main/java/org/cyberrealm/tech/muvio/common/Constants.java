@@ -14,6 +14,7 @@ public final class Constants {
     public static final int FOUR = 4;
     public static final int SIX = 6;
     public static final int NINE = 9;
+    public static final double ROUNDING_FACTOR = 10.0;
     public static final int TEN = 10;
     public static final int ONE_HUNDRED = 100;
     public static final int SHORT_DURATION = 40;

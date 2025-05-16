@@ -2,6 +2,7 @@ package org.cyberrealm.tech.muvio.mapper;
 
 import static org.cyberrealm.tech.muvio.common.Constants.DEFAULT_SERIAL_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
+import static org.cyberrealm.tech.muvio.common.Constants.ROUNDING_FACTOR;
 import static org.cyberrealm.tech.muvio.common.Constants.SHORT_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
@@ -36,7 +37,7 @@ public interface MediaMapper {
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
     @Mapping(source = "movieDb.runtime", target = "duration")
-    @Mapping(source = "movieDb.voteAverage", target = "rating")
+    @Mapping(source = "movieDb.voteAverage", target = "rating", qualifiedByName = "getRating")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
     @Mapping(target = "posterPath", expression = "java(org.cyberrealm.tech.muvio.common.Constants"
             + ".IMAGE_PATH + movieDb.getPosterPath())")
@@ -45,7 +46,7 @@ public interface MediaMapper {
     Media toEntity(MovieDb movieDb);
 
     @Mapping(source = "tvSeriesDb.name", target = "title")
-    @Mapping(source = "tvSeriesDb.voteAverage", target = "rating")
+    @Mapping(source = "tvSeriesDb.voteAverage", target = "rating", qualifiedByName = "getRating")
     @Mapping(target = "type", expression = "java(org.cyberrealm.tech.muvio.model.Type.TV_SHOW)")
     @Mapping(target = "id", expression =
             "java(org.cyberrealm.tech.muvio.common.Constants.TV + tvSeriesDb.getId())")
@@ -109,5 +110,10 @@ public interface MediaMapper {
         return episodeRunTime.stream()
                 .findFirst()
                 .orElse(DEFAULT_SERIAL_DURATION);
+    }
+
+    @Named("getRating")
+    default Double getRating(Double voteAverage) {
+        return Math.round(voteAverage * ROUNDING_FACTOR) / ROUNDING_FACTOR;
     }
 }
