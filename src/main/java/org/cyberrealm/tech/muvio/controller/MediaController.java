@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.cyberrealm.tech.muvio.dto.MainPageInfoDto;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
@@ -41,20 +42,20 @@ public class MediaController {
         return mediaService.getMediaById(id);
     }
 
+    @GetMapping("/all")
     @Operation(
             summary = "Get all",
             description = "Retrieve all medias in the format of MediaBaseDto"
     )
-    @GetMapping("/all")
     public List<MediaBaseDto> getAll(Pageable pageable) {
         return mediaService.getAll(pageable);
     }
 
+    @GetMapping("/count")
     @Operation(
             summary = "Count",
             description = "Retrieve  number of all medias"
     )
-    @GetMapping("/count")
     public long count() {
         return mediaService.count();
     }
@@ -135,5 +136,14 @@ public class MediaController {
     )
     public MediaDto findByTitle(@PathVariable String title) {
         return mediaService.findByTitle(title);
+    }
+
+    @GetMapping("/statistics")
+    @Operation(
+            summary = "Provide statistical info for the main page",
+            description = "Provide statistical info like the amount of media, genres, and actors"
+    )
+    public MainPageInfoDto getMainPageInfo() {
+        return mediaService.getMainPageInfo();
     }
 }

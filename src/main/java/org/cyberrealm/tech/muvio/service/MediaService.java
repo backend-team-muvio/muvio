@@ -2,6 +2,7 @@ package org.cyberrealm.tech.muvio.service;
 
 import java.util.List;
 import java.util.Set;
+import org.cyberrealm.tech.muvio.dto.MainPageInfoDto;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
@@ -37,4 +38,6 @@ public interface MediaService {
     List<MediaBaseDto> getAll(Pageable pageable);
 
     long count();
+
+    MainPageInfoDto getMainPageInfo();
 }
