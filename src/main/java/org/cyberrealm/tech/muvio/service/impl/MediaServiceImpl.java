@@ -3,6 +3,7 @@ package org.cyberrealm.tech.muvio.service.impl;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE_HUNDRED;
 import static org.cyberrealm.tech.muvio.common.Constants.RATING;
 import static org.cyberrealm.tech.muvio.common.Constants.SIX;
+import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
@@ -45,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
+    private static final String POINTS = "points";
     private final MediaRepository mediaRepository;
     private final ActorRepository actorRepository;
     private final MediaMapper mediaMapper;
@@ -58,14 +60,16 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
-                                                       Pageable pageable) {
+    public Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto) {
         final List<MediaDtoWithPoints> mediasWithPoints = mediaRepository
                 .getAllMediaByVibes(requestDto).stream()
                 .map(media -> mediaMapper.toMediaDtoWithPoints(media,
                         getCategories(requestDto.categories())))
                 .toList();
-        return paginationUtil.paginateListWithOneRandomBefore(pageable, mediasWithPoints);
+        return paginationUtil.paginateListWithOneRandomBefore(PageRequest.of(
+                requestDto.page() == null ? ZERO : requestDto.page(),
+                requestDto.size() == null ? TEN : requestDto.size(),
+                Sort.by(POINTS).descending().and(Sort.by(RATING).descending())), mediasWithPoints);
     }
 
     @Override
@@ -114,7 +118,8 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public Slice<MediaDtoWithCast> findMediaByTopLists(String topList, Pageable pageable) {
+    public Slice<MediaDtoWithCast> findMediaByTopLists(String topList, int page,int size) {
+        final Pageable pageable = PageRequest.of(page, size, Sort.by(RATING).descending());
         final Slice<MediaDtoWithCastFromDb> media = mediaRepository
                 .findByTopListsContaining(topList, pageable);
         final List<MediaDtoWithCast> mediaList = media.stream()

@@ -18,8 +18,7 @@ public interface MediaService {
 
     MediaDto getMediaById(String id);
 
-    Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto,
-                                                Pageable pageable);
+    Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto);
 
     Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto, Pageable pageable);
 
@@ -27,7 +26,7 @@ public interface MediaService {
 
     Slice<MediaBaseDto> getRecommendations(int page);
 
-    Slice<MediaDtoWithCast> findMediaByTopLists(String topList, Pageable pageable);
+    Slice<MediaDtoWithCast> findMediaByTopLists(String topList, int page, int size);
 
     Slice<PosterDto> findAllPosters(Pageable pageable);
 

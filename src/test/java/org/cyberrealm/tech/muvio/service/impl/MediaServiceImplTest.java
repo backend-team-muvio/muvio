@@ -111,7 +111,7 @@ public class MediaServiceImplTest {
                 new PageImpl<>(List.of(mediaDtoWithPoints)));
         final List<MediaDtoWithPoints> actual = mediaService.getAllMediaByVibe(
                 new MediaVibeRequestDto(VIBE, null, null,
-                null), getPageable()).getContent();
+                null, ZERO, TEN)).getContent();
         assertThat(actual.getFirst()).isEqualTo(mediaDtoWithPoints);
         assertThat(actual.size()).isEqualTo(ONE);
     }
@@ -145,7 +145,7 @@ public class MediaServiceImplTest {
                 .thenReturn(new SliceImpl<>(List.of(getMediaDtoWithCastFromDb())));
         when(mediaMapper.toMediaDtoWithCast(any(MediaDtoWithCastFromDb.class)))
                 .thenReturn(mediaDtoWithCast);
-        assertThat(mediaService.findMediaByTopLists(TOP_LIST, getPageable()).getContent())
+        assertThat(mediaService.findMediaByTopLists(TOP_LIST, ZERO, TEN).getContent())
                 .isEqualTo(List.of(mediaDtoWithCast));
     }
 

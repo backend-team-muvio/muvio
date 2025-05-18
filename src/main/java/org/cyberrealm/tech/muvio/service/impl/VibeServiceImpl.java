@@ -16,7 +16,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class VibeServiceImpl implements VibeService {
     private static final List<String> RATINGS = List.of("G", "PG", "PG-13", "R", "NC-17", "N-13",
-            "NC16");
+            "NC16", "TV-G", "U", "AL", "TV-PG", "U/A 7+", "TV-14", "12", "13", "TV-MA", "18+",
+            "R21");
     private static final Map<GenreEntity, Map<Vibe, Integer>> GENRE_TO_VIBE_MAP = Map.ofEntries(
             Map.entry(GenreEntity.FAMILY, Map.of(Vibe.MAKE_ME_CHILL, 9, Vibe.MAKE_ME_FEEL_GOOD, 9,
                     Vibe.MAKE_ME_DREAM, 9)),

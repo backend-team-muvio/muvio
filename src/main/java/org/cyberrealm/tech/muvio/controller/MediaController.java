@@ -67,8 +67,8 @@ public class MediaController {
                     + "filtering parameters"
     )
     public Slice<MediaDtoWithPoints> getAllMediaByVibe(
-            @Valid MediaVibeRequestDto requestDto, Pageable pageable) {
-        return mediaService.getAllMediaByVibe(requestDto, pageable);
+            @Valid MediaVibeRequestDto requestDto) {
+        return mediaService.getAllMediaByVibe(requestDto);
     }
 
     @GetMapping("/gallery")
@@ -107,8 +107,9 @@ public class MediaController {
                     + "top list category"
     )
     public Slice<MediaDtoWithCast> getMediaByTopList(@PathVariable String topList,
-                                                     Pageable pageable) {
-        return mediaService.findMediaByTopLists(topList, pageable);
+                                                     @RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "20") int size) {
+        return mediaService.findMediaByTopLists(topList, page, size);
     }
 
     @GetMapping("/posters")
