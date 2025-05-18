@@ -8,6 +8,7 @@ import java.util.Set;
 public record MediaVibeRequestDto(
         @NotNull @NotBlank String vibe,
         String years, String type,
-        @Schema(type = "string", example = "category1, category2, ...etc") Set<String> categories
+        @Schema(type = "string", example = "category1, category2, ...etc") Set<String> categories,
+        Integer page, Integer size
 ) {
 }

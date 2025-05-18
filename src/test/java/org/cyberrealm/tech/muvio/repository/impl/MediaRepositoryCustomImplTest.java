@@ -45,7 +45,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     void getAllMediaByVibes_FilteredParams_ReturnListMediaVibeRequestDto() {
         final MediaVibeRequestDto request = new MediaVibeRequestDto(
                 Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(),
-                Set.of(Category.BASED_ON_A_TRUE_STORY.name()));
+                Set.of(Category.BASED_ON_A_TRUE_STORY.name()), ZERO, TEN);
         final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
         assertThat(actual).isEqualTo(List.of(getMedia()));
     }
@@ -54,7 +54,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     @DisplayName("Should ignore null/empty categories and still return by vibe")
     void getAllMediaByVibes_EmptyCategories_ReturnListMedia() {
         final MediaVibeRequestDto request = new MediaVibeRequestDto(
-                Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(), Set.of());
+                Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(), Set.of(), ZERO, TEN);
         final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
         assertThat(actual).isEqualTo(List.of(getMedia()));
     }
@@ -84,7 +84,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     void getAllMediaByVibes_EmptyYears_ReturnListMedia() {
         final MediaVibeRequestDto request = new MediaVibeRequestDto(
                 Vibe.BLOW_MY_MIND.name(), null, Type.MOVIE.name(),
-                Set.of(Category.BASED_ON_A_TRUE_STORY.name()));
+                Set.of(Category.BASED_ON_A_TRUE_STORY.name()), ZERO, TEN);
         final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
         assertThat(actual).isEqualTo(List.of(getMedia()));
     }

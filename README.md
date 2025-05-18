@@ -120,7 +120,7 @@ Get total count of media:
 __Example:__  
 Get a slice of media filtered by vibe, categories, and years:
   ```bash
-   curl -X GET "http://localhost:8080/api/media/vibe?page=0&size=10&sort=points,desc&sort=rating,desc&vibe=MAKE_ME_FEEL_GOOD&categories=BASED_ON_A_TRUE_STORY,BASED_ON_A_BOOK,MUST_WATCH_LIST,GIRL_POWER,LIFE_CHANGING_MOVIES,IMD_TOP_250&years=2020-2025&type=MOVIE"
+   curl -X GET "http://localhost:8080/api/media/vibe?page=0&size=10&vibe=MAKE_ME_FEEL_GOOD&categories=BASED_ON_A_TRUE_STORY,BASED_ON_A_BOOK,MUST_WATCH_LIST,GIRL_POWER,LIFE_CHANGING_MOVIES,IMD_TOP_250&years=2020-2025&type=MOVIE"
   ```  
 - `GET /api/media/gallery?...` – Filter by partial title, years, and type. With pagination support (page, size, sort).  
 __Example:__  
@@ -144,7 +144,7 @@ Get recommended media on page 0:
 __Example:__  
 Get media from the "TOP_OSCAR_WINNING_MASTERPIECES" list sorted by rating:
   ```bash
-   curl -X GET "http://localhost:8080/api/media/top-list/TOP_OSCAR_WINNING_MASTERPIECES?page=1&size=10&sort=rating,desc"
+   curl -X GET "http://localhost:8080/api/media/top-list/TOP_OSCAR_WINNING_MASTERPIECES?page=1&size=10"
   ```      
 - `GET /api/media/posters?...` – Get list of media posters. With pagination support (page, size, sort).   
 __Example:__  
@@ -163,6 +163,11 @@ __Example:__
 Find the movie "Inception":
   ```bash
    curl -X GET "http://localhost:8080/api/media/titles/Inception"
+  ```    
+- `GET /api/media/statistics` – Provide statistical info for the main page.  
+__Example:__  
+  ```bash
+   curl -X GET "http://localhost:8080/api/media/statistics"
   ```    
 
 **🎭Available Vibes:**  

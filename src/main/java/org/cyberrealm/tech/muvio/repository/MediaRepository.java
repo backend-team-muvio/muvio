@@ -43,6 +43,7 @@ public interface MediaRepository extends MongoRepository<Media, String>, MediaRe
     @Query(value = "{}", fields = "{ 'id': 1, 'title': 1 }")
     Slice<TitleDto> findAllTitles(Pageable pageable);
 
+    @Query("{ 'title': { $regex: ?0, $options: 'i' } }")
     MediaDtoFromDb findByTitle(String title);
 
     @Query(value = "{}", fields = "{ 'id': 1, 'title': 1, 'genres': 1, 'rating': 1, "
