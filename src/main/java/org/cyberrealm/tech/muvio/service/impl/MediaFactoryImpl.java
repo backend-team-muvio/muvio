@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class MediaFactoryImpl implements MediaFactory {
+    private static final String PRODUCER = "Producer";
     private static final String DEFAULT_LANGUAGE = "null";
     private static final int MAX_NUMBER_OF_ACTORS = 3;
     private final TmDbService tmdbService;
@@ -49,6 +50,10 @@ public class MediaFactoryImpl implements MediaFactory {
         final List<Keyword> keywords = tmdbService.fetchMovieKeywords(movieId)
                 .getKeywords();
         final Credits credits = tmdbService.fetchMovieCredits(movieId, language);
+        final List<Crew> crew = credits.getCrew();
+        if (crew.isEmpty()) {
+            return null;
+        }
         final Media media = mediaMapper.toEntity(movieDb);
         final Double voteAverage = media.getRating();
         final Integer voteCount = movieDb.getVoteCount();
@@ -56,7 +61,7 @@ public class MediaFactoryImpl implements MediaFactory {
         final String title = media.getTitle();
         media.setTrailer(tmdbService.fetchMovieTrailer(movieId, language));
         media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId));
-        media.setDirector(getMovieDirector(credits.getCrew()));
+        media.setDirector(getMovieDirector(crew));
         media.setActors(getMovieActors(credits.getCast(), actors));
         media.setReviews(getReviews(() ->
                 tmdbService.fetchMovieReviews(language, movieId)));
@@ -86,6 +91,11 @@ public class MediaFactoryImpl implements MediaFactory {
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
         media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId));
         media.setDirector(getTvDirector(tvSeriesDb.getCreatedBy()));
+        if (media.getDirector() == null) {
+            System.out.println("Director is null for tv show: " + title + " with id: " + seriesId + " " + credits.getCast()
+            + "              " + credits.getCrew());
+            System.out.println("Created by: " + tvSeriesDb.getCreatedBy());
+        }
         media.setActors(getTvActors(credits.getCast(), actors));
         media.setReviews(getReviews(() ->
                 tmdbService.fetchTvSerialsReviews(language, seriesId)));
@@ -132,7 +142,9 @@ public class MediaFactoryImpl implements MediaFactory {
         return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR))
                 .findFirst()
                 .map(Crew::getName)
-                .orElse(null);
+                .orElse(crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(PRODUCER))
+                        .findFirst()
+                        .map(Crew::getName).orElse(null));
     }
 
     private String getTvDirector(List<CreatedBy> creators) {

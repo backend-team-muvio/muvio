@@ -77,7 +77,8 @@ public class TmDbServiceImpl implements TmDbService {
                                                 && movie.getVideo() != null
                                                 && movie.getPosterPath() != null
                                                 && movie.getOverview() != null
-                                                && movie.getReleaseDate() != null)
+                                                && movie.getReleaseDate() != null
+                                                && movie.getVoteCount() >= MIN_VOTE_COUNT)
                         .map(IdElement::getId).collect(Collectors.toSet()),
                 "Failed to fetch popular movies from TmDb");
     }
@@ -138,9 +139,10 @@ public class TmDbServiceImpl implements TmDbService {
     public Set<Integer> fetchPopularTvSerials(String language, int page) {
         return executeTmDbCall(() -> tmdbTvSeriesLists.getPopular(language, page).getResults()
                         .stream().filter(tvSeries -> tvSeries.getVoteAverage() > MIN_RATE
-                        && tvSeries.getPosterPath() != null
-                        && tvSeries.getOverview() != null
-                        && tvSeries.getFirstAirDate() != null)
+                                && tvSeries.getPosterPath() != null
+                                && tvSeries.getOverview() != null
+                                && tvSeries.getFirstAirDate() != null
+                                && tvSeries.getVoteCount() >= MIN_VOTE_COUNT)
                 .map(IdElement::getId).collect(Collectors.toSet()),
                 "Failed to fetch popular TVSerials from TmDb by page: " + page);
     }
