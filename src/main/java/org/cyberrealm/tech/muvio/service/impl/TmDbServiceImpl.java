@@ -1,11 +1,5 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
-import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
-import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
-import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
-
 import info.movito.themoviedbapi.TmdbDiscover;
 import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
@@ -48,11 +42,12 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
+import static org.cyberrealm.tech.muvio.common.Constants.*;
+
 @Service
 @RequiredArgsConstructor
 public class TmDbServiceImpl implements TmDbService {
     private static final double MIN_RATE = 5.0;
-    private static final double MIN_VOTE_COUNT = 100;
     private static final int MAX_ATTEMPTS = 12;
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_PHOTOS = 6;

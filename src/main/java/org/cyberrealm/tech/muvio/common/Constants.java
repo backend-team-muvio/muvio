@@ -26,6 +26,7 @@ public final class Constants {
     public static final String TRAILER = "Trailer";
     public static final String TEASER = "Teaser";
     public static final String RATING = "rating";
+    public static final Integer MIN_VOTE_COUNT = 100;
 
     private Constants() {
 

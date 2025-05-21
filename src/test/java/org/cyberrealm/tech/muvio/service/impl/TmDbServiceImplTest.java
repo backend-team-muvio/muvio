@@ -1,14 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
-import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
-import static org.cyberrealm.tech.muvio.common.Constants.ONE;
-import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
-import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
-import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
-import static org.cyberrealm.tech.muvio.common.Constants.TWO;
-import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.*;
 import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
 import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
@@ -336,6 +329,7 @@ public class TmDbServiceImplTest {
         tvSeries.setId(TWO);
         tvSeries.setOverview(OVERVIEW);
         tvSeries.setVoteAverage(VOTE_AVERAGE_8);
+        tvSeries.setVoteCount(MIN_VOTE_COUNT);
         tvSeries.setPosterPath(POSTER_PATH);
         tvSeries.setFirstAirDate(RELEASE_DATE);
         tvSeries.setName(TITLE);
@@ -383,6 +377,7 @@ public class TmDbServiceImplTest {
         movie.setId(ONE);
         movie.setOverview(OVERVIEW);
         movie.setVoteAverage(VOTE_AVERAGE_8);
+        movie.setVoteCount(MIN_VOTE_COUNT);
         movie.setPosterPath(POSTER_PATH);
         movie.setReleaseDate(RELEASE_DATE);
         movie.setVideo(true);
