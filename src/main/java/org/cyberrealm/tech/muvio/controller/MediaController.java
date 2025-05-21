@@ -135,8 +135,8 @@ public class MediaController {
             summary = "Find media by title",
             description = "Retrieve a media resource that matches the provided title"
     )
-    public MediaDto findByTitle(@PathVariable String title) {
-        return mediaService.findByTitle(title);
+    public Slice<MediaBaseDto> getMediaByTitle(@PathVariable String title, Pageable pageable) {
+        return mediaService.findByTitle(title, pageable);
     }
 
     @GetMapping("/statistics")

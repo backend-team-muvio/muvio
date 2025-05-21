@@ -32,7 +32,7 @@ public interface MediaService {
 
     Slice<TitleDto> findAllTitles(Pageable pageable);
 
-    MediaDto findByTitle(String title);
+    Slice<MediaBaseDto> findByTitle(String title, Pageable pageable);
 
     List<MediaBaseDto> getAll(Pageable pageable);
 
