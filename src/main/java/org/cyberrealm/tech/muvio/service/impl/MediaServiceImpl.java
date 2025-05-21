@@ -1,5 +1,6 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE_HUNDRED;
 import static org.cyberrealm.tech.muvio.common.Constants.RATING;
 import static org.cyberrealm.tech.muvio.common.Constants.SIX;
@@ -7,9 +8,11 @@ import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
+import com.mongodb.MongoSocketReadTimeoutException;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -25,6 +28,7 @@ import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
+import org.cyberrealm.tech.muvio.exception.MediaProcessingException;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
@@ -34,12 +38,15 @@ import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaService;
 import org.cyberrealm.tech.muvio.service.PaginationUtil;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,12 +54,19 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
     private static final String POINTS = "points";
+    private static final int MIN_TITLE_LENGTH = 3;
+    private static final String MEDIA_STATISTICS = "mediaStatistics";
+    private static final String RESULT_NULL = "#result == null";
     private final MediaRepository mediaRepository;
     private final ActorRepository actorRepository;
     private final MediaMapper mediaMapper;
     private final PaginationUtil paginationUtil;
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public MediaDto getMediaById(String id) {
         return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
                 .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
@@ -60,6 +74,10 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto) {
         final List<MediaDtoWithPoints> mediasWithPoints = mediaRepository
                 .getAllMediaByVibes(requestDto).stream()
@@ -73,6 +91,10 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
                                                 Pageable pageable) {
         final List<Media> mediaForGallery = mediaRepository.getAllForGallery(requestDto, pageable);
@@ -82,6 +104,10 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Set<MediaDto> getAllLuck(int size) {
         return mediaRepository.getAllLuck(size).stream()
                 .map(mediaMapper::toMovieDto).collect(Collectors.toSet());
@@ -89,6 +115,10 @@ public class MediaServiceImpl implements MediaService {
 
     @Transactional
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Slice<MediaBaseDto> getRecommendations(int page) {
         boolean stop = true;
         final int minYear = Year.now().getValue() - THREE;
@@ -118,6 +148,10 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Slice<MediaDtoWithCast> findMediaByTopLists(String topList, int page,int size) {
         final Pageable pageable = PageRequest.of(page, size, Sort.by(RATING).descending());
         final Slice<MediaDtoWithCastFromDb> media = mediaRepository
@@ -128,33 +162,63 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Slice<PosterDto> findAllPosters(Pageable pageable) {
         return mediaRepository.findAllPosters(pageable);
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public Slice<TitleDto> findAllTitles(Pageable pageable) {
         return mediaRepository.findAllTitles(pageable);
     }
 
     @Override
-    public MediaDto findByTitle(String title) {
-        return mediaMapper.toMovieDto(mediaRepository.findByTitle(title));
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
+    public Slice<MediaBaseDto> findByTitle(String title, Pageable pageable) {
+        if (title == null || title.length() < MIN_TITLE_LENGTH) {
+            throw new IllegalArgumentException("The title must contain at least 3 characters");
+        }
+        return Optional.ofNullable(mediaRepository.findByTitle(title, pageable))
+                .filter(slice -> !slice.isEmpty())
+                .orElseThrow(() ->
+                        new MediaProcessingException("Couldn't find media by title: " + title));
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public List<MediaBaseDto> getAll(Pageable pageable) {
         return mediaRepository.getAll(pageable).stream().peek(media -> media.setDuration(
                 mediaMapper.toDuration(Integer.valueOf(media.getDuration())))).toList();
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public long count() {
         return mediaRepository.count();
     }
 
-    @Cacheable(value = "mediaStatistics", unless = "#result == null")
+    @Cacheable(value = MEDIA_STATISTICS, unless = RESULT_NULL)
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public MainPageInfoDto getMainPageInfo() {
         return new MainPageInfoDto(count(), getGenreCount(), actorRepository.count());
     }
