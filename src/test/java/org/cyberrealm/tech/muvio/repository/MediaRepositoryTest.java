@@ -83,9 +83,9 @@ public class MediaRepositoryTest extends AbstractMongoTest {
     @Test
     @DisplayName("Should return media by title")
     void findByTitle_ValidResponse_ReturnMediaDtoFromDb() {
-        final MediaDtoFromDb actual = mediaRepository.findByTitle(TITLE_1);
+        final Slice<MediaBaseDto> actual = mediaRepository.findByTitle(TITLE_1, PAGEABLE);
         assertNotNull(actual);
-        assertEquals(TITLE_1, actual.title());
+        assertEquals(TITLE_1, actual.getContent().getFirst().getTitle());
     }
 
     @Test
