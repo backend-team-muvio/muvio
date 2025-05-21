@@ -168,10 +168,11 @@ public class MediaServiceImplTest {
     @Test
     @DisplayName("Verify findByTitle() method works")
     void findByTitle_validResponse_returnMediaDto() {
-        final MediaDto mediaDto = getMediaDto();
-        when(mediaRepository.findByTitle(anyString())).thenReturn(getMediaDtoFromDb());
-        when(mediaMapper.toMovieDto(any(MediaDtoFromDb.class))).thenReturn(mediaDto);
-        assertThat(mediaService.findByTitle(TITLE)).isEqualTo(mediaDto);
+        final MediaBaseDto mediaBaseDto = getMediaBaseDto();
+        when(mediaRepository.findByTitle(TITLE, PAGEABLE))
+                .thenReturn(getSliceMediaDtoFromDb());
+        assertThat(mediaBaseDto)
+                .isEqualTo(mediaService.findByTitle(TITLE, PAGEABLE).getContent().getFirst());
     }
 
     @Test
@@ -267,7 +268,13 @@ public class MediaServiceImplTest {
     private MediaBaseDto getMediaBaseDto() {
         MediaBaseDto mediaBaseDto = new MediaBaseDto();
         mediaBaseDto.setId(ID_STRING);
+        mediaBaseDto.setTitle(TITLE);
+        mediaBaseDto.setGenres(Set.of(COMEDY));
+        mediaBaseDto.setRating(VOTE_AVERAGE_8);
+        mediaBaseDto.setPosterPath(POSTER_PATH);
         mediaBaseDto.setDuration(DURATION_90_STRING);
+        mediaBaseDto.setReleaseYear(YEAR_2020);
+        mediaBaseDto.setType(TYPE_MOVIE);
         return mediaBaseDto;
     }
 
@@ -275,6 +282,14 @@ public class MediaServiceImplTest {
         return new MediaDtoFromDb(ID_STRING, TITLE, Set.of(COMEDY), VOTE_AVERAGE_8,
                 TRAILER, POSTER_PATH, DURATION_90, DIRECTOR_NAME, Set.of(), List.of(), List.of(),
                 YEAR_2020, List.of(), OVERVIEW, TYPE_MOVIE, Set.of());
+    }
+
+    private Slice<MediaBaseDto> getSliceMediaDtoFromDb() {
+        List<MediaBaseDto> mediaList = List.of(
+                new MediaBaseDto(ID_STRING, TITLE, Set.of(COMEDY), VOTE_AVERAGE_8,
+                        POSTER_PATH, DURATION_90_STRING, YEAR_2020, TYPE_MOVIE)
+        );
+        return new SliceImpl<>(mediaList);
     }
 
     private MediaDto getMediaDto() {

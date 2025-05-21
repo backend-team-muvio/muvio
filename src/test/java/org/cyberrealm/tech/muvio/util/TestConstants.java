@@ -63,6 +63,9 @@ public final class TestConstants {
     public static final String FIRST_ACTOR_ID = "12s";
     public static final String FIRST_ACTOR_ROLE = "Max";
     public static final Actor DEFAULT_ACTOR = new Actor();
+    public static final int FIRST_ID = 1;
+    public static final String FIRST_ACTOR_NAME = "Mike";
+    public static final String FIRST_ACTOR_PHOTO_URL = "firstActorUrl";
     // Details of the second movie (The Matrix)
     public static final String SECOND_MOVIE_TITLE = "The Matrix";
     public static final double SECOND_MOVIE_RATING = 8.7;
@@ -97,6 +100,10 @@ public final class TestConstants {
     public static final String PARAM_NAME_TITLE = "title";
     public static final String CRITERIA_YEARS_PERIOD = "2010-2015";
     public static final String CONTENT_STRING = "content";
+    //Statistics values
+    public static final int MEDIA_COUNT = 2;
+    public static final int GENRE_COUNT = 26;
+    public static final int ACTOR_COUNT = 1;
 
     public static final String MEDIA_1 = "Media1";
     public static final String TRUE_STORY = "true story";
@@ -121,6 +128,8 @@ public final class TestConstants {
     public static final String STRING_4 = "4";
     public static final String STRING_5 = "5";
     public static final String STRING_6 = "6";
+    public static final String TITLE_PROCESSING_EXCEPTION_MESSAGE = "Couldn't find media by title:"
+            + " Nonexistent Title";
 
     private TestConstants() {
     }

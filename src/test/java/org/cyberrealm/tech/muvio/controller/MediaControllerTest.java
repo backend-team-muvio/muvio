@@ -1,6 +1,7 @@
 package org.cyberrealm.tech.muvio.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.cyberrealm.tech.muvio.util.TestConstants.ACTOR_COUNT;
 import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.CRITERIA_YEARS_PERIOD;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EMPTY;
@@ -10,9 +11,11 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MEDIA_ID;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MEDIA_TITLE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MOVIE_TITLE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_RECORD;
+import static org.cyberrealm.tech.muvio.util.TestConstants.GENRE_COUNT;
 import static org.cyberrealm.tech.muvio.util.TestConstants.INVALID_CATEGORIES;
 import static org.cyberrealm.tech.muvio.util.TestConstants.INVALID_MEDIA_ID;
 import static org.cyberrealm.tech.muvio.util.TestConstants.INVALID_YEARS_PERIOD;
+import static org.cyberrealm.tech.muvio.util.TestConstants.MEDIA_COUNT;
 import static org.cyberrealm.tech.muvio.util.TestConstants.NONEXISTENT_TITLE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.NON_EXISTENT_VIBE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.PAGE_NUMBER_ZERO;
@@ -25,6 +28,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.PARAM_NAME_TYPE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.PARAM_NAME_VIBE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.PARAM_NAME_YEARS;
 import static org.cyberrealm.tech.muvio.util.TestConstants.POPULAR_MOVIE_ID_ONE;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_PROCESSING_EXCEPTION_MESSAGE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ZERO_OF_RECORDS;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,12 +39,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.config.AbstractMongoTest;
+import org.cyberrealm.tech.muvio.dto.MainPageInfoDto;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
+import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.TopLists;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.model.Vibe;
+import org.cyberrealm.tech.muvio.repository.ActorRepository;
 import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.util.TestUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -65,13 +72,19 @@ public class MediaControllerTest extends AbstractMongoTest {
     @Autowired
     private MediaRepository mediaRepository;
 
+    @Autowired
+    private ActorRepository actorRepository;
+
     @BeforeEach
     void setUp() {
         mediaRepository.deleteAll();
+        actorRepository.deleteAll();
 
+        Actor firstActor = TestUtil.FIRST_ACTOR;
         Media firstMedia = TestUtil.firstMedia;
         Media secondMedia = TestUtil.secondMedia;
 
+        actorRepository.save(firstActor);
         mediaRepository.saveAll(List.of(firstMedia, secondMedia));
     }
 
@@ -414,15 +427,19 @@ public class MediaControllerTest extends AbstractMongoTest {
     @DisplayName("get Media by title")
     void getMediaByTitle_ExistingTitle_ReturnsMedia() throws Exception {
         // When
-        MvcResult mvcResult = mockMvc.perform(get("/media/titles/{title}", FIRST_MEDIA_TITLE))
+        MvcResult mvcResult = mockMvc.perform(get("/media/titles/{title}", FIRST_MEDIA_TITLE)
+                        .param(PARAM_NAME_PAGE, PAGE_NUMBER_ZERO)
+                        .param(PARAM_NAME_SIZE, PAGE_SIZE_FIVE))
                 .andExpect(status().isOk())
                 .andReturn();
 
         // Then
-        String jsonResponse = mvcResult.getResponse().getContentAsString();
-        MediaDto responseDto = objectMapper.readValue(jsonResponse, MediaDto.class);
-        assertThat(responseDto).isNotNull();
-        assertThat(responseDto.title()).isEqualTo(FIRST_MEDIA_TITLE);
+        JsonNode root = objectMapper.readTree(mvcResult.getResponse().getContentAsString());
+        JsonNode contentArray = root.get(CONTENT_STRING);
+
+        assertThat(contentArray).isNotNull();
+        assertThat(contentArray.isArray()).isTrue();
+        assertThat(contentArray.size()).isGreaterThan(ZERO_OF_RECORDS);
     }
 
     @Test
@@ -430,11 +447,28 @@ public class MediaControllerTest extends AbstractMongoTest {
     void getMediaByTitle_WhenMediaNotFound_ReturnsNotFound() throws Exception {
         // When
         MvcResult mvcResult = mockMvc.perform(get("/media/titles/{title}", NONEXISTENT_TITLE))
+                .andExpect(status().is5xxServerError())
+                .andReturn();
+
+        // Then
+        String jsonResponse = mvcResult.getResponse().getContentAsString();
+        assertThat(jsonResponse).contains(TITLE_PROCESSING_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    @DisplayName("Provide statistical info for the main page")
+    void getMainPageInfo_ReturnStatistics_IsOk() throws Exception {
+        //Given
+        MainPageInfoDto expected = new MainPageInfoDto(MEDIA_COUNT, GENRE_COUNT, ACTOR_COUNT);
+        // When
+        MvcResult mvcResult = mockMvc.perform(get("/media/statistics"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         // Then
         String jsonResponse = mvcResult.getResponse().getContentAsString();
-        assertThat(jsonResponse).isEmpty();
+        MainPageInfoDto actual = objectMapper.readValue(jsonResponse, MainPageInfoDto.class);
+        assertThat(actual).isNotNull();
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
     }
 }

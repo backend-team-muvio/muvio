@@ -1,7 +1,9 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
+import com.mongodb.MongoSocketReadTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,9 @@ import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.repository.ActorRepository;
 import org.cyberrealm.tech.muvio.repository.MediaRepository;
 import org.cyberrealm.tech.muvio.service.MediaStorageService;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,6 +26,10 @@ public class MediaStorageServiceImpl implements MediaStorageService {
     private final ActorRepository actorRepository;
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public void deleteAll() {
         if (actorRepository != null) {
             actorRepository.deleteAll();
@@ -31,6 +40,10 @@ public class MediaStorageServiceImpl implements MediaStorageService {
     }
 
     @Override
+    @Retryable(retryFor = {
+            DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
+    },
+            backoff = @Backoff(delay = BACK_OFF))
     public void saveAll(Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage) {
         List<Actor> actorList = new ArrayList<>(actorStorage.values());
         for (int i = ZERO; i < actorList.size(); i += BATCH_SIZE) {

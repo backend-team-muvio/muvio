@@ -17,6 +17,7 @@ public final class Constants {
     public static final double ROUNDING_FACTOR = 10.0;
     public static final int TEN = 10;
     public static final int ONE_HUNDRED = 100;
+    public static final int BACK_OFF = 10000;
     public static final int SHORT_DURATION = 40;
     public static final int DEFAULT_SERIAL_DURATION = 30;
     public static final String LANGUAGE_EN = "en";

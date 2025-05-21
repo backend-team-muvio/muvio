@@ -2,8 +2,12 @@ package org.cyberrealm.tech.muvio.util;
 
 import static org.cyberrealm.tech.muvio.util.TestConstants.CHRISTOPHER_NOLAN;
 import static org.cyberrealm.tech.muvio.util.TestConstants.DEFAULT_ACTOR;
+import static org.cyberrealm.tech.muvio.util.TestConstants.EXPECTED_SIZE_TWO;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_ACTOR_ID;
+import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_ACTOR_NAME;
+import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_ACTOR_PHOTO_URL;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_ACTOR_ROLE;
+import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_ID;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MEDIA_ID;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MOVIE_OVERVIEW;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MOVIE_RATING;
@@ -28,6 +32,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.SECOND_MOVIE_TRAILER;
 
 import java.util.List;
 import java.util.Set;
+import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.RoleActor;
@@ -37,12 +42,12 @@ import org.cyberrealm.tech.muvio.model.Vibe;
 import org.springframework.data.domain.Pageable;
 
 public final class TestUtil {
-    public static final RoleActor firstActor = new RoleActor();
+    public static final RoleActor FIRST_ROLE_ACTOR = new RoleActor();
 
     static {
-        firstActor.setId(FIRST_ACTOR_ID);
-        firstActor.setRole(FIRST_ACTOR_ROLE);
-        firstActor.setActor(DEFAULT_ACTOR);
+        FIRST_ROLE_ACTOR.setId(FIRST_ACTOR_ID);
+        FIRST_ROLE_ACTOR.setRole(FIRST_ACTOR_ROLE);
+        FIRST_ROLE_ACTOR.setActor(DEFAULT_ACTOR);
     }
 
     public static final Media firstMedia = Media.builder()
@@ -55,7 +60,7 @@ public final class TestUtil {
             .duration(INTERCEPTION_DURATION)
             .director(CHRISTOPHER_NOLAN)
             .photos(Set.of(PHOTOS_INCEPTION_1_URL, PHOTOS_INCEPTION_2_URL))
-            .actors(List.of(firstActor))
+            .actors(List.of(FIRST_ROLE_ACTOR))
             .reviews(List.of())
             .releaseYear(RELEASE_YEAR_2010)
             .overview(FIRST_MOVIE_OVERVIEW)
@@ -74,14 +79,22 @@ public final class TestUtil {
             .duration(SECOND_MOVIE_DURATION)
             .director(SECOND_MOVIE_DIRECTOR)
             .photos(Set.of(PHOTOS_MATRIX_1_URL, PHOTOS_MATRIX_2_URL))
-            .actors(List.of(firstActor))
+            .actors(List.of(FIRST_ROLE_ACTOR))
             .reviews(List.of())
             .releaseYear(RELEASE_YEAR_1999)
             .overview(SECOND_MOVIE_OVERVIEW)
             .type(Type.MOVIE)
             .build();
 
-    public static final Pageable PAGEABLE = Pageable.unpaged();
+    public static final Pageable PAGEABLE = Pageable.ofSize(EXPECTED_SIZE_TWO);
+
+    public static final Actor FIRST_ACTOR = new Actor();
+
+    static {
+        FIRST_ACTOR.setId(FIRST_ID);
+        FIRST_ACTOR.setName(FIRST_ACTOR_NAME);
+        FIRST_ACTOR.setPhoto(FIRST_ACTOR_PHOTO_URL);
+    }
 
     private TestUtil() {
     }
