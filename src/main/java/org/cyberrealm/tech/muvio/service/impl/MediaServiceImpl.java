@@ -29,6 +29,7 @@ import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
 import org.cyberrealm.tech.muvio.exception.EntityNotFoundException;
 import org.cyberrealm.tech.muvio.exception.MediaProcessingException;
+import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.model.GenreEntity;
 import org.cyberrealm.tech.muvio.model.Media;
@@ -60,6 +61,7 @@ public class MediaServiceImpl implements MediaService {
     private final MediaRepository mediaRepository;
     private final ActorRepository actorRepository;
     private final MediaMapper mediaMapper;
+    private final GenreMapper genreMapper;
     private final PaginationUtil paginationUtil;
 
     @Override
@@ -142,6 +144,11 @@ public class MediaServiceImpl implements MediaService {
             }
         }
         updateDuration(recommendations);
+        recommendations.forEach(
+                media -> {
+                    media.setGenres(genreMapper.toStringGenres(media.getGenres()));
+                    media.setType(mediaMapper.toCorrectType(media.getType()));
+                });
         final Page<MediaBaseDto> mediaPage = paginationUtil
                 .paginateList(PageRequest.of(page, SIX), recommendations);
         return mediaPage.getContent().size() < SIX ? null : mediaPage;
@@ -188,10 +195,17 @@ public class MediaServiceImpl implements MediaService {
         if (title == null || title.length() < MIN_TITLE_LENGTH) {
             throw new IllegalArgumentException("The title must contain at least 3 characters");
         }
-        return Optional.ofNullable(mediaRepository.findByTitle(title, pageable))
+        final Slice<MediaBaseDto> baseDtoSlice = Optional.ofNullable(
+                mediaRepository.findByTitle(title, pageable))
                 .filter(slice -> !slice.isEmpty())
                 .orElseThrow(() ->
                         new MediaProcessingException("Couldn't find media by title: " + title));
+        baseDtoSlice.forEach(
+                media -> {
+                    media.setGenres(genreMapper.toStringGenres(media.getGenres()));
+                    media.setType(mediaMapper.toCorrectType(media.getType()));
+                });
+        return baseDtoSlice;
     }
 
     @Override
@@ -200,8 +214,11 @@ public class MediaServiceImpl implements MediaService {
     },
             backoff = @Backoff(delay = BACK_OFF))
     public List<MediaBaseDto> getAll(Pageable pageable) {
-        return mediaRepository.getAll(pageable).stream().peek(media -> media.setDuration(
-                mediaMapper.toDuration(Integer.valueOf(media.getDuration())))).toList();
+        return mediaRepository.getAll(pageable).stream().peek(media -> {
+            media.setDuration(mediaMapper.toDuration(Integer.valueOf(media.getDuration())));
+            media.setGenres(genreMapper.toStringGenres(media.getGenres()));
+            media.setType(mediaMapper.toCorrectType(media.getType()));
+        }).toList();
     }
 
     @Override

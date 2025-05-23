@@ -45,6 +45,9 @@ public class MediaSyncServiceImpl implements MediaSyncService {
                     winningMedia, actorStorage)
                     : mediaFactory.createTvSerial(language, id, imdbTop250,
                     winningMedia, actorStorage);
+            if (media == null) {
+                return;
+            }
             mediaStorage.put(media.getId(), media);
         });
     }
@@ -70,6 +73,9 @@ public class MediaSyncServiceImpl implements MediaSyncService {
                     actorStorage)
                     : mediaFactory.createTvSerial(language, id, imdbTop250,
                     winningMedia, actorStorage);
+            if (newMedia == null) {
+                return;
+            }
             mediaStorage.put(newMedia.getId(), newMedia);
         });
     }
@@ -92,6 +98,9 @@ public class MediaSyncServiceImpl implements MediaSyncService {
                             actorStorage)
                             : mediaFactory.createTvSerial(language, id, imdbTop250,
                             winningMedia, actorStorage);
+                    if (newMedia == null) {
+                        return;
+                    }
                     mediaStorage.put(newMedia.getId(), newMedia);
                 });
     }

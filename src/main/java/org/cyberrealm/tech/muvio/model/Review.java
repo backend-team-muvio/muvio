@@ -12,5 +12,5 @@ public class Review {
     private String avatarPath;
     private String content;
     private LocalDateTime time;
-    private Double rating;
+    private Integer rating;
 }
