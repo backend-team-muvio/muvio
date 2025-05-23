@@ -1,6 +1,8 @@
 package org.cyberrealm.tech.muvio.mapper;
 
 import static org.cyberrealm.tech.muvio.common.Constants.AMPERSAND;
+import static org.cyberrealm.tech.muvio.common.Constants.UNDERSCORE;
+import static org.cyberrealm.tech.muvio.common.Constants.WHITE_SPACE;
 
 import info.movito.themoviedbapi.model.core.Genre;
 import java.util.Arrays;
@@ -25,6 +27,25 @@ public interface GenreMapper {
                 : new String[]{genre.getName()})
                 .flatMap(Arrays::stream)
                 .map(genre -> GenreEntity.fromString(genre.trim()))
+                .collect(Collectors.toSet());
+    }
+
+    @Named("toStringGenres")
+    default Set<String> toStringGenres(Set<String> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return null;
+        }
+        return genres.stream().map(genre -> GenreEntity
+                        .fromString(genre.replace(UNDERSCORE, WHITE_SPACE)).getName())
+                .collect(Collectors.toSet());
+    }
+
+    @Named("fromGenreEntityToString")
+    default Set<String> fromGenreEntityToString(Set<GenreEntity> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return null;
+        }
+        return genres.stream().map(GenreEntity::getName)
                 .collect(Collectors.toSet());
     }
 }

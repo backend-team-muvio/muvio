@@ -1,5 +1,12 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
+import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
+import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
+import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
+
 import info.movito.themoviedbapi.TmdbDiscover;
 import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
@@ -41,8 +48,6 @@ import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-
-import static org.cyberrealm.tech.muvio.common.Constants.*;
 
 @Service
 @RequiredArgsConstructor

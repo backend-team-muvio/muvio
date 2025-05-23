@@ -7,7 +7,25 @@ import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
-import static org.cyberrealm.tech.muvio.util.TestConstants.*;
+import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
+import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.util.TestConstants.POSTER_PATH;
+import static org.cyberrealm.tech.muvio.util.TestConstants.RELEASE_YEAR_2022;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_2;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_3;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_4;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_5;
+import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_6;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_1;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_2;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_3;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_4;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_5;
+import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_6;
+import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
+import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
 import static org.cyberrealm.tech.muvio.util.TestUtil.PAGEABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +51,7 @@ import org.cyberrealm.tech.muvio.dto.MediaGalleryRequestDto;
 import org.cyberrealm.tech.muvio.dto.MediaVibeRequestDto;
 import org.cyberrealm.tech.muvio.dto.PosterDto;
 import org.cyberrealm.tech.muvio.dto.TitleDto;
+import org.cyberrealm.tech.muvio.mapper.GenreMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.repository.MediaRepository;
@@ -66,6 +85,8 @@ public class MediaServiceImplTest {
     private MediaMapper mediaMapper;
     @Mock
     private PaginationUtil paginationUtil;
+    @Mock
+    private GenreMapper genreMapper;
     @InjectMocks
     private MediaServiceImpl mediaService;
 
@@ -154,6 +175,8 @@ public class MediaServiceImplTest {
         final MediaBaseDto mediaBaseDto = getMediaBaseDto();
         when(mediaRepository.findByTitle(TITLE, PAGEABLE))
                 .thenReturn(getSliceMediaDtoFromDb());
+        when(genreMapper.toStringGenres(any())).thenReturn(Set.of(COMEDY));
+        when(mediaMapper.toCorrectType(any())).thenReturn(TYPE_MOVIE);
         assertThat(mediaBaseDto)
                 .isEqualTo(mediaService.findByTitle(TITLE, PAGEABLE).getContent().getFirst());
     }
@@ -164,6 +187,7 @@ public class MediaServiceImplTest {
         final List<MediaBaseDto> mediaBaseDto = List.of(getMediaBaseDto());
         when(mediaRepository.getAll(PAGEABLE)).thenReturn(mediaBaseDto);
         when(mediaMapper.toDuration(anyInt())).thenReturn(DURATION_90_STRING);
+        when(genreMapper.toStringGenres(any())).thenReturn(Set.of(COMEDY));
         assertThat(mediaService.getAll(PAGEABLE)).isEqualTo(mediaBaseDto);
     }
 
@@ -239,13 +263,13 @@ public class MediaServiceImplTest {
     }
 
     private MediaDtoWithCast getMediaDtoWithCast() {
-        return new MediaDtoWithCast(ID_STRING, TITLE, RELEASE_YEAR_2022, Set.of(COMEDY), VOTE_AVERAGE_8,
-                POSTER_PATH, DURATION_90_STRING, DIRECTOR_NAME, List.of());
+        return new MediaDtoWithCast(ID_STRING, TITLE, RELEASE_YEAR_2022, Set.of(COMEDY),
+                VOTE_AVERAGE_8, POSTER_PATH, DURATION_90_STRING, DIRECTOR_NAME, List.of());
     }
 
     private MediaDtoWithCastFromDb getMediaDtoWithCastFromDb() {
-        return new MediaDtoWithCastFromDb(ID_STRING, TITLE, RELEASE_YEAR_2022, Set.of(COMEDY), VOTE_AVERAGE_8,
-                POSTER_PATH, DURATION_90, DIRECTOR_NAME, List.of());
+        return new MediaDtoWithCastFromDb(ID_STRING, TITLE, RELEASE_YEAR_2022, Set.of(COMEDY),
+                VOTE_AVERAGE_8, POSTER_PATH, DURATION_90, DIRECTOR_NAME, List.of());
     }
 
     private MediaBaseDto getMediaBaseDto() {

@@ -33,6 +33,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MediaFactoryImpl implements MediaFactory {
     private static final String PRODUCER = "Producer";
+    private static final String EXECUTIVE_PRODUCER = "Executive Producer";
+    private static final String SERIES_DIRECTOR = "Series Director";
+    private static final String HOST = "host";
+    private static final String CREATOR = "Creator";
+    private static final String CHIEF_DIRECTOR = "Chief Director";
+    private static final String EPISODE_DIRECTOR = "Episode Director";
     private static final String DEFAULT_LANGUAGE = "null";
     private static final int MAX_NUMBER_OF_ACTORS = 3;
     private final TmDbService tmdbService;
@@ -84,19 +90,20 @@ public class MediaFactoryImpl implements MediaFactory {
         final Media media = mediaMapper.toEntity(tvSeriesDb);
         final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
                 = tmdbService.fetchTvSerialsCredits(seriesId, language);
+        final List<info.movito.themoviedbapi.model.tv.core.credits.Cast> cast = credits.getCast();
+        final String tvDirector = getTvDirector(
+                tvSeriesDb.getCreatedBy(), cast, credits.getCrew());
+        if (tvDirector == null) {
+            return null;
+        }
         final Double voteAverage = media.getRating();
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
         media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId));
-        media.setDirector(getTvDirector(tvSeriesDb.getCreatedBy()));
-        if (media.getDirector() == null) {
-            System.out.println("Director is null for tv show: " + title + " with id: " + seriesId + " " + credits.getCast()
-            + "              " + credits.getCrew());
-            System.out.println("Created by: " + tvSeriesDb.getCreatedBy());
-        }
-        media.setActors(getTvActors(credits.getCast(), actors));
+        media.setDirector(tvDirector);
+        media.setActors(getTvActors(cast, actors));
         media.setReviews(getReviews(() ->
                 tmdbService.fetchTvSerialsReviews(language, seriesId)));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
@@ -139,18 +146,50 @@ public class MediaFactoryImpl implements MediaFactory {
     }
 
     private String getMovieDirector(List<Crew> crews) {
-        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(DIRECTOR))
-                .findFirst()
-                .map(Crew::getName)
-                .orElse(crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(PRODUCER))
-                        .findFirst()
-                        .map(Crew::getName).orElse(null));
+        return tryGetFirstNonNull(
+                () -> findCrewMemberByJob(crews, DIRECTOR),
+                () -> findCrewMemberByJob(crews, PRODUCER)
+        );
     }
 
-    private String getTvDirector(List<CreatedBy> creators) {
-        return creators.stream()
-                .map(NamedIdElement::getName)
-                .findFirst()
-                .orElse(null);
+    private String findCrewMemberByJob(List<Crew> crews, String job) {
+        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(job))
+                .map(Crew::getName).findFirst().orElse(null);
+    }
+
+    private String getTvDirector(List<CreatedBy> creators,
+                                 List<info.movito.themoviedbapi.model.tv.core.credits.Cast> casts,
+                                 List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crews
+    ) {
+        return tryGetFirstNonNull(
+                () -> creators.stream().map(NamedIdElement::getName).findFirst().orElse(null),
+                () -> getCrewNameByJob(crews, DIRECTOR),
+                () -> getCrewNameByJob(crews, CREATOR),
+                () -> getCrewNameByJob(crews, PRODUCER),
+                () -> getCrewNameByJob(crews, EXECUTIVE_PRODUCER),
+                () -> getCrewNameByJob(crews, SERIES_DIRECTOR),
+                () -> getCrewNameByJob(crews, EPISODE_DIRECTOR),
+                () -> getCrewNameByJob(crews, CHIEF_DIRECTOR),
+                () -> casts.stream().filter(cast -> cast.getCharacter() != null
+                                && cast.getCharacter().toLowerCase().contains(HOST))
+                        .findFirst().map(NamedIdElement::getName).orElse(null));
+    }
+
+    @SafeVarargs
+    private String tryGetFirstNonNull(Supplier<String>... suppliers) {
+        for (Supplier<String> supplier : suppliers) {
+            String result = supplier.get();
+            if (result != null && !result.isEmpty()) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    private String getCrewNameByJob(
+            List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crews, String job) {
+        return crews.stream().filter(crew -> crew.getJob() != null
+                        && crew.getJob().equalsIgnoreCase(job)).findFirst()
+                .map(NamedIdElement::getName).orElse(null);
     }
 }

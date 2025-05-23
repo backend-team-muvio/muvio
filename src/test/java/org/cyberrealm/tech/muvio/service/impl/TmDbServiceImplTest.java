@@ -1,7 +1,15 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.*;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
+import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
+import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
+import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
+import static org.cyberrealm.tech.muvio.common.Constants.TWO;
+import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
 import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;

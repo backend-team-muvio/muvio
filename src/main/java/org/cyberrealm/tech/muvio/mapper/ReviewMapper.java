@@ -1,7 +1,5 @@
 package org.cyberrealm.tech.muvio.mapper;
 
-import static org.cyberrealm.tech.muvio.common.Constants.ROUNDING_FACTOR;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,7 +23,7 @@ public interface ReviewMapper {
     }
 
     @Named("getRating")
-    default Double getRating(Double voteAverage) {
-        return Math.round(voteAverage * ROUNDING_FACTOR) / ROUNDING_FACTOR;
+    default Integer getRating(Double voteAverage) {
+        return voteAverage.intValue();
     }
 }

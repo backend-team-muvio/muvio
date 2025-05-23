@@ -46,7 +46,7 @@ public class MediaSyncServiceImpl implements MediaSyncService {
                     : mediaFactory.createTvSerial(language, id, imdbTop250,
                     winningMedia, actorStorage);
             if (media == null) {
-              return;
+                return;
             }
             mediaStorage.put(media.getId(), media);
         });

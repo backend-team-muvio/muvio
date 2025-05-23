@@ -5,6 +5,8 @@ import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
 import static org.cyberrealm.tech.muvio.common.Constants.ROUNDING_FACTOR;
 import static org.cyberrealm.tech.muvio.common.Constants.SHORT_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
+import static org.cyberrealm.tech.muvio.common.Constants.UNDERSCORE;
+import static org.cyberrealm.tech.muvio.common.Constants.WHITE_SPACE;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
 import info.movito.themoviedbapi.model.core.ProductionCountry;
@@ -34,6 +36,8 @@ public interface MediaMapper {
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
+    @Mapping(source = "genres", target = "genres", qualifiedByName = "toStringGenres")
+    @Mapping(source = "type", target = "type", qualifiedByName = "toCorrectType")
     MediaDto toMovieDto(MediaDtoFromDb movie);
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
@@ -64,14 +68,20 @@ public interface MediaMapper {
 
     @Mapping(source = "actors", target = "actors", qualifiedByName = "toListActors")
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
+    @Mapping(source = "genres", target = "genres", qualifiedByName = "toStringGenres")
     MediaDtoWithCast toMediaDtoWithCast(MediaDtoWithCastFromDb movie);
 
     @Mapping(source = "media.actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "media.duration", target = "duration", qualifiedByName = "toDuration")
     @Mapping(target = "points", expression = "java(calculatePoints(media, categories))")
+    @Mapping(source = "media.genres", target = "genres",
+            qualifiedByName = "fromGenreEntityToString")
+    @Mapping(source = "media.type", target = "type", qualifiedByName = "fromTypeToString")
     MediaDtoWithPoints toMediaDtoWithPoints(Media media, Set<String> categories);
 
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
+    @Mapping(source = "genres", target = "genres", qualifiedByName = "fromGenreEntityToString")
+    @Mapping(source = "type", target = "type", qualifiedByName = "fromTypeToString")
     MediaBaseDto toMediaBaseDto(Media media);
 
     @Named("toDuration")
@@ -125,5 +135,15 @@ public interface MediaMapper {
     @Named("putCountries")
     default List<String> putCountries(List<ProductionCountry> productionCountries) {
         return productionCountries.stream().map(ProductionCountry::getName).toList();
+    }
+
+    @Named("toCorrectType")
+    default String toCorrectType(String type) {
+        return Type.fromString(type.replace(UNDERSCORE, WHITE_SPACE)).getName();
+    }
+
+    @Named("fromTypeToString")
+    default String fromTypeToString(Type type) {
+        return type.getName();
     }
 }
