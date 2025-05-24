@@ -117,8 +117,8 @@ public class MediaController {
             summary = "Get all media posters",
             description = "Retrieve a paginated list of media posters"
     )
-    public Slice<PosterDto> findAllPosters(Pageable pageable) {
-        return mediaService.findAllPosters(pageable);
+    public List<PosterDto> getRandomPosters(@RequestParam(defaultValue = "70") int size) {
+        return mediaService.getRandomPosters(size);
     }
 
     @GetMapping("/titles")

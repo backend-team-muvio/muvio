@@ -37,8 +37,10 @@ public interface MediaRepository extends MongoRepository<Media, String>, MediaRe
 
     Slice<MediaDtoWithCastFromDb> findByTopListsContaining(String topList, Pageable pageable);
 
-    @Query(value = "{ 'posterPath': { '$ne': null } }", fields = "{ 'id': 1, 'posterPath': 1 }")
-    Slice<PosterDto> findAllPosters(Pageable pageable);
+    @Aggregation(pipeline = {
+            "{ '$sample': { 'size': ?0 } }"
+    })
+    List<PosterDto> getRandomPosters(int size);
 
     @Query(value = "{}", fields = "{ 'id': 1, 'title': 1 }")
     Slice<TitleDto> findAllTitles(Pageable pageable);

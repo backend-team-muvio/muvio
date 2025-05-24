@@ -173,8 +173,8 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public Slice<PosterDto> findAllPosters(Pageable pageable) {
-        return mediaRepository.findAllPosters(pageable);
+    public List<PosterDto> getRandomPosters(int size) {
+        return mediaRepository.getRandomPosters(size);
     }
 
     @Override

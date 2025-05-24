@@ -346,42 +346,38 @@ public class MediaControllerTest extends AbstractMongoTest {
     }
 
     @Test
-    @DisplayName("get all posters")
-    void getAllPosters_WhenMediaExists_ReturnsSlice() throws Exception {
+    @DisplayName("get random posters")
+    void getRandomPosters_WhenMediaExists_ReturnsSlice() throws Exception {
         // When
         MvcResult mvcResult = mockMvc.perform(get("/media/posters")
-                        .param(PARAM_NAME_PAGE, PAGE_NUMBER_ZERO)
                         .param(PARAM_NAME_SIZE, PAGE_SIZE_FIVE))
                 .andExpect(status().isOk())
                 .andReturn();
 
         // Then
-        JsonNode root = objectMapper.readTree(mvcResult.getResponse().getContentAsString());
-        JsonNode contentArray = root.get(CONTENT_STRING);
+        JsonNode actual = objectMapper.readTree(mvcResult.getResponse().getContentAsString());
 
-        assertThat(contentArray).isNotNull();
-        assertThat(contentArray.isArray()).isTrue();
-        assertThat(contentArray.size()).isGreaterThan(ZERO_OF_RECORDS);
+        assertThat(actual).isNotNull();
+        assertThat(actual.isArray()).isTrue();
+        assertThat(actual.size()).isGreaterThan(ZERO_OF_RECORDS);
     }
 
     @Test
-    @DisplayName("get all posters when repository empty")
-    void getAllPosters_WhenRepositoryEmpty_ReturnsEmptySlice() throws Exception {
+    @DisplayName("get random posters when repository empty")
+    void getRandomPosters_WhenRepositoryEmpty_ReturnsEmptySlice() throws Exception {
         // When
         mediaRepository.deleteAll();
         MvcResult mvcResult = mockMvc.perform(get("/media/posters")
-                        .param(PARAM_NAME_PAGE, PAGE_NUMBER_ZERO)
                         .param(PARAM_NAME_SIZE, PAGE_SIZE_FIVE))
                 .andExpect(status().isOk())
                 .andReturn();
 
         // Then
         JsonNode root = objectMapper.readTree(mvcResult.getResponse().getContentAsString());
-        JsonNode contentArray = root.get(CONTENT_STRING);
 
-        assertThat(contentArray).isNotNull();
-        assertThat(contentArray.isArray()).isTrue();
-        assertThat(contentArray.size()).isEqualTo(ZERO_OF_RECORDS);
+        assertThat(root).isNotNull();
+        assertThat(root.isArray()).isTrue();
+        assertThat(root.size()).isEqualTo(ZERO_OF_RECORDS);
     }
 
     @Test
