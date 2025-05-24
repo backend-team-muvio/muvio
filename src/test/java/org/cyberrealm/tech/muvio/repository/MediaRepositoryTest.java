@@ -12,6 +12,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_2;
 import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
 import static org.cyberrealm.tech.muvio.util.TestUtil.PAGEABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,11 +90,12 @@ public class MediaRepositoryTest extends AbstractMongoTest {
     }
 
     @Test
-    @DisplayName("Should return poster DTOs with findAllPosters()")
-    void findAllPosters_ValidResponse_ReturnSlicePosterDto() {
-        final Slice<PosterDto> actual = mediaRepository.findAllPosters(PageRequest.of(ZERO, TEN));
-        assertEquals(actual.getContent(), List.of(new PosterDto(STRING_1, POSTER_PATH_1),
-                new PosterDto(STRING_2, POSTER_PATH_2)));
+    @DisplayName("Should return random poster DTOs with getRandomPosters()")
+    void getRandomPosters_ValidResponse_ReturnSlicePosterDto() {
+        final List<PosterDto> actual = mediaRepository.getRandomPosters(TWO);
+        assertTrue(actual.contains(new PosterDto(STRING_1, POSTER_PATH_1)));
+        assertTrue(actual.contains(new PosterDto(STRING_2, POSTER_PATH_2)));
+        assertEquals(TWO, actual.size());
     }
 
     @Test

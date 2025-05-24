@@ -6,6 +6,7 @@ import static org.cyberrealm.tech.muvio.common.Constants.SIX;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
+import static org.cyberrealm.tech.muvio.common.Constants.TWO;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
@@ -154,11 +155,11 @@ public class MediaServiceImplTest {
     }
 
     @Test
-    @DisplayName("Verify findAllPosters() method works")
-    void findAllPosters_validResponse_returnSlicePosterDto() {
-        final Slice<PosterDto> slicePosterDto = getSlicePosterDto();
-        when(mediaRepository.findAllPosters(any(Pageable.class))).thenReturn(slicePosterDto);
-        assertThat(mediaService.findAllPosters(getPageable())).isEqualTo(slicePosterDto);
+    @DisplayName("Verify getRandomPosters() method works")
+    void getRandomPosters_validResponse_returnSlicePosterDto() {
+        final List<PosterDto> randomPosterDto = getRandomPosterDto();
+        when(mediaRepository.getRandomPosters(anyInt())).thenReturn(randomPosterDto);
+        assertThat(mediaService.getRandomPosters(TWO)).isEqualTo(randomPosterDto);
     }
 
     @Test
@@ -254,8 +255,9 @@ public class MediaServiceImplTest {
         return new SliceImpl<>(List.of(new TitleDto(ID_STRING, TITLE)));
     }
 
-    private Slice<PosterDto> getSlicePosterDto() {
-        return new SliceImpl<>(List.of(new PosterDto(ID_STRING, POSTER_PATH)));
+    private List<PosterDto> getRandomPosterDto() {
+        return List.of(new PosterDto(ID_STRING, POSTER_PATH),
+                new PosterDto(ID_STRING, POSTER_PATH));
     }
 
     private Pageable getPageable() {

@@ -146,11 +146,11 @@ Get media from the "TOP_OSCAR_WINNING_MASTERPIECES" list sorted by rating:
   ```bash
    curl -X GET "http://localhost:8080/api/media/top-list/TOP_OSCAR_WINNING_MASTERPIECES?page=1&size=10"
   ```      
-- `GET /api/media/posters?...` – Get list of media posters. With pagination support (page, size, sort).   
+- `GET /api/media/posters?...` – Get list of random media posters.   
 __Example:__  
-Get a list of the top 100 posters sorted by rating:
+Get a list of random 100 posters:
   ```bash
-   curl -X GET "http://localhost:8080/api/media/posters?page=0&size=100&sort=rating,desc"
+   curl -X GET "http://localhost:8080/api/media/posters?size=100"
   ```     
 - `GET /api/media/titles?...` – Get all media titles. With pagination support (page, size, sort).  
 __Example:__  

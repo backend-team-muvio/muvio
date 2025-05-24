@@ -28,7 +28,7 @@ public interface MediaService {
 
     Slice<MediaDtoWithCast> findMediaByTopLists(String topList, int page, int size);
 
-    Slice<PosterDto> findAllPosters(Pageable pageable);
+    List<PosterDto> getRandomPosters(int size);
 
     Slice<TitleDto> findAllTitles(Pageable pageable);
 

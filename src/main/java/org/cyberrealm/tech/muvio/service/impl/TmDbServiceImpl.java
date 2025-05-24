@@ -57,6 +57,8 @@ public class TmDbServiceImpl implements TmDbService {
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_PHOTOS = 6;
     private static final int MAX_NUMBER_OF_REVIEWS = 3;
+    private static final String W_500 = "w500";
+    private static final String W_200 = "w200";
     private static final Semaphore SEMAPHORE = new Semaphore(100, true);
     private final TmdbMovies tmdbMovies;
     private final TmdbTvSeries tmdbTvSeries;
@@ -320,11 +322,14 @@ public class TmDbServiceImpl implements TmDbService {
     }
 
     private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier) {
-        List<Artwork> artworks = imagesSupplier.get();
-        return artworks.stream()
-                .limit(MAX_NUMBER_OF_PHOTOS)
+        return imagesSupplier.get().stream()
+                .filter(artwork -> artwork.getFilePath() != null)
+                .sorted(Comparator.comparing(Artwork::getVoteAverage,
+                        Comparator.nullsLast(Double::compareTo)).reversed())
                 .peek(artwork -> artwork.setFilePath(IMAGE_PATH + artwork.getFilePath()))
                 .map(Artwork::getFilePath)
+                .distinct()
+                .limit(MAX_NUMBER_OF_PHOTOS)
                 .collect(Collectors.toSet());
     }
 
