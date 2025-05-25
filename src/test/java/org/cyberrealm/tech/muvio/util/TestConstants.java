@@ -130,6 +130,7 @@ public final class TestConstants {
     public static final String STRING_6 = "6";
     public static final String TITLE_PROCESSING_EXCEPTION_MESSAGE = "Couldn't find media by title:"
             + " Nonexistent Title";
+    public static final String PATH = "/path";
 
     private TestConstants() {
     }

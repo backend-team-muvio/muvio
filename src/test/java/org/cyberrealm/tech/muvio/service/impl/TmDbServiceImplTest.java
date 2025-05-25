@@ -10,17 +10,21 @@ import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
 import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
 import static org.cyberrealm.tech.muvio.util.TestConstants.POSTER_PATH;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TRUE_STORY;
 import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
 import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 import info.movito.themoviedbapi.TmdbDiscover;
@@ -58,6 +62,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
+import org.cyberrealm.tech.muvio.service.ImageSimilarityService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,7 +72,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class TmDbServiceImplTest {
-    private static final String PATH = "path";
     private static final String RELEASE_DATE = "2020.11.11";
     private static final String AGE_RATING_G = "G";
 
@@ -87,6 +91,8 @@ public class TmDbServiceImplTest {
     private DiscoverMovieParamBuilder discoverMovieParamBuilder;
     @Mock
     private DiscoverTvParamBuilder discoverTvParamBuilder;
+    @Mock
+    private ImageSimilarityService imageSimilarityService;
     @InjectMocks
     private TmDbServiceImpl tmDbService;
 
@@ -131,6 +137,12 @@ public class TmDbServiceImplTest {
     @DisplayName("Verify fetchMoviePhotos() method works")
     public void fetchMoviePhotos_ValidResponse_ReturnSetPaths() {
         when(tmdbMovies.getImages(anyInt(), anyString())).thenReturn(getImages());
+        doAnswer(invocation -> {
+            final String imageUrl = invocation.getArgument(ZERO);
+            final Set<String> filePaths = invocation.getArgument(TWO);
+            filePaths.add(imageUrl);
+            return null;
+        }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
         assertThat(tmDbService.fetchMoviePhotos(LANGUAGE_EN, ONE))
                 .isEqualTo(Set.of(IMAGE_PATH + PATH));
     }
@@ -195,6 +207,12 @@ public class TmDbServiceImplTest {
     @DisplayName("Verify fetchTvSerialsPhotos() method works")
     public void fetchTvSerialsPhotos_ValidResponse_ReturnSetPaths() {
         when(tmdbTvSeries.getImages(anyInt(), anyString())).thenReturn(getTvImages());
+        doAnswer(invocation -> {
+            final String imageUrl = invocation.getArgument(ZERO);
+            final Set<String> filePaths = invocation.getArgument(TWO);
+            filePaths.add(imageUrl);
+            return null;
+        }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
         assertThat(tmDbService.fetchTvSerialsPhotos(LANGUAGE_EN, ONE))
                 .isEqualTo(Set.of(IMAGE_PATH + PATH));
     }

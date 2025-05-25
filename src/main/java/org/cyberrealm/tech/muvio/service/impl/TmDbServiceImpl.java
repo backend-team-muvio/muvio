@@ -2,11 +2,13 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
 import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 
+import dev.brachtendorf.jimagehash.hash.Hash;
 import info.movito.themoviedbapi.TmdbDiscover;
 import info.movito.themoviedbapi.TmdbMovieLists;
 import info.movito.themoviedbapi.TmdbMovies;
@@ -33,6 +35,8 @@ import info.movito.themoviedbapi.tools.sortby.DiscoverMovieSortBy;
 import info.movito.themoviedbapi.tools.sortby.DiscoverTvSortBy;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,6 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.exception.TmdbServiceException;
+import org.cyberrealm.tech.muvio.service.ImageSimilarityService;
 import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -53,12 +58,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TmDbServiceImpl implements TmDbService {
     private static final double MIN_RATE = 5.0;
-    private static final int MAX_ATTEMPTS = 12;
     private static final int FIRST_PAGE = 1;
     private static final int MAX_NUMBER_OF_PHOTOS = 6;
     private static final int MAX_NUMBER_OF_REVIEWS = 3;
-    private static final String W_500 = "w500";
-    private static final String W_200 = "w200";
     private static final Semaphore SEMAPHORE = new Semaphore(100, true);
     private final TmdbMovies tmdbMovies;
     private final TmdbTvSeries tmdbTvSeries;
@@ -68,6 +70,7 @@ public class TmDbServiceImpl implements TmDbService {
     private final TmdbDiscover tmdbDiscover;
     private final DiscoverMovieParamBuilder discoverMovieParamBuilder;
     private final DiscoverTvParamBuilder discoverTvParamBuilder;
+    private final ImageSimilarityService imageSimilarityService;
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
@@ -322,15 +325,21 @@ public class TmDbServiceImpl implements TmDbService {
     }
 
     private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier) {
-        return imagesSupplier.get().stream()
+        List<String> imagePaths = imagesSupplier.get().stream()
                 .filter(artwork -> artwork.getFilePath() != null)
                 .sorted(Comparator.comparing(Artwork::getVoteAverage,
                         Comparator.nullsLast(Double::compareTo)).reversed())
-                .peek(artwork -> artwork.setFilePath(IMAGE_PATH + artwork.getFilePath()))
-                .map(Artwork::getFilePath)
-                .distinct()
-                .limit(MAX_NUMBER_OF_PHOTOS)
-                .collect(Collectors.toSet());
+                .map(artwork -> IMAGE_PATH + artwork.getFilePath())
+                .toList();
+        Set<Hash> seenHashes = new HashSet<>();
+        Set<String> uniqueImagePaths = new LinkedHashSet<>();
+        for (String filePath : imagePaths) {
+            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
+            if (uniqueImagePaths.size() >= MAX_NUMBER_OF_PHOTOS) {
+                break;
+            }
+        }
+        return uniqueImagePaths;
     }
 
     private <T> T executeTmDbCall(Callable<T> callable, String errorMessage) {
