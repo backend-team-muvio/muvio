@@ -62,8 +62,20 @@ jobs:
           username: ec2-user
           key: ${{ secrets.AWS_EC2_SSH_KEY }}
           script: |
-            sudo docker stop reverent_diffie || true
-            sudo docker rm reverent_diffie || true
+            sudo docker stop muvio || true
+            sudo docker rm muvio || true  
             sudo docker pull ghcr.io/${{ github.repository_owner }}/muvio:latest
-            sudo docker run -d -p 80:10000 --name muvio ghcr.io/${{ github.repository_owner }}/muvio:latest
-
+            sudo docker run -d 
+            -p 80:10000 \
+            --name muvio \
+            -e MONGO_URL="${{ secrets.MONGO_URL }}" \
+            -e TMDB_API_TOKEN="${{ secrets.TMDB_API_TOKEN }}" \
+            -e CRON_WEEKLY="${{ secrets.CRON_WEEKLY }}" \
+            -e CRON_SECONDS="${{ secrets.CRON_SECONDS }}" \
+            -e TOP250_MOVIE_URL="${{ secrets.TOP250_MOVIE_URL }}" \
+            -e TOP250_TV_SHOW_URL="${{ secrets.TOP250_TV_SHOW_URL }}" \
+            -e SPARQL_ENDPOINT="${{ secrets.SPARQL_ENDPOINT }}" \
+            -e EMMY_WINNERS_URL="${{ secrets.EMMY_WINNERS_URL }}" \
+            -e SPARQL_QUERY="${{ secrets.SPARQL_QUERY }}" \
+            -e PORT="${{ secrets.PORT }}" \
+            ghcr.io/${{ github.repository_owner }}/muvio:latest
