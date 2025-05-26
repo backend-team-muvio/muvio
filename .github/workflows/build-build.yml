@@ -65,9 +65,7 @@ jobs:
             sudo docker stop muvio || true
             sudo docker rm muvio || true  
             sudo docker pull ghcr.io/${{ github.repository_owner }}/muvio:latest
-            sudo docker run -d 
-            -p 80:10000 \
-            --name muvio \
+            sudo docker run -d -p 80:10000 --name muvio \
             -e MONGO_URL="${{ secrets.MONGO_URL }}" \
             -e TMDB_API_TOKEN="${{ secrets.TMDB_API_TOKEN }}" \
             -e CRON_WEEKLY="${{ secrets.CRON_WEEKLY }}" \
