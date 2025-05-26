@@ -29,6 +29,7 @@ public final class Constants {
     public static final Integer MIN_VOTE_COUNT = 100;
     public static final String WHITE_SPACE = " ";
     public static final String UNDERSCORE = "_";
+    public static final int MAX_ATTEMPTS = 12;
 
     private Constants() {
 

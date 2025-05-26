@@ -2,6 +2,7 @@ package org.cyberrealm.tech.muvio.config;
 
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
+import dev.brachtendorf.jimagehash.hashAlgorithms.PerceptiveHash;
 import info.movito.themoviedbapi.TmdbApi;
 import info.movito.themoviedbapi.TmdbDiscover;
 import info.movito.themoviedbapi.TmdbMovieLists;
@@ -24,6 +25,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @Configuration
 public class SecurityConfig {
+    private static final int PERCEPTIVE_HASH_BIT_RESOLUTION = 64;
     @Value("${tmdb.api.key}")
     private String apiKey;
 
@@ -75,5 +77,10 @@ public class SecurityConfig {
     @Bean
     public HttpClient httpClient() {
         return HttpClient.newHttpClient();
+    }
+
+    @Bean
+    public PerceptiveHash perceptiveHash() {
+        return new PerceptiveHash(PERCEPTIVE_HASH_BIT_RESOLUTION);
     }
 }

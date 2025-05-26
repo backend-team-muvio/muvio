@@ -18,6 +18,7 @@ Backend-moodie is a Java-based application that helps users find movies or TV sh
 - Swagger  
 - TMDB API  
 - MongoDB
+- JImageHash
 ---
 
 🚀 **How to Run the Application**  
