@@ -2,15 +2,13 @@ name: Deploy to Render
 
 on:
   workflow_run:
-    workflows: ["Build For Deployment"]
+    workflows: ["Build and Push Docker Image"]
     types:
       - completed
 
 jobs:
   deploy:
-    name: Deploy to Render
     runs-on: ubuntu-latest
-
     steps:
       - name: Trigger Render Deployment
         run: |
