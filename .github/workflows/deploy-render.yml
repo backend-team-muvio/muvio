@@ -2,7 +2,7 @@ name: Deploy to Render
 
 on:
   workflow_run:
-    workflows: ["Build and Test"]
+    workflows: ["Build For Deployment"]
     types:
       - completed
 
