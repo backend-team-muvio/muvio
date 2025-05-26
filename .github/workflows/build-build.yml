@@ -47,3 +47,23 @@ jobs:
           file: Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/muvio:latest
+
+      - name: Trigger Render Deployment
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }} \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{}'
+
+      - name: SSH and Deploy on EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          script: |
+            docker stop muvio || true
+            docker rm muvio || true
+            docker pull ghcr.io/${{ github.repository_owner }}/muvio:latest
+            docker run -d -p 80:10000 --name muvio ghcr.io/${{ github.repository_owner }}/muvio:latest
+
