@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ImageSimilarityServiceImpl implements ImageSimilarityService {
     private static final double SIMILARITY_THRESHOLD = 0.49;
+    private static final int STATUS_CODE_400 = 400;
     private final PerceptiveHash perceptiveHash;
     private final HttpClient httpClient;
 
@@ -48,7 +49,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
                 throw new NetworkRequestException(
                         "Interrupted while fetching image: " + imageUrl, e);
             }
-            if (response.statusCode() >= 400) {
+            if (response.statusCode() >= STATUS_CODE_400) {
                 return;
             }
             image = ImageIO.read(response.body());
