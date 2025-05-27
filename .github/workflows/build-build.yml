@@ -62,18 +62,21 @@ jobs:
           username: ec2-user
           key: ${{ secrets.AWS_EC2_SSH_KEY }}
           script: |
+            mkdir -p /home/ec2-user/muvio
+            aws ssm get-parameters-by-path \
+              --path "/muvio/" \
+              --with-decryption \
+              --region "eu-central-1" \
+              --query "Parameters[*].[Name,Value]" \
+              --output text | while read name value
+            do
+              env_name=$(basename "$name")
+              echo "${env_name}=${value}" >> /home/ec2-user/muvio/.env
+            done
+
             sudo docker stop muvio || true
             sudo docker rm muvio || true  
+
             sudo docker pull ghcr.io/${{ github.repository_owner }}/muvio:latest
-            sudo docker run -d -p 80:10000 --name muvio \
-            -e MONGO_URL="${{ secrets.MONGO_URL }}" \
-            -e TMDB_API_TOKEN="${{ secrets.TMDB_API_TOKEN }}" \
-            -e CRON_WEEKLY="${{ secrets.CRON_WEEKLY }}" \
-            -e CRON_SECONDS="${{ secrets.CRON_SECONDS }}" \
-            -e TOP250_MOVIE_URL="${{ secrets.TOP250_MOVIE_URL }}" \
-            -e TOP250_TV_SHOW_URL="${{ secrets.TOP250_TV_SHOW_URL }}" \
-            -e SPARQL_ENDPOINT="${{ secrets.SPARQL_ENDPOINT }}" \
-            -e EMMY_WINNERS_URL="${{ secrets.EMMY_WINNERS_URL }}" \
-            -e SPARQL_QUERY="${{ secrets.SPARQL_QUERY }}" \
-            -e PORT="${{ secrets.PORT }}" \
-            ghcr.io/${{ github.repository_owner }}/muvio:latest
+
+            sudo docker run -d -p 80:10000 --name muvio --env-file /home/ec2-user/muvio/.env ghcr.io/${{ github.repository_owner }}/muvio:latest
