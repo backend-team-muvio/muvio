@@ -7,6 +7,8 @@ import static org.cyberrealm.tech.muvio.common.Constants.SHORT_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.UNDERSCORE;
 import static org.cyberrealm.tech.muvio.common.Constants.WHITE_SPACE;
+import static org.cyberrealm.tech.muvio.common.Constants.W_200;
+import static org.cyberrealm.tech.muvio.common.Constants.W_500;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
 import info.movito.themoviedbapi.model.core.ProductionCountry;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
@@ -38,6 +41,8 @@ public interface MediaMapper {
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toStringGenres")
     @Mapping(source = "type", target = "type", qualifiedByName = "toCorrectType")
+    @Mapping(source = "posterPath", target = "posterPath", qualifiedByName = "changePoster")
+    @Mapping(source = "photos",target = "photos", qualifiedByName = "changePhotos")
     MediaDto toMovieDto(MediaDtoFromDb movie);
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
@@ -145,5 +150,16 @@ public interface MediaMapper {
     @Named("fromTypeToString")
     default String fromTypeToString(Type type) {
         return type.getName();
+    }
+
+    @Named("changePoster")
+    default String changePoster(String posterPath) {
+        return posterPath.replace(W_200, W_500);
+    }
+
+    @Named("changePhotos")
+    default Set<String> changePhotos(Set<String> photos) {
+        return photos.stream().map(photo -> photo.replace(W_200, W_500))
+                .collect(Collectors.toSet());
     }
 }

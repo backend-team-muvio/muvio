@@ -30,6 +30,9 @@ public final class Constants {
     public static final String WHITE_SPACE = " ";
     public static final String UNDERSCORE = "_";
     public static final int MAX_ATTEMPTS = 12;
+    public static final int FIVE = 5;
+    public static final String W_200 = "w200";
+    public static final String W_500 = "w500";
 
     private Constants() {
 
