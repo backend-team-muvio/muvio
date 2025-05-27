@@ -11,18 +11,24 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Set;
 import javax.imageio.ImageIO;
-import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.exception.NetworkRequestException;
 import org.cyberrealm.tech.muvio.service.ImageSimilarityService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class ImageSimilarityServiceImpl implements ImageSimilarityService {
-    private static final double SIMILARITY_THRESHOLD = 0.15;
     private final PerceptiveHash perceptiveHash;
+    private final double similarityThreshold;
+
+    public ImageSimilarityServiceImpl(PerceptiveHash perceptiveHash,
+                                      @Value("${image.similarity.threshold:0.4}")
+                                      double similarityThreshold) {
+        this.perceptiveHash = perceptiveHash;
+        this.similarityThreshold = similarityThreshold;
+    }
 
     @Retryable(retryFor = NetworkRequestException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
@@ -40,7 +46,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
         }
         final Hash hash = perceptiveHash.hash(image);
         final boolean isSimilar = imageHashes.stream().anyMatch(
-                existing -> hash.normalizedHammingDistance(existing) < SIMILARITY_THRESHOLD);
+                existing -> hash.normalizedHammingDistance(existing) < similarityThreshold);
         if (!isSimilar) {
             imageHashes.add(hash);
             filePaths.add(imageUrl);

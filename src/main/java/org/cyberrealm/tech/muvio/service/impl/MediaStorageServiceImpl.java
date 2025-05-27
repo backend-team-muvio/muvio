@@ -55,5 +55,7 @@ public class MediaStorageServiceImpl implements MediaStorageService {
             int toIndex = Math.min(i + BATCH_SIZE, mediaList.size());
             mediaRepository.saveAll(mediaList.subList(i, toIndex));
         }
+        actorList.clear();
+        mediaList.clear();
     }
 }
