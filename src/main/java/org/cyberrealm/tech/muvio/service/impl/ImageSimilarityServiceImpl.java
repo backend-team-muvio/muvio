@@ -38,56 +38,90 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
 
     public ImageSimilarityServiceImpl(
             PerceptiveHash perceptiveHash,
+            HttpClient httpClient,
             @Value("${image.similarity.threshold:0.4}") double similarityThreshold) {
         this.perceptiveHash = Objects.requireNonNull(perceptiveHash,
                 "PerceptiveHash must not be null");
+        this.httpClient = Objects.requireNonNull(httpClient,
+                "HttpClient must not be null");
         this.similarityThreshold = similarityThreshold;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-                .build();
     }
 
     @Retryable(retryFor = NetworkRequestException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
     public void addIfUniqueHash(String imageUrl, Set<Hash> imageHashes, Set<String> filePaths) {
-        BufferedImage image;
+        log.debug("Processing image from URL: {}", imageUrl);
+
+        BufferedImage image = fetchImage(imageUrl);
+        if (image == null) {
+            log.warn("Could not process image from URL: {}", imageUrl);
+            return;
+        }
+
+        processImageHash(image, imageUrl, imageHashes, filePaths);
+    }
+
+    private BufferedImage fetchImage(String imageUrl) {
         try {
-            final URI uri = new URI(imageUrl);
-            final HttpRequest request = HttpRequest.newBuilder().uri(uri)
-                    .timeout(Duration.ofSeconds(FIVE)).GET().build();
-            final HttpResponse<InputStream> response;
-            try {
-                response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new NetworkRequestException(
-                        "Interrupted while fetching image: " + imageUrl, e);
-            }
+            HttpResponse<InputStream> response = sendHttpRequest(imageUrl);
+
             if (response.statusCode() >= STATUS_CODE_400) {
-                return;
+                log.warn("Received error status code {} for URL: {}",
+                        response.statusCode(), imageUrl);
+                return null;
             }
-            image = ImageIO.read(response.body());
+
+            BufferedImage image = ImageIO.read(response.body());
             if (image == null) {
-                return;
+                log.warn("Could not read image data from URL: {}", imageUrl);
             }
+            return image;
+
         } catch (IOException | URISyntaxException e) {
             throw new NetworkRequestException(
-                    "Failed to read image or generate hash from: " + imageUrl, e);
+                    "Failed to read image from: " + imageUrl, e);
         }
+    }
+
+    private HttpResponse<InputStream> sendHttpRequest(String imageUrl)
+            throws URISyntaxException, IOException {
+        final URI uri = new URI(imageUrl);
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .timeout(Duration.ofSeconds(FIVE))
+                .GET()
+                .build();
+
         try {
-            final Hash hash = perceptiveHash.hash(image);
-            final int algorithmId = hash.getAlgorithmId();
-            final boolean isSimilar = imageHashes.stream()
-                    .filter(h -> h.getAlgorithmId() == algorithmId)
-                    .anyMatch(existing ->
-                            hash.normalizedHammingDistance(existing) < similarityThreshold);
-            if (!isSimilar) {
+            return httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new NetworkRequestException("Interrupted while fetching image: " + imageUrl, e);
+        }
+    }
+
+    private void processImageHash(BufferedImage image, String imageUrl,
+                                  Set<Hash> imageHashes, Set<String> filePaths) {
+        try {
+            Hash hash = perceptiveHash.hash(image);
+            if (isHashUnique(hash, imageHashes)) {
+                log.debug("Adding unique hash for image: {}", imageUrl);
                 imageHashes.add(hash);
                 filePaths.add(imageUrl);
+            } else {
+                log.debug("Skipping similar image: {}", imageUrl);
             }
         } catch (Exception e) {
             throw new NetworkRequestException("Error while hashing image: " + imageUrl, e);
         }
+    }
+
+    private boolean isHashUnique(Hash hash, Set<Hash> imageHashes) {
+        final int algorithmId = hash.getAlgorithmId();
+        return imageHashes.stream()
+                .filter(h -> h.getAlgorithmId() == algorithmId)
+                .noneMatch(existing ->
+                        hash.normalizedHammingDistance(existing) < similarityThreshold);
     }
 }
