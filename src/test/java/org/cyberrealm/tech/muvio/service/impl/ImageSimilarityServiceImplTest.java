@@ -21,10 +21,11 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.imageio.ImageIO;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,7 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ImageSimilarityServiceImplTest {
     private static final String FORMAT_NAME = "jpg";
     private static final int STATUS_200 = 200;
-
+    private static final double SIMILARITY_THRESHOLD = 0.4;
     @Mock
     private PerceptiveHash perceptiveHash;
     @Mock
@@ -41,8 +42,13 @@ public class ImageSimilarityServiceImplTest {
     private HttpClient httpClient;
     @Mock
     private HttpResponse<InputStream> httpResponse;
-    @InjectMocks
     private ImageSimilarityServiceImpl imageSimilarityService;
+
+    @BeforeEach
+    void setUp() {
+        imageSimilarityService = new ImageSimilarityServiceImpl(perceptiveHash,
+                httpClient, SIMILARITY_THRESHOLD);
+    }
 
     @Test
     @SneakyThrows
@@ -55,7 +61,9 @@ public class ImageSimilarityServiceImplTest {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         ImageIO.write(image, FORMAT_NAME, os);
         final ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-        when(httpClient.send(any(), any(HttpResponse.BodyHandler.class)))
+        when(httpClient.send(
+                ArgumentMatchers.any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
                 .thenReturn(httpResponse);
         when(httpResponse.statusCode()).thenReturn(STATUS_200);
         when(httpResponse.body()).thenReturn(is);

@@ -41,8 +41,8 @@ public interface MediaMapper {
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toStringGenres")
     @Mapping(source = "type", target = "type", qualifiedByName = "toCorrectType")
-    @Mapping(source = "posterPath", target = "posterPath", qualifiedByName = "changePoster")
-    @Mapping(source = "photos",target = "photos", qualifiedByName = "changePhotos")
+    //@Mapping(source = "posterPath", target = "posterPath", qualifiedByName = "changePoster")
+    //@Mapping(source = "photos",target = "photos", qualifiedByName = "changePhotos")
     MediaDto toMovieDto(MediaDtoFromDb movie);
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")

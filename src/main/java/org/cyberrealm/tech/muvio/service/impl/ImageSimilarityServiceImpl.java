@@ -39,7 +39,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
     public ImageSimilarityServiceImpl(
             PerceptiveHash perceptiveHash,
             HttpClient httpClient,
-            @Value("${image.similarity.threshold:0.4}") double similarityThreshold) {
+            @Value("${image.similarity.threshold}") double similarityThreshold) {
         this.perceptiveHash = Objects.requireNonNull(perceptiveHash,
                 "PerceptiveHash must not be null");
         this.httpClient = Objects.requireNonNull(httpClient,
