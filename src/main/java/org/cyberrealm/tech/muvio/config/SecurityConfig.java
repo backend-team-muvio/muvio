@@ -1,5 +1,6 @@
 package org.cyberrealm.tech.muvio.config;
 
+import static org.cyberrealm.tech.muvio.common.Constants.FIVE;
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
 import dev.brachtendorf.jimagehash.hashAlgorithms.PerceptiveHash;
@@ -13,6 +14,7 @@ import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverMovieParamBuilder;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,7 +78,7 @@ public class SecurityConfig {
 
     @Bean
     public HttpClient httpClient() {
-        return HttpClient.newHttpClient();
+        return HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(FIVE)).build();
     }
 
     @Bean
