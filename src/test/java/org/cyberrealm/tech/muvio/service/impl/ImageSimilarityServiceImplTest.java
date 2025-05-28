@@ -1,6 +1,6 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
@@ -54,7 +54,7 @@ public class ImageSimilarityServiceImplTest {
     @SneakyThrows
     @DisplayName("Verify addIfUniqueHash() method works")
     public void addIfUniqueHash_ValidResponse_addedPath() {
-        final String imageUrl = IMAGE_PATH + PATH;
+        final String imageUrl = IMAGE_PATH_W200 + PATH;
         final Set<Hash> imageHashes = new HashSet<>();
         final Set<String> filePaths = new HashSet<>();
         final BufferedImage image = new BufferedImage(TEN, TEN, BufferedImage.TYPE_INT_RGB);

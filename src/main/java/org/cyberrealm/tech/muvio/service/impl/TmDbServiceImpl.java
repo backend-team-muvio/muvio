@@ -1,7 +1,8 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W500;
 import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
@@ -279,7 +280,7 @@ public class TmDbServiceImpl implements TmDbService {
         if (review.getAuthorDetails() != null) {
             String avatarPath = review.getAuthorDetails().getAvatarPath();
             if (avatarPath != null) {
-                review.getAuthorDetails().setAvatarPath(IMAGE_PATH + avatarPath);
+                review.getAuthorDetails().setAvatarPath(IMAGE_PATH_W200 + avatarPath);
             } else {
                 review.getAuthorDetails().setAvatarPath(null);
             }
@@ -329,7 +330,7 @@ public class TmDbServiceImpl implements TmDbService {
                 .filter(artwork -> artwork.getFilePath() != null)
                 .sorted(Comparator.comparing(Artwork::getVoteAverage,
                         Comparator.nullsLast(Double::compareTo)).reversed())
-                .map(artwork -> IMAGE_PATH + artwork.getFilePath())
+                .map(artwork -> IMAGE_PATH_W500 + artwork.getFilePath())
                 .toList();
         Set<Hash> seenHashes = new HashSet<>();
         Set<String> uniqueImagePaths = new LinkedHashSet<>();

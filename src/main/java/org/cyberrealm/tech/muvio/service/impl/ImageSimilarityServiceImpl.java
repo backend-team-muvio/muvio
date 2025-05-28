@@ -7,6 +7,7 @@ import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 import dev.brachtendorf.jimagehash.hash.Hash;
 import dev.brachtendorf.jimagehash.hashAlgorithms.PerceptiveHash;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -30,8 +31,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ImageSimilarityServiceImpl implements ImageSimilarityService {
     private static final int STATUS_CODE_400 = 400;
-    private static final int TIMEOUT_SECONDS = FIVE;
-
     private final double similarityThreshold;
     private final PerceptiveHash perceptiveHash;
     private final HttpClient httpClient;
@@ -64,7 +63,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
 
     private BufferedImage fetchImage(String imageUrl) {
         try {
-            HttpResponse<InputStream> response = sendHttpRequest(imageUrl);
+            final HttpResponse<InputStream> response = sendHttpRequest(imageUrl);
 
             if (response.statusCode() >= STATUS_CODE_400) {
                 log.warn("Received error status code {} for URL: {}",
@@ -72,12 +71,16 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
                 return null;
             }
 
-            BufferedImage image = ImageIO.read(response.body());
-            if (image == null) {
-                log.warn("Could not read image data from URL: {}", imageUrl);
+            try (final InputStream inputStream = response.body()) {
+                byte[] imageBytes = inputStream.readAllBytes();
+                try (final InputStream imageStream = new ByteArrayInputStream(imageBytes)) {
+                    final BufferedImage image = ImageIO.read(imageStream);
+                    if (image == null) {
+                        log.warn("Could not read image data from URL: {}", imageUrl);
+                    }
+                    return image;
+                }
             }
-            return image;
-
         } catch (IOException | URISyntaxException e) {
             throw new NetworkRequestException(
                     "Failed to read image from: " + imageUrl, e);
@@ -104,7 +107,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
     private void processImageHash(BufferedImage image, String imageUrl,
                                   Set<Hash> imageHashes, Set<String> filePaths) {
         try {
-            Hash hash = perceptiveHash.hash(image);
+            final Hash hash = perceptiveHash.hash(image);
             if (isHashUnique(hash, imageHashes)) {
                 log.debug("Adding unique hash for image: {}", imageUrl);
                 imageHashes.add(hash);

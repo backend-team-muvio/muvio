@@ -2,7 +2,8 @@ package org.cyberrealm.tech.muvio.common;
 
 public final class Constants {
     public static final String YOUTUBE_PATH = "https://www.youtube.com/watch?v=";
-    public static final String IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
+    public static final String IMAGE_PATH_W200 = "https://image.tmdb.org/t/p/w200";
+    public static final String IMAGE_PATH_W500 = "https://image.tmdb.org/t/p/w500";
     public static final String AMPERSAND = "&";
     public static final String TV = "TV";
     public static final String TITLE = "title";

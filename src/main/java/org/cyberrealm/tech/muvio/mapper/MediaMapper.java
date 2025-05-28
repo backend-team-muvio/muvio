@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
@@ -41,8 +40,7 @@ public interface MediaMapper {
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toStringGenres")
     @Mapping(source = "type", target = "type", qualifiedByName = "toCorrectType")
-    //@Mapping(source = "posterPath", target = "posterPath", qualifiedByName = "changePoster")
-    //@Mapping(source = "photos",target = "photos", qualifiedByName = "changePhotos")
+    @Mapping(source = "posterPath", target = "posterPath", qualifiedByName = "changePoster")
     MediaDto toMovieDto(MediaDtoFromDb movie);
 
     @Mapping(target = "id", expression = "java(String.valueOf(movieDb.getId()))")
@@ -50,7 +48,7 @@ public interface MediaMapper {
     @Mapping(source = "movieDb.voteAverage", target = "rating", qualifiedByName = "getRating")
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
     @Mapping(target = "posterPath", expression = "java(org.cyberrealm.tech.muvio.common.Constants"
-            + ".IMAGE_PATH + movieDb.getPosterPath())")
+            + ".IMAGE_PATH_W200 + movieDb.getPosterPath())")
     @Mapping(source = "releaseDate", target = "releaseYear", qualifiedByName = "getReleaseYear")
     @Mapping(source = "movieDb.runtime", target = "type", qualifiedByName = "putType")
     @Mapping(source = "movieDb.productionCountries", target = "countries",
@@ -65,7 +63,7 @@ public interface MediaMapper {
     @Mapping(source = "genres", target = "genres", qualifiedByName = "toGenreEntity")
     @Mapping(source = "episodeRunTime", target = "duration", qualifiedByName = "getDurations")
     @Mapping(target = "posterPath", expression = "java(org.cyberrealm.tech.muvio.common.Constants"
-            + ".IMAGE_PATH + tvSeriesDb.getPosterPath())")
+            + ".IMAGE_PATH_W200 + tvSeriesDb.getPosterPath())")
     @Mapping(source = "firstAirDate", target = "releaseYear", qualifiedByName = "getReleaseYear")
     @Mapping(source = "tvSeriesDb.productionCountries", target = "countries",
             qualifiedByName = "putCountries")
@@ -82,6 +80,7 @@ public interface MediaMapper {
     @Mapping(source = "media.genres", target = "genres",
             qualifiedByName = "fromGenreEntityToString")
     @Mapping(source = "media.type", target = "type", qualifiedByName = "fromTypeToString")
+    @Mapping(source = "media.posterPath", target = "posterPath", qualifiedByName = "changePoster")
     MediaDtoWithPoints toMediaDtoWithPoints(Media media, Set<String> categories);
 
     @Mapping(source = "duration", target = "duration", qualifiedByName = "toDuration")
@@ -155,11 +154,5 @@ public interface MediaMapper {
     @Named("changePoster")
     default String changePoster(String posterPath) {
         return posterPath.replace(W_200, W_500);
-    }
-
-    @Named("changePhotos")
-    default Set<String> changePhotos(Set<String> photos) {
-        return photos.stream().map(photo -> photo.replace(W_200, W_500))
-                .collect(Collectors.toSet());
     }
 }
