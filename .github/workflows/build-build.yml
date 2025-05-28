@@ -1,14 +1,12 @@
-name: Java CI/CD with Render
+name: Build and Push Docker Image
 
 on: [push, pull_request]
 
 jobs:
   build:
-    name: Build and Test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
@@ -19,7 +17,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn clean package --batch-mode --update-snapshots
         env:
           MONGO_URL: ${{ secrets.MONGO_URL }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
@@ -30,12 +28,10 @@ jobs:
           SPARQL_ENDPOINT: ${{ secrets.SPARQL_ENDPOINT }}
           EMMY_WINNERS_URL: ${{ secrets.EMMY_WINNERS_URL }}
           SPARQL_QUERY: ${{ secrets.SPARQL_QUERY }}
-
-
-
+          IMAGE_SIMILARITY_THRESHOLD: ${{ secrets.IMAGE_SIMILARITY_THRESHOLD }}
 
   deploy:
-    name: Deploy to Render
+    name: Deploy to Render and EC2
     needs: build
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
@@ -63,12 +59,14 @@ jobs:
           SPARQL_ENDPOINT: ${{ secrets.SPARQL_ENDPOINT }}
           EMMY_WINNERS_URL: ${{ secrets.EMMY_WINNERS_URL }}
           SPARQL_QUERY: ${{ secrets.SPARQL_QUERY }}
+          IMAGE_SIMILARITY_THRESHOLD: ${{ secrets.IMAGE_SIMILARITY_THRESHOLD }}
 
-      - name: Log in to Docker Hub
+      - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: 4Vitalii5
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
@@ -76,7 +74,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: vitalii454/muvio:latest
+          tags: ghcr.io/${{ github.repository_owner }}/muvio:latest
 
       - name: Trigger Render Deployment
         run: |
@@ -84,3 +82,29 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
           -H "Content-Type: application/json" \
           -d '{}'
+
+      - name: SSH and Deploy on EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          script: |
+            mkdir -p /home/ec2-user/muvio
+            aws ssm get-parameters-by-path \
+              --path "/muvio/" \
+              --with-decryption \
+              --region "eu-central-1" \
+              --query "Parameters[*].[Name,Value]" \
+              --output text | while read name value
+            do
+              env_name=$(basename "$name")
+              echo "${env_name}=${value}" >> /home/ec2-user/muvio/.env
+            done
+
+            sudo docker stop muvio || true
+            sudo docker rm muvio || true  
+
+            sudo docker pull ghcr.io/${{ github.repository_owner }}/muvio:latest
+
+            sudo docker run -d -p 10000:10000 --name muvio --env-file /home/ec2-user/muvio/.env ghcr.io/${{ github.repository_owner }}/muvio:latest

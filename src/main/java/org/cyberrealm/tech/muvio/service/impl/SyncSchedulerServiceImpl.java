@@ -45,6 +45,8 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, actorStorage, mediaStorage, false);
         mediaStorageService.deleteAll();
         mediaStorageService.saveAll(actorStorage, mediaStorage);
+        actorStorage.clear();
+        mediaStorage.clear();
         log.info("Initial media synchronization completed successfully");
     }
 
@@ -74,6 +76,8 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, mediaStorage, actorStorage, false);
         mediaStorageService.deleteAll();
         mediaStorageService.saveAll(actorStorage, mediaStorage);
+        actorStorage.clear();
+        mediaStorage.clear();
         log.info("Weekly media update completed successfully");
     }
 }
