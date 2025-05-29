@@ -14,12 +14,12 @@ import org.mapstruct.Named;
 public interface ActorMapper {
 
     @Mapping(target = "photo", expression = "java(cast.getProfilePath() != null ? org.cyberrealm"
-            + ".tech.muvio.common.Constants.IMAGE_PATH + cast.getProfilePath() : null)")
+            + ".tech.muvio.common.Constants.IMAGE_PATH_W200 + cast.getProfilePath() : null)")
     @Mapping(target = "name", source = "name")
     Actor toActorEntity(Cast cast);
 
     @Mapping(target = "photo", expression = "java(cast.getProfilePath() != null ? org.cyberrealm"
-            + ".tech.muvio.common.Constants.IMAGE_PATH + cast.getProfilePath() : null)")
+            + ".tech.muvio.common.Constants.IMAGE_PATH_W200 + cast.getProfilePath() : null)")
     @Mapping(target = "name", source = "name")
     Actor toActorEntity(info.movito.themoviedbapi.model.tv.core.credits.Cast cast);
 

@@ -1,7 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W500;
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
@@ -144,7 +144,7 @@ public class TmDbServiceImplTest {
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
         assertThat(tmDbService.fetchMoviePhotos(LANGUAGE_EN, ONE))
-                .isEqualTo(Set.of(IMAGE_PATH + PATH));
+                .isEqualTo(Set.of(IMAGE_PATH_W500 + PATH));
     }
 
     @SneakyThrows
@@ -214,7 +214,7 @@ public class TmDbServiceImplTest {
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
         assertThat(tmDbService.fetchTvSerialsPhotos(LANGUAGE_EN, ONE))
-                .isEqualTo(Set.of(IMAGE_PATH + PATH));
+                .isEqualTo(Set.of(IMAGE_PATH_W500 + PATH));
     }
 
     @SneakyThrows
