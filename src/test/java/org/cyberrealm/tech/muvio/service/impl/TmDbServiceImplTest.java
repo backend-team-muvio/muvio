@@ -143,7 +143,7 @@ public class TmDbServiceImplTest {
             filePaths.add(imageUrl);
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
-        assertThat(tmDbService.fetchMoviePhotos(LANGUAGE_EN, ONE))
+        assertThat(tmDbService.fetchMoviePhotos(LANGUAGE_EN, ONE, POSTER_PATH))
                 .isEqualTo(Set.of(IMAGE_PATH_W500 + PATH));
     }
 
@@ -213,7 +213,7 @@ public class TmDbServiceImplTest {
             filePaths.add(imageUrl);
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
-        assertThat(tmDbService.fetchTvSerialsPhotos(LANGUAGE_EN, ONE))
+        assertThat(tmDbService.fetchTvSerialsPhotos(LANGUAGE_EN, ONE, POSTER_PATH))
                 .isEqualTo(Set.of(IMAGE_PATH_W500 + PATH));
     }
 
