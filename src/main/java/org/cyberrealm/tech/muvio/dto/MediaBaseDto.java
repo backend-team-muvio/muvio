@@ -5,7 +5,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.cyberrealm.tech.muvio.service.impl.SmartDoubleSerializer;
+import org.cyberrealm.tech.muvio.util.SmartDoubleSerializer;
 
 @Data
 @AllArgsConstructor

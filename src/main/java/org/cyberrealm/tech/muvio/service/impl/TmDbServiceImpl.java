@@ -336,14 +336,17 @@ public class TmDbServiceImpl implements TmDbService {
                 .toList();
         Set<Hash> seenHashes = new HashSet<>();
         Set<String> uniqueImagePaths = new LinkedHashSet<>();
-        imageSimilarityService.addIfUniqueHash(posterPath.replace(W_200, W_500), seenHashes,
-                uniqueImagePaths);
-        uniqueImagePaths = new LinkedHashSet<>();
+        if (posterPath != null && !posterPath.isBlank()) {
+            String processedPosterPath = posterPath.replace(W_200, W_500);
+            Set<String> temporaryDiscardAbleSetForPosterPath = new LinkedHashSet<>();
+            imageSimilarityService.addIfUniqueHash(processedPosterPath, seenHashes,
+                    temporaryDiscardAbleSetForPosterPath);
+        }
         for (String filePath : imagePaths) {
-            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
             if (uniqueImagePaths.size() >= MAX_NUMBER_OF_PHOTOS) {
                 break;
             }
+            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
         }
         return uniqueImagePaths;
     }

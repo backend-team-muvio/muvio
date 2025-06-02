@@ -1,5 +1,6 @@
 package org.cyberrealm.tech.muvio.util;
 
+import java.util.List;
 import org.cyberrealm.tech.muvio.model.Actor;
 
 public final class TestConstants {
@@ -114,6 +115,7 @@ public final class TestConstants {
     public static final double VOTE_AVERAGE_8 = 8.0;
     public static final String POSTER_PATH = "posterPath";
     public static final String DIRECTOR_NAME = "directorName";
+    public static final List<String> COUNTRY_NAME = List.of("UKRAINE");
     public static final int YEAR_2020 = 2020;
     public static final int TEST_SIZE = 1200;
     public static final String TITLE_1 = "Title 1";

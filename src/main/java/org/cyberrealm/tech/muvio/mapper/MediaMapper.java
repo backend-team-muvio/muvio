@@ -2,6 +2,7 @@ package org.cyberrealm.tech.muvio.mapper;
 
 import static org.cyberrealm.tech.muvio.common.Constants.DEFAULT_SERIAL_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.ROUNDING_FACTOR;
 import static org.cyberrealm.tech.muvio.common.Constants.SHORT_DURATION;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
@@ -138,7 +139,10 @@ public interface MediaMapper {
 
     @Named("putCountries")
     default List<String> putCountries(List<ProductionCountry> productionCountries) {
-        return productionCountries.stream().map(ProductionCountry::getName).toList();
+        return productionCountries.stream()
+                .limit(ONE)
+                .map(ProductionCountry::getName)
+                .toList();
     }
 
     @Named("toCorrectType")

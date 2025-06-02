@@ -3,7 +3,7 @@ package org.cyberrealm.tech.muvio.dto;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import java.util.Set;
-import org.cyberrealm.tech.muvio.service.impl.SmartDoubleSerializer;
+import org.cyberrealm.tech.muvio.util.SmartDoubleSerializer;
 
 public record MediaDto(
         String id, String title, Set<String> genres,
