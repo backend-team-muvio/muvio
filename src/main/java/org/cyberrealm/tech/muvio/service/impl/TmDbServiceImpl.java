@@ -7,6 +7,8 @@ import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
+import static org.cyberrealm.tech.muvio.common.Constants.W_200;
+import static org.cyberrealm.tech.muvio.common.Constants.W_500;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 
 import dev.brachtendorf.jimagehash.hash.Hash;
@@ -116,10 +118,10 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<String> fetchMoviePhotos(String language, int movieId) {
+    public Set<String> fetchMoviePhotos(String language, int movieId, String posterPath) {
         return fetchPhotos(() -> executeTmDbCall(() -> tmdbMovies.getImages(movieId, language)
                         .getBackdrops(),
-                "Failed to fetch photos from TmDb by movieId: " + movieId));
+                "Failed to fetch photos from TmDb by movieId: " + movieId), posterPath);
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -181,10 +183,10 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public Set<String> fetchTvSerialsPhotos(String language, int serialId) {
+    public Set<String> fetchTvSerialsPhotos(String language, int serialId, String posterPath) {
         return fetchPhotos(() -> executeTmDbCall(() -> tmdbTvSeries.getImages(serialId, language)
                         .getBackdrops(),
-                        "Failed to fetch photos from TmDb by serialId " + serialId));
+                        "Failed to fetch photos from TmDb by serialId " + serialId), posterPath);
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -325,7 +327,7 @@ public class TmDbServiceImpl implements TmDbService {
                 .orElse(null);
     }
 
-    private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier) {
+    private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier, String posterPath) {
         List<String> imagePaths = imagesSupplier.get().stream()
                 .filter(artwork -> artwork.getFilePath() != null)
                 .sorted(Comparator.comparing(Artwork::getVoteAverage,
@@ -334,6 +336,9 @@ public class TmDbServiceImpl implements TmDbService {
                 .toList();
         Set<Hash> seenHashes = new HashSet<>();
         Set<String> uniqueImagePaths = new LinkedHashSet<>();
+        imageSimilarityService.addIfUniqueHash(posterPath.replace(W_200, W_500), seenHashes,
+                uniqueImagePaths);
+        uniqueImagePaths = new LinkedHashSet<>();
         for (String filePath : imagePaths) {
             imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
             if (uniqueImagePaths.size() >= MAX_NUMBER_OF_PHOTOS) {

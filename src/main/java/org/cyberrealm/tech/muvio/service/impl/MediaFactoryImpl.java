@@ -66,7 +66,8 @@ public class MediaFactoryImpl implements MediaFactory {
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
         media.setTrailer(tmdbService.fetchMovieTrailer(movieId, language));
-        media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId));
+        media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
+                media.getPosterPath()));
         media.setDirector(getMovieDirector(crew));
         media.setActors(getMovieActors(credits.getCast(), actors));
         media.setReviews(getReviews(() ->
@@ -101,7 +102,8 @@ public class MediaFactoryImpl implements MediaFactory {
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
-        media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId));
+        media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId,
+                media.getPosterPath()));
         media.setDirector(tvDirector);
         media.setActors(getTvActors(cast, actors));
         media.setReviews(getReviews(() ->

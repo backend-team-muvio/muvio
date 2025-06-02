@@ -20,7 +20,7 @@ public interface TmDbService {
 
     String fetchMovieTrailer(int movieId, String language);
 
-    Set<String> fetchMoviePhotos(String language, int movieId);
+    Set<String> fetchMoviePhotos(String language, int movieId, String posterPath);
 
     KeywordResults fetchMovieKeywords(int movieId);
 
@@ -35,7 +35,7 @@ public interface TmDbService {
 
     String fetchTvSerialsTrailer(int serialId, String language);
 
-    Set<String> fetchTvSerialsPhotos(String language, int serialId);
+    Set<String> fetchTvSerialsPhotos(String language, int serialId, String posterPath);
 
     TvKeywords fetchTvSerialsKeywords(int serialId);
 
