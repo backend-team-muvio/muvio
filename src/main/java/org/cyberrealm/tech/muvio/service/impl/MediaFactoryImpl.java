@@ -57,17 +57,17 @@ public class MediaFactoryImpl implements MediaFactory {
                 .getKeywords();
         final Credits credits = tmdbService.fetchMovieCredits(movieId, language);
         final List<Crew> crew = credits.getCrew();
-        if (crew.isEmpty()) {
+        final Media media = mediaMapper.toEntity(movieDb);
+        media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
+                media.getPosterPath()));
+        if (crew.isEmpty() || media.getPhotos().isEmpty()) {
             return null;
         }
-        final Media media = mediaMapper.toEntity(movieDb);
         final Double voteAverage = media.getRating();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
         media.setTrailer(tmdbService.fetchMovieTrailer(movieId, language));
-        media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
-                media.getPosterPath()));
         media.setDirector(getMovieDirector(crew));
         media.setActors(getMovieActors(credits.getCast(), actors));
         media.setReviews(getReviews(() ->
@@ -94,7 +94,9 @@ public class MediaFactoryImpl implements MediaFactory {
         final List<info.movito.themoviedbapi.model.tv.core.credits.Cast> cast = credits.getCast();
         final String tvDirector = getTvDirector(
                 tvSeriesDb.getCreatedBy(), cast, credits.getCrew());
-        if (tvDirector == null) {
+        media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId,
+                media.getPosterPath()));
+        if (tvDirector == null || media.getPhotos().isEmpty()) {
             return null;
         }
         final Double voteAverage = media.getRating();
@@ -102,8 +104,6 @@ public class MediaFactoryImpl implements MediaFactory {
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
         media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
-        media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId,
-                media.getPosterPath()));
         media.setDirector(tvDirector);
         media.setActors(getTvActors(cast, actors));
         media.setReviews(getReviews(() ->

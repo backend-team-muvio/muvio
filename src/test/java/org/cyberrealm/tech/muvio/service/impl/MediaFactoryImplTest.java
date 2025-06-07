@@ -11,6 +11,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -84,6 +85,8 @@ public class MediaFactoryImplTest {
                 any())).thenReturn(Set.of());
         when(tmdbService.fetchMovieReviews(any(), anyInt())).thenReturn(tmDbReviews);
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
+        when(tmdbService.fetchMoviePhotos(anyString(), anyInt(), anyString()))
+                .thenReturn(Set.of(PATH));
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
         assertThat(mediaFactory.createMovie(LANGUAGE_EN, THREE, Set.of(), Set.of(), actors))
                 .isEqualTo(media);
@@ -109,6 +112,8 @@ public class MediaFactoryImplTest {
                 .thenReturn(Set.of());
         when(tmdbService.fetchTvSerialsReviews(any(), anyInt())).thenReturn(tmDbReviews);
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
+        when(tmdbService.fetchTvSerialsPhotos(anyString(), anyInt(), anyString()))
+                .thenReturn(Set.of(PATH));
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
         assertThat(mediaFactory.createTvSerial(LANGUAGE_EN, THREE, Set.of(), Set.of(), actors))
                 .isEqualTo(media);
@@ -158,6 +163,8 @@ public class MediaFactoryImplTest {
         final Media media = new Media();
         media.setId(String.valueOf(THREE));
         media.setOverview(OVERVIEW);
+        media.setPhotos(Set.of(PATH));
+        media.setPosterPath(PATH);
         return media;
     }
 

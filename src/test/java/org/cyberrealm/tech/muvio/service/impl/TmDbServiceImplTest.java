@@ -1,7 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W500;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
 import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
@@ -51,6 +51,7 @@ import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.movies.ReleaseDate;
 import info.movito.themoviedbapi.model.movies.ReleaseDateResults;
 import info.movito.themoviedbapi.model.movies.ReleaseInfo;
+import info.movito.themoviedbapi.model.reviews.AuthorDetails;
 import info.movito.themoviedbapi.model.tv.series.ContentRating;
 import info.movito.themoviedbapi.model.tv.series.ContentRatingResults;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
@@ -144,7 +145,7 @@ public class TmDbServiceImplTest {
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
         assertThat(tmDbService.fetchMoviePhotos(LANGUAGE_EN, ONE, POSTER_PATH))
-                .isEqualTo(Set.of(IMAGE_PATH_W500 + PATH));
+                .isEqualTo(Set.of(IMAGE_PATH_W200 + PATH));
     }
 
     @SneakyThrows
@@ -214,7 +215,7 @@ public class TmDbServiceImplTest {
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
         assertThat(tmDbService.fetchTvSerialsPhotos(LANGUAGE_EN, ONE, POSTER_PATH))
-                .isEqualTo(Set.of(IMAGE_PATH_W500 + PATH));
+                .isEqualTo(Set.of(IMAGE_PATH_W200 + PATH));
     }
 
     @SneakyThrows
@@ -378,9 +379,12 @@ public class TmDbServiceImplTest {
 
     private List<Review> getListReviews() {
         final Review review = new Review();
+        final AuthorDetails authorDetails = new AuthorDetails();
+        authorDetails.setRating("6");
         review.setAuthor(AUTHOR);
         review.setContent(CONTENT_STRING);
         review.setId(ID_STRING);
+        review.setAuthorDetails(authorDetails);
         return List.of(review);
     }
 

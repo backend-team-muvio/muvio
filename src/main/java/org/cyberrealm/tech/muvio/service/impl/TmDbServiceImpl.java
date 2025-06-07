@@ -2,13 +2,10 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
 import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W500;
 import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
-import static org.cyberrealm.tech.muvio.common.Constants.W_200;
-import static org.cyberrealm.tech.muvio.common.Constants.W_500;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 
 import dev.brachtendorf.jimagehash.hash.Hash;
@@ -302,6 +299,7 @@ public class TmDbServiceImpl implements TmDbService {
         }
         return allReviews.stream()
                 .sorted(getReviewComparator())
+                .filter(review -> review.getAuthorDetails().getRating() != null)
                 .limit(MAX_NUMBER_OF_REVIEWS)
                 .map(this::updateReviewAvatar)
                 .collect(Collectors.toList());
@@ -332,11 +330,11 @@ public class TmDbServiceImpl implements TmDbService {
                 .filter(artwork -> artwork.getFilePath() != null)
                 .sorted(Comparator.comparing(Artwork::getVoteAverage,
                         Comparator.nullsLast(Double::compareTo)).reversed())
-                .map(artwork -> IMAGE_PATH_W500 + artwork.getFilePath())
+                .map(artwork -> IMAGE_PATH_W200 + artwork.getFilePath())
                 .toList();
         Set<Hash> seenHashes = new HashSet<>();
         Set<String> uniqueImagePaths = new LinkedHashSet<>();
-        imageSimilarityService.addIfUniqueHash(posterPath.replace(W_200, W_500), seenHashes,
+        imageSimilarityService.addIfUniqueHash(posterPath, seenHashes,
                 uniqueImagePaths);
         uniqueImagePaths = new LinkedHashSet<>();
         for (String filePath : imagePaths) {
