@@ -27,7 +27,7 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
     private final MediaSyncService mediaSyncService;
     private final MediaStorageService mediaStorageService;
 
-    //@Scheduled(initialDelayString = "${sync.initial.cron.time}")
+    @Scheduled(initialDelayString = "${sync.initial.cron.time}")
     @CacheEvict(value = "mediaStatistics", allEntries = true)
     @Override
     public void start() {
