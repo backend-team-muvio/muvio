@@ -1,0 +1,370 @@
+{
+  "info": {
+    "_postman_id": "dd0f2d9c-4a31-4e78-83b3-25b3c58626c9",
+    "name": "Muvio API",
+    "description": "Postman collection for Muvio API, generated from MediaController.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Media Management",
+      "description": "Endpoints for managing media assets such as movies and TV shows",
+      "item": [
+        {
+          "name": "Get media by ID",
+          "request": {
+            "description": "Retrieve detailed information of a media resource by its unique identifier",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "693134"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all",
+          "request": {
+            "description": "Retrieve all medias in the format of MediaBaseDto",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/all?page=0&size=10&sort=title,asc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "all"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "title,asc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Count",
+          "request": {
+            "description": "Retrieve number of all medias",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "count"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get media by vibe criteria",
+          "request": {
+            "description": "Retrieve a paginated slice of media items based on vibe filtering parameters",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/vibe?vibe=MAKE_ME_FEEL_GOOD&categories=GIRL_POWER,IMDB_TOP_250&years=2020-2025&type=MOVIE&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "vibe"
+              ],
+              "query": [
+                {
+                  "key": "vibe",
+                  "value": "MAKE_ME_FEEL_GOOD"
+                },
+                {
+                  "key": "categories",
+                  "value": "GIRL_POWER,IMDB_TOP_250"
+                },
+                {
+                  "key": "years",
+                  "value": "2020-2025"
+                },
+                {
+                  "key": "type",
+                  "value": "MOVIE"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get media for gallery view",
+          "request": {
+            "description": "Retrieve a paginated slice of media items suitable for gallery display",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/gallery?page=0&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "gallery"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get random media selection",
+          "request": {
+            "description": "Retrieve a set of random media items based on the provided size",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/luck/:size",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "luck",
+                ":size"
+              ],
+              "variable": [
+                {
+                  "key": "size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get media recommendations",
+          "request": {
+            "description": "Retrieve a paginated list of recommended media items based on media rating",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/recommendations?page=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "recommendations"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get media by top list category",
+          "request": {
+            "description": "Retrieve a paginated list of media items that belong to a specific top list category",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/top-list/:topList?page=0&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "top-list",
+                ":topList"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "topList",
+                  "value": "TOP_RATED_IMDB_MOVIES_OF_All_TIME"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all media posters",
+          "request": {
+            "description": "Retrieve a paginated list of media posters",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/posters?size=70",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "posters"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "70"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all media titles",
+          "request": {
+            "description": "Retrieve a paginated list of media titles",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/titles?page=0&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "titles"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find media by title",
+          "request": {
+            "description": "Retrieve a media resource that matches the provided title",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/titles/:title?page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "titles",
+                ":title"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "title",
+                  "value": "Dune"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Provide statistical info for the main page",
+          "request": {
+            "description": "Provide statistical info like the amount of media, genres, and actors",
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "media",
+                "statistics"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:10000/api",
+      "description": "The base URL for the API. Change port to 8080 for Docker."
+    }
+  ]
+}
