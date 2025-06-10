@@ -8,6 +8,7 @@ import static org.cyberrealm.tech.muvio.common.Constants.TITLE;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+import static org.cyberrealm.tech.muvio.util.TestConstants.COUNTRY_NAME;
 import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
@@ -106,7 +107,7 @@ public class MediaServiceImplTest {
     void getAllMediaByVibe_validResponse_returnSliceMediaDtoWithPoints() {
         final MediaDtoWithPoints mediaDtoWithPoints = new MediaDtoWithPoints(ID_STRING, TITLE,
                 Set.of(COMEDY), VOTE_AVERAGE_8, TRAILER, POSTER_PATH, DURATION_90_STRING,
-                DIRECTOR_NAME, Set.of(), List.of(), List.of(), YEAR_2020, OVERVIEW,
+                DIRECTOR_NAME, Set.of(), List.of(), List.of(), YEAR_2020, COUNTRY_NAME, OVERVIEW,
                 TYPE_MOVIE, ONE);
         when(mediaRepository.getAllMediaByVibes(any(MediaVibeRequestDto.class)))
                 .thenReturn(List.of(getMedia()));

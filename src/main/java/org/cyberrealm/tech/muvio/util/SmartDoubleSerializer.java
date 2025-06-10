@@ -1,4 +1,7 @@
-package org.cyberrealm.tech.muvio.service.impl;
+package org.cyberrealm.tech.muvio.util;
+
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -12,7 +15,7 @@ public class SmartDoubleSerializer extends JsonSerializer<Double> {
                           SerializerProvider serializerProvider) throws IOException {
         if (value == null) {
             jsonGenerator.writeNull();
-        } else if (value % 1 == 0) {
+        } else if (value % ONE == ZERO) {
             jsonGenerator.writeNumber(value.intValue());
         } else {
             jsonGenerator.writeNumber(value);
