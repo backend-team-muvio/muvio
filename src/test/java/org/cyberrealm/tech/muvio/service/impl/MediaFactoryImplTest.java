@@ -2,16 +2,10 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
-import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
-import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
-import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
-import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
-import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
-import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
-import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
+import static org.cyberrealm.tech.muvio.util.TestConstants.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -48,8 +42,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class MediaFactoryImplTest {
-    private static final String ACTOR_NAME = "ActorName";
-
     @Mock
     private TmDbService tmdbService;
     @Mock
@@ -88,7 +80,7 @@ public class MediaFactoryImplTest {
         when(tmdbService.fetchMoviePhotos(anyString(), anyInt(), anyString()))
                 .thenReturn(Set.of(PATH));
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
-        assertThat(mediaFactory.createMovie(LANGUAGE_EN, THREE, Set.of(), Set.of(), actors))
+        assertThat(mediaFactory.createMovie(THREE, Set.of(), Set.of(), actors, localizationMediaStorage))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
     }
@@ -115,7 +107,7 @@ public class MediaFactoryImplTest {
         when(tmdbService.fetchTvSerialsPhotos(anyString(), anyInt(), anyString()))
                 .thenReturn(Set.of(PATH));
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
-        assertThat(mediaFactory.createTvSerial(LANGUAGE_EN, THREE, Set.of(), Set.of(), actors))
+        assertThat(mediaFactory.createTvSerial(THREE, Set.of(), Set.of(), actors, localizationMediaStorage))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
     }
@@ -136,7 +128,7 @@ public class MediaFactoryImplTest {
                 = new info.movito.themoviedbapi.model.tv.core.credits.Credits();
         final info.movito.themoviedbapi.model.tv.core.credits.Cast cast
                 = new info.movito.themoviedbapi.model.tv.core.credits.Cast();
-        cast.setName(ACTOR_NAME);
+        cast.setName(ACTOR_NAME_STRING);
         cast.setId(TWO);
         credits.setCast(List.of(cast));
         return credits;
@@ -171,7 +163,7 @@ public class MediaFactoryImplTest {
     private Credits getCredits() {
         final Credits credits = new Credits();
         final Cast cast = new Cast();
-        cast.setName(ACTOR_NAME);
+        cast.setName(ACTOR_NAME_STRING);
         cast.setId(TWO);
         credits.setCast(List.of(cast));
         final Crew crew = new Crew();

@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.LocalizationMedia;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.service.AwardService;
 import org.cyberrealm.tech.muvio.service.MediaStorageService;
@@ -34,19 +35,18 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
         log.info("Initiating the initial media synchronization");
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
+        final Map<String, LocalizationMedia> localizationMediaStorage = new ConcurrentHashMap<>();
         final int currentYear = Year.now().getValue();
         final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
         final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
         final Set<String> imdbTop250TvShows = awardService.getImdbTop250TvShows();
         final Set<String> emmyWinningTvShows = awardService.getEmmyWinningTvShows();
-        mediaSyncService.importMedia(LANGUAGE_EN, REGION_US, currentYear, imdbTop250Movies,
-                oscarWinningMovies, actorStorage, mediaStorage, true);
-        mediaSyncService.importMedia(LANGUAGE_EN, REGION_US, currentYear, imdbTop250TvShows,
-                emmyWinningTvShows, actorStorage, mediaStorage, false);
+        mediaSyncService.importMedia(currentYear, imdbTop250Movies,
+                oscarWinningMovies, actorStorage, mediaStorage, localizationMediaStorage, true);
+        mediaSyncService.importMedia(currentYear, imdbTop250TvShows,
+                emmyWinningTvShows, actorStorage, mediaStorage, localizationMediaStorage, false);
         mediaStorageService.deleteAll();
-        mediaStorageService.saveAll(actorStorage, mediaStorage);
-        actorStorage.clear();
-        mediaStorage.clear();
+        mediaStorageService.saveAll(actorStorage, mediaStorage, localizationMediaStorage);
         log.info("Initial media synchronization completed successfully");
     }
 
@@ -57,27 +57,26 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
         log.info("Starting the weekly media update");
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
+        final Map<String, LocalizationMedia> localizationMediaStorage = new ConcurrentHashMap<>();
         final int currentYear = Year.now().getValue();
         final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
         final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
         final Set<String> imdbTop250TvShows = awardService.getImdbTop250TvShows();
         final Set<String> emmyWinningTvShows = awardService.getEmmyWinningTvShows();
-        mediaSyncService.importMedia(LANGUAGE_EN, REGION_US, currentYear, imdbTop250Movies,
-                oscarWinningMovies, actorStorage, mediaStorage, true);
-        mediaSyncService.importMedia(LANGUAGE_EN, REGION_US, currentYear, imdbTop250TvShows,
-                emmyWinningTvShows, actorStorage, mediaStorage, false);
-        mediaSyncService.importByFindingTitles(LANGUAGE_EN, REGION_US, currentYear, actorStorage,
-                mediaStorage, imdbTop250Movies, oscarWinningMovies, true);
-        mediaSyncService.importByFindingTitles(LANGUAGE_EN, REGION_US, currentYear, actorStorage,
-                mediaStorage, imdbTop250TvShows, emmyWinningTvShows, false);
-        mediaSyncService.importMediaByFilter(LANGUAGE_EN, currentYear, imdbTop250Movies,
-                oscarWinningMovies, mediaStorage, actorStorage, true);
-        mediaSyncService.importMediaByFilter(LANGUAGE_EN, currentYear, imdbTop250TvShows,
-                emmyWinningTvShows, mediaStorage, actorStorage, false);
+        mediaSyncService.importMedia(currentYear, imdbTop250Movies,
+                oscarWinningMovies, actorStorage, mediaStorage, localizationMediaStorage, true);
+        mediaSyncService.importMedia(currentYear, imdbTop250TvShows,
+                emmyWinningTvShows, actorStorage, mediaStorage, localizationMediaStorage, false);
+        mediaSyncService.importByFindingTitles(currentYear, actorStorage,
+                mediaStorage, localizationMediaStorage, imdbTop250Movies, oscarWinningMovies, true);
+        mediaSyncService.importByFindingTitles(currentYear, actorStorage,
+                mediaStorage, localizationMediaStorage, imdbTop250TvShows, emmyWinningTvShows, false);
+        mediaSyncService.importMediaByFilter(currentYear, imdbTop250Movies,
+                oscarWinningMovies, mediaStorage, localizationMediaStorage, actorStorage, true);
+        mediaSyncService.importMediaByFilter(currentYear, imdbTop250TvShows,
+                emmyWinningTvShows, mediaStorage, localizationMediaStorage, actorStorage, false);
         mediaStorageService.deleteAll();
-        mediaStorageService.saveAll(actorStorage, mediaStorage);
-        actorStorage.clear();
-        mediaStorage.clear();
+        mediaStorageService.saveAll(actorStorage, mediaStorage, localizationMediaStorage);
         log.info("Weekly media update completed successfully");
     }
 }

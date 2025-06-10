@@ -34,6 +34,8 @@ public final class Constants {
     public static final int FIVE = 5;
     public static final String W_200 = "w200";
     public static final String W_500 = "w500";
+    public static final String FULL_DURATION_PATTERN = "%d%s %02d%s";
+    public static final String MINUTES_ONLY_PATTERN = "%02d%s";
 
     private Constants() {
 

@@ -22,11 +22,8 @@ public interface GenreMapper {
         if (genres == null || genres.isEmpty()) {
             return null;
         }
-        return genres.stream().map(genre -> genre.getName().contains(AMPERSAND)
-                ? genre.getName().split(AMPERSAND)
-                : new String[]{genre.getName()})
-                .flatMap(Arrays::stream)
-                .map(genre -> GenreEntity.fromString(genre.trim()))
+        return splitAndCleanGenres(genres).stream()
+                .map(GenreEntity::fromString)
                 .collect(Collectors.toSet());
     }
 
@@ -46,6 +43,24 @@ public interface GenreMapper {
             return null;
         }
         return genres.stream().map(GenreEntity::getName)
+                .collect(Collectors.toSet());
+    }
+
+    @Named("toSetStringGenres")
+    default Set<String> toSetStringGenres(List<Genre> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return null;
+        }
+        return splitAndCleanGenres(genres);
+    }
+
+    private Set<String> splitAndCleanGenres(List<Genre> genres) {
+        return genres.stream()
+                .map(genre -> genre.getName().contains(AMPERSAND)
+                        ? genre.getName().split(AMPERSAND)
+                        : new String[]{genre.getName()})
+                .flatMap(Arrays::stream)
+                .map(String::trim)
                 .collect(Collectors.toSet());
     }
 }

@@ -1,6 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
+import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 
 import info.movito.themoviedbapi.model.core.NamedIdElement;
 import info.movito.themoviedbapi.model.keywords.Keyword;
@@ -18,18 +19,11 @@ import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
-import org.cyberrealm.tech.muvio.model.Actor;
-import org.cyberrealm.tech.muvio.model.Media;
-import org.cyberrealm.tech.muvio.model.Review;
-import org.cyberrealm.tech.muvio.model.RoleActor;
-import org.cyberrealm.tech.muvio.service.CategoryService;
-import org.cyberrealm.tech.muvio.service.MediaFactory;
-import org.cyberrealm.tech.muvio.service.TmDbService;
-import org.cyberrealm.tech.muvio.service.TopListService;
-import org.cyberrealm.tech.muvio.service.VibeService;
-import org.springframework.stereotype.Component;
+import org.cyberrealm.tech.muvio.model.*;
+import org.cyberrealm.tech.muvio.service.*;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class MediaFactoryImpl implements MediaFactory {
     private static final String PRODUCER = "Producer";
@@ -48,14 +42,16 @@ public class MediaFactoryImpl implements MediaFactory {
     private final ActorMapper actorMapper;
     private final ReviewMapper reviewMapper;
     private final TopListService topListService;
+    private final Map<String, LocalizationEntry> localizationEntryMap;
+    private final LocalizationMediaFactory localizationMediaFactory;
 
     @Override
-    public Media createMovie(String language, Integer movieId, Set<String> moviesTop250,
-                             Set<String> oscarWinningMedia, Map<Integer, Actor> actors) {
-        final MovieDb movieDb = tmdbService.fetchMovieDetails(movieId, language);
+    public Media createMovie(Integer movieId, Set<String> moviesTop250,
+                             Set<String> oscarWinningMedia, Map<Integer, Actor> actors, Map<String, LocalizationMedia> localizationMediaStorage) {
+        final MovieDb movieDb = tmdbService.fetchMovieDetails(movieId, LANGUAGE_EN);
         final List<Keyword> keywords = tmdbService.fetchMovieKeywords(movieId)
                 .getKeywords();
-        final Credits credits = tmdbService.fetchMovieCredits(movieId, language);
+        final Credits credits = tmdbService.fetchMovieCredits(movieId, LANGUAGE_EN);
         final List<Crew> crew = credits.getCrew();
         final Media media = mediaMapper.toEntity(movieDb);
         media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
@@ -63,15 +59,23 @@ public class MediaFactoryImpl implements MediaFactory {
         if (crew.isEmpty() || media.getPhotos().isEmpty()) {
             return null;
         }
+        media.setReviews(getReviews(() ->
+                tmdbService.fetchMovieReviews(LANGUAGE_EN, movieId)));
+        media.setDirector(getMovieDirector(crew));
+        media.setActors(getMovieActors(credits.getCast(), actors));
+        boolean existLocalization = false;
+        if (!localizationEntryMap.isEmpty()) {
+            existLocalization = localizationMediaFactory.createFromMovie(media,
+                    localizationMediaStorage, actors);
+        }
+        if (!existLocalization) {
+            return null;
+        }
         final Double voteAverage = media.getRating();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
-        media.setTrailer(tmdbService.fetchMovieTrailer(movieId, language));
-        media.setDirector(getMovieDirector(crew));
-        media.setActors(getMovieActors(credits.getCast(), actors));
-        media.setReviews(getReviews(() ->
-                tmdbService.fetchMovieReviews(language, movieId)));
+        media.setTrailer(tmdbService.fetchMovieTrailer(movieId, LANGUAGE_EN));
         media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbMovieRatings(movieId),
                 media.getGenres()));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
@@ -83,14 +87,14 @@ public class MediaFactoryImpl implements MediaFactory {
     }
 
     @Override
-    public Media createTvSerial(String language, Integer seriesId, Set<String> serialsTop250,
-                                Set<String> emmyWinningMedia, Map<Integer, Actor> actors) {
+    public Media createTvSerial(Integer seriesId, Set<String> serialsTop250,
+                                Set<String> emmyWinningMedia, Map<Integer, Actor> actors, Map<String, LocalizationMedia> localizationMediaStorage) {
         final List<Keyword> keywords = tmdbService.fetchTvSerialsKeywords(seriesId)
                 .getResults();
-        final TvSeriesDb tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, language);
+        final TvSeriesDb tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, LANGUAGE_EN);
         final Media media = mediaMapper.toEntity(tvSeriesDb);
         final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
-                = tmdbService.fetchTvSerialsCredits(seriesId, language);
+                = tmdbService.fetchTvSerialsCredits(seriesId, LANGUAGE_EN);
         final List<info.movito.themoviedbapi.model.tv.core.credits.Cast> cast = credits.getCast();
         final String tvDirector = getTvDirector(
                 tvSeriesDb.getCreatedBy(), cast, credits.getCrew());
@@ -103,11 +107,11 @@ public class MediaFactoryImpl implements MediaFactory {
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
-        media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, language));
+        media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, LANGUAGE_EN));
         media.setDirector(tvDirector);
         media.setActors(getTvActors(cast, actors));
         media.setReviews(getReviews(() ->
-                tmdbService.fetchTvSerialsReviews(language, seriesId)));
+                tmdbService.fetchTvSerialsReviews(LANGUAGE_EN, seriesId)));
         media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
                 keywords, voteAverage, voteCount, popularity, serialsTop250, title));
         media.setTopLists(topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
@@ -115,6 +119,13 @@ public class MediaFactoryImpl implements MediaFactory {
         media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId),
                 media.getGenres()));
         return media;
+    }
+
+    private String getMovieDirector(List<Crew> crews) {
+        return tryGetFirstNonNull(
+                () -> findCrewMemberByJob(crews, DIRECTOR),
+                () -> findCrewMemberByJob(crews, PRODUCER)
+        );
     }
 
     private List<Review> getReviews(
@@ -147,12 +158,7 @@ public class MediaFactoryImpl implements MediaFactory {
         }).toList();
     }
 
-    private String getMovieDirector(List<Crew> crews) {
-        return tryGetFirstNonNull(
-                () -> findCrewMemberByJob(crews, DIRECTOR),
-                () -> findCrewMemberByJob(crews, PRODUCER)
-        );
-    }
+
 
     private String findCrewMemberByJob(List<Crew> crews, String job) {
         return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(job))
