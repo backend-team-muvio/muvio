@@ -2,13 +2,10 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
 import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
-import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W500;
 import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 import static org.cyberrealm.tech.muvio.common.Constants.MIN_VOTE_COUNT;
 import static org.cyberrealm.tech.muvio.common.Constants.TEASER;
 import static org.cyberrealm.tech.muvio.common.Constants.TRAILER;
-import static org.cyberrealm.tech.muvio.common.Constants.W_200;
-import static org.cyberrealm.tech.muvio.common.Constants.W_500;
 import static org.cyberrealm.tech.muvio.common.Constants.YOUTUBE_PATH;
 
 import dev.brachtendorf.jimagehash.hash.Hash;
@@ -81,7 +78,8 @@ public class TmDbServiceImpl implements TmDbService {
     public Set<Integer> fetchPopularMovies(String language, int page, String region) {
         return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, region)
                                 .getResults().stream().filter(
-                                        movie -> movie.getVoteAverage() > MIN_RATE
+                                        movie -> movie.getVoteAverage() != null
+                                                && movie.getVoteAverage() > MIN_RATE
                                                 && movie.getVideo() != null
                                                 && movie.getPosterPath() != null
                                                 && movie.getOverview() != null
@@ -146,7 +144,8 @@ public class TmDbServiceImpl implements TmDbService {
     @Override
     public Set<Integer> fetchPopularTvSerials(String language, int page) {
         return executeTmDbCall(() -> tmdbTvSeriesLists.getPopular(language, page).getResults()
-                        .stream().filter(tvSeries -> tvSeries.getVoteAverage() > MIN_RATE
+                        .stream().filter(tvSeries -> tvSeries.getVoteAverage() != null
+                                && tvSeries.getVoteAverage() > MIN_RATE
                                 && tvSeries.getPosterPath() != null
                                 && tvSeries.getOverview() != null
                                 && tvSeries.getFirstAirDate() != null
@@ -302,6 +301,7 @@ public class TmDbServiceImpl implements TmDbService {
         }
         return allReviews.stream()
                 .sorted(getReviewComparator())
+                .filter(review -> review.getAuthorDetails().getRating() != null)
                 .limit(MAX_NUMBER_OF_REVIEWS)
                 .map(this::updateReviewAvatar)
                 .collect(Collectors.toList());
@@ -332,21 +332,18 @@ public class TmDbServiceImpl implements TmDbService {
                 .filter(artwork -> artwork.getFilePath() != null)
                 .sorted(Comparator.comparing(Artwork::getVoteAverage,
                         Comparator.nullsLast(Double::compareTo)).reversed())
-                .map(artwork -> IMAGE_PATH_W500 + artwork.getFilePath())
+                .map(artwork -> IMAGE_PATH_W200 + artwork.getFilePath())
                 .toList();
         Set<Hash> seenHashes = new HashSet<>();
         Set<String> uniqueImagePaths = new LinkedHashSet<>();
-        if (posterPath != null && !posterPath.isBlank()) {
-            String processedPosterPath = posterPath.replace(W_200, W_500);
-            Set<String> temporaryDiscardAbleSetForPosterPath = new LinkedHashSet<>();
-            imageSimilarityService.addIfUniqueHash(processedPosterPath, seenHashes,
-                    temporaryDiscardAbleSetForPosterPath);
-        }
+        imageSimilarityService.addIfUniqueHash(posterPath, seenHashes,
+                uniqueImagePaths);
+        uniqueImagePaths = new LinkedHashSet<>();
         for (String filePath : imagePaths) {
+            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
             if (uniqueImagePaths.size() >= MAX_NUMBER_OF_PHOTOS) {
                 break;
             }
-            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
         }
         return uniqueImagePaths;
     }

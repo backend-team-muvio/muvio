@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.repository.ActorRepository;
@@ -23,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class MediaStorageServiceImplTest {
-    private static final String ACTOR_NAME = "Actor ";
     @Mock
     private MediaRepository mediaRepository;
     @Mock
@@ -47,7 +47,6 @@ public class MediaStorageServiceImplTest {
         for (int i = ZERO; i < TEST_SIZE; i++) {
             Actor actor = new Actor();
             actor.setId(i);
-            actor.setName(ACTOR_NAME + i);
             actorStorage.put(i, actor);
         }
         for (int i = ZERO; i < TEST_SIZE; i++) {
@@ -56,7 +55,7 @@ public class MediaStorageServiceImplTest {
             media.setTitle(MEDIA_TITLE + i);
             mediaStorage.put(String.valueOf(i), media);
         }
-        mediaStorageService.saveAll(actorStorage, mediaStorage);
+        mediaStorageService.saveAll(actorStorage, mediaStorage, Set.of());
         verify(actorRepository, times(THREE)).saveAll(anyList());
         verify(mediaRepository, times(THREE)).saveAll(anyList());
     }

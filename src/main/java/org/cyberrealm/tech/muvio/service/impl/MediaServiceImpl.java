@@ -1,6 +1,7 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
+import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE_HUNDRED;
 import static org.cyberrealm.tech.muvio.common.Constants.RATING;
 import static org.cyberrealm.tech.muvio.common.Constants.SIX;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.dto.MainPageInfoDto;
 import org.cyberrealm.tech.muvio.dto.MediaBaseDto;
 import org.cyberrealm.tech.muvio.dto.MediaDto;
+import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithPoints;
@@ -36,6 +38,7 @@ import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.repository.ActorRepository;
 import org.cyberrealm.tech.muvio.repository.MediaRepository;
+import org.cyberrealm.tech.muvio.service.LocalizationMediaService;
 import org.cyberrealm.tech.muvio.service.MediaService;
 import org.cyberrealm.tech.muvio.service.PaginationUtil;
 import org.springframework.cache.annotation.Cacheable;
@@ -59,6 +62,7 @@ public class MediaServiceImpl implements MediaService {
     private static final String MEDIA_STATISTICS = "mediaStatistics";
     private static final String RESULT_NULL = "#result == null";
     private final MediaRepository mediaRepository;
+    private final LocalizationMediaService localizationMediaService;
     private final ActorRepository actorRepository;
     private final MediaMapper mediaMapper;
     private final GenreMapper genreMapper;
@@ -69,10 +73,16 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public MediaDto getMediaById(String id) {
-        return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no media with this id: "
-                        + id)));
+    public MediaDto getMediaById(String id, String lang) {
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.findById(id, mediaRepository.findById(
+                    id.substring(lang.length())).orElseThrow(() -> new EntityNotFoundException(
+                            "There is no media with this id: " + id)));
+        } else {
+            return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "There is no media with this id: " + id)));
+        }
     }
 
     @Override
@@ -81,11 +91,17 @@ public class MediaServiceImpl implements MediaService {
     },
             backoff = @Backoff(delay = BACK_OFF))
     public Slice<MediaDtoWithPoints> getAllMediaByVibe(MediaVibeRequestDto requestDto) {
-        final List<MediaDtoWithPoints> mediasWithPoints = mediaRepository
-                .getAllMediaByVibes(requestDto).stream()
-                .map(media -> mediaMapper.toMediaDtoWithPoints(media,
-                        getCategories(requestDto.categories())))
-                .toList();
+        final List<Media> mediaList = mediaRepository.getAllMediaByVibes(requestDto);
+        final Set<String> categories = getCategories(requestDto.categories());
+        final String lang = requestDto.lang();
+        final List<MediaDtoWithPoints> mediasWithPoints;
+        if (isLocalizationRequired(lang)) {
+            mediasWithPoints = localizationMediaService.getAllMediaByVibe(mediaList,
+                    categories, lang);
+        } else {
+            mediasWithPoints = mediaList.stream().map(
+                    media -> mediaMapper.toMediaDtoWithPoints(media, categories)).toList();
+        }
         return paginationUtil.paginateListWithOneRandomBefore(PageRequest.of(
                 requestDto.page() == null ? ZERO : requestDto.page(),
                 requestDto.size() == null ? TEN : requestDto.size(),
@@ -99,10 +115,16 @@ public class MediaServiceImpl implements MediaService {
             backoff = @Backoff(delay = BACK_OFF))
     public Slice<MediaBaseDto> getAllForGallery(MediaGalleryRequestDto requestDto,
                                                 Pageable pageable) {
+        final String lang = requestDto.lang();
         final List<Media> mediaForGallery = mediaRepository.getAllForGallery(requestDto, pageable);
-        final List<MediaBaseDto> listMedias = mediaForGallery.stream()
-                .map(mediaMapper::toMediaBaseDto).toList();
-        return new SliceImpl<>(listMedias, pageable, !listMedias.isEmpty());
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.getAllForGalleryLocalization(
+                    mediaForGallery, requestDto.title(), pageable, lang);
+        } else {
+            List<MediaBaseDto> listMedias = mediaForGallery.stream()
+                    .map(mediaMapper::toMediaBaseDto).toList();
+            return new SliceImpl<>(listMedias, pageable, !listMedias.isEmpty());
+        }
     }
 
     @Override
@@ -110,9 +132,14 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public Set<MediaDto> getAllLuck(int size) {
-        return mediaRepository.getAllLuck(size).stream()
-                .map(mediaMapper::toMovieDto).collect(Collectors.toSet());
+    public Set<MediaDto> getAllLuck(int size, String lang) {
+        final Set<MediaDtoFromDb> allLuck = mediaRepository.getAllLuck(size);
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.getAllLuck(allLuck, lang);
+        } else {
+            return allLuck.stream()
+                    .map(mediaMapper::toMovieDto).collect(Collectors.toSet());
+        }
     }
 
     @Transactional
@@ -121,7 +148,7 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public Slice<MediaBaseDto> getRecommendations(int page) {
+    public Slice<MediaBaseDto> getRecommendations(int page, String lang) {
         boolean stop = true;
         final int minYear = Year.now().getValue() - THREE;
         List<Stack<MediaBaseDto>> stacks = List.of(
@@ -143,15 +170,20 @@ public class MediaServiceImpl implements MediaService {
                 }
             }
         }
-        updateDuration(recommendations);
-        recommendations.forEach(
-                media -> {
-                    media.setGenres(genreMapper.toStringGenres(media.getGenres()));
-                    media.setType(mediaMapper.toCorrectType(media.getType()));
-                });
+        final PageRequest pageRequest = PageRequest.of(page, SIX);
         final Page<MediaBaseDto> mediaPage = paginationUtil
-                .paginateList(PageRequest.of(page, SIX), recommendations);
-        return mediaPage.getContent().size() < SIX ? null : mediaPage;
+                .paginateList(pageRequest, recommendations);
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.getRecommendations(mediaPage, pageRequest, lang);
+        } else {
+            updateDuration(mediaPage);
+            mediaPage.forEach(
+                    media -> {
+                        media.setGenres(genreMapper.toStringGenres(media.getGenres()));
+                        media.setType(mediaMapper.toCorrectType(media.getType()));
+                    });
+            return mediaPage.getContent().size() < SIX ? null : mediaPage;
+        }
     }
 
     @Override
@@ -159,12 +191,19 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public Slice<MediaDtoWithCast> findMediaByTopLists(String topList, int page,int size) {
+    public Slice<MediaDtoWithCast> findMediaByTopLists(
+            String topList, int page, int size, String lang) {
         final Pageable pageable = PageRequest.of(page, size, Sort.by(RATING).descending());
         final Slice<MediaDtoWithCastFromDb> media = mediaRepository
                 .findByTopListsContaining(topList, pageable);
-        final List<MediaDtoWithCast> mediaList = media.stream()
-                .map(mediaMapper::toMediaDtoWithCast).toList();
+        final List<MediaDtoWithCast> mediaList;
+        if (isLocalizationRequired(lang)) {
+            mediaList = localizationMediaService.findMediaByTopLists(media, lang);
+        } else {
+            mediaList = media.stream()
+                    .map(mediaMapper::toMediaDtoWithCast).toList();
+
+        }
         return new SliceImpl<>(mediaList, pageable, !mediaList.isEmpty());
     }
 
@@ -173,8 +212,12 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public List<PosterDto> getRandomPosters(int size) {
-        return mediaRepository.getRandomPosters(size);
+    public List<PosterDto> getRandomPosters(int size, String lang) {
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.getRandomPosters(size, lang);
+        } else {
+            return mediaRepository.getRandomPosters(size);
+        }
     }
 
     @Override
@@ -182,8 +225,12 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public Slice<TitleDto> findAllTitles(Pageable pageable) {
-        return mediaRepository.findAllTitles(pageable);
+    public Slice<TitleDto> findAllTitles(Pageable pageable, String lang) {
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.findAllTitles(pageable, lang);
+        } else {
+            return mediaRepository.findAllTitles(pageable);
+        }
     }
 
     @Override
@@ -191,21 +238,25 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public Slice<MediaBaseDto> findByTitle(String title, Pageable pageable) {
+    public Slice<MediaBaseDto> findByTitle(String title, Pageable pageable, String lang) {
         if (title == null || title.length() < MIN_TITLE_LENGTH) {
             throw new IllegalArgumentException("The title must contain at least 3 characters");
         }
-        final Slice<MediaBaseDto> baseDtoSlice = Optional.ofNullable(
-                mediaRepository.findByTitle(title, pageable))
-                .filter(slice -> !slice.isEmpty())
-                .orElseThrow(() ->
-                        new MediaProcessingException("Couldn't find media by title: " + title));
-        baseDtoSlice.forEach(
-                media -> {
-                    media.setGenres(genreMapper.toStringGenres(media.getGenres()));
-                    media.setType(mediaMapper.toCorrectType(media.getType()));
-                });
-        return baseDtoSlice;
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.findByTitle(title,pageable, lang);
+        } else {
+            final Slice<MediaBaseDto> baseDtoSlice = Optional.ofNullable(
+                            mediaRepository.findByTitle(title, pageable))
+                    .filter(slice -> !slice.isEmpty())
+                    .orElseThrow(() ->
+                            new MediaProcessingException("Couldn't find media by title: " + title));
+            baseDtoSlice.forEach(
+                    media -> {
+                        media.setGenres(genreMapper.toStringGenres(media.getGenres()));
+                        media.setType(mediaMapper.toCorrectType(media.getType()));
+                    });
+            return baseDtoSlice;
+        }
     }
 
     @Override
@@ -213,12 +264,17 @@ public class MediaServiceImpl implements MediaService {
             DataAccessResourceFailureException.class, MongoSocketReadTimeoutException.class
     },
             backoff = @Backoff(delay = BACK_OFF))
-    public List<MediaBaseDto> getAll(Pageable pageable) {
-        return mediaRepository.getAll(pageable).stream().peek(media -> {
-            media.setDuration(mediaMapper.toDuration(Integer.valueOf(media.getDuration())));
-            media.setGenres(genreMapper.toStringGenres(media.getGenres()));
-            media.setType(mediaMapper.toCorrectType(media.getType()));
-        }).toList();
+    public List<MediaBaseDto> getAll(Pageable pageable, String lang) {
+        final List<MediaBaseDto> mediaBaseList = mediaRepository.getAll(pageable);
+        if (isLocalizationRequired(lang)) {
+            return localizationMediaService.getAll(mediaBaseList, lang);
+        } else {
+            return mediaBaseList.stream().peek(media -> {
+                media.setDuration(mediaMapper.toDuration(Integer.valueOf(media.getDuration())));
+                media.setGenres(genreMapper.toStringGenres(media.getGenres()));
+                media.setType(mediaMapper.toCorrectType(media.getType()));
+            }).toList();
+        }
     }
 
     @Override
@@ -277,5 +333,9 @@ public class MediaServiceImpl implements MediaService {
         return categories != null
                 ? categories.stream().map(String::toUpperCase).collect(Collectors.toSet())
                 : Set.of();
+    }
+
+    private boolean isLocalizationRequired(String lang) {
+        return lang != null && !lang.isEmpty() && !lang.equals(LANGUAGE_EN);
     }
 }

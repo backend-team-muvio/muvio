@@ -2,7 +2,6 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
-import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
@@ -11,6 +10,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,9 +32,11 @@ import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
 import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.LocalizationEntry;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
 import org.cyberrealm.tech.muvio.service.CategoryService;
+import org.cyberrealm.tech.muvio.service.LocalizationMediaFactory;
 import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.cyberrealm.tech.muvio.service.TopListService;
 import org.cyberrealm.tech.muvio.service.VibeService;
@@ -47,8 +49,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class MediaFactoryImplTest {
-    private static final String ACTOR_NAME = "ActorName";
-
     @Mock
     private TmDbService tmdbService;
     @Mock
@@ -63,6 +63,10 @@ public class MediaFactoryImplTest {
     private ReviewMapper reviewMapper;
     @Mock
     private TopListService topListService;
+    @Mock
+    private Set<LocalizationEntry> localizationEntrySet;
+    @Mock
+    private LocalizationMediaFactory localizationMediaFactory;
     @InjectMocks
     private MediaFactoryImpl mediaFactory;
 
@@ -84,8 +88,11 @@ public class MediaFactoryImplTest {
                 any())).thenReturn(Set.of());
         when(tmdbService.fetchMovieReviews(any(), anyInt())).thenReturn(tmDbReviews);
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
+        when(tmdbService.fetchMoviePhotos(anyString(), anyInt(), anyString()))
+                .thenReturn(Set.of(PATH));
+        when(localizationEntrySet.isEmpty()).thenReturn(true);
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
-        assertThat(mediaFactory.createMovie(LANGUAGE_EN, THREE, Set.of(), Set.of(), actors))
+        assertThat(mediaFactory.createMovie(THREE, Set.of(), Set.of(), actors, Set.of()))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
     }
@@ -109,8 +116,11 @@ public class MediaFactoryImplTest {
                 .thenReturn(Set.of());
         when(tmdbService.fetchTvSerialsReviews(any(), anyInt())).thenReturn(tmDbReviews);
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
+        when(tmdbService.fetchTvSerialsPhotos(anyString(), anyInt(), anyString()))
+                .thenReturn(Set.of(PATH));
+        when(localizationEntrySet.isEmpty()).thenReturn(true);
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
-        assertThat(mediaFactory.createTvSerial(LANGUAGE_EN, THREE, Set.of(), Set.of(), actors))
+        assertThat(mediaFactory.createTvSerial(THREE, Set.of(), Set.of(), actors, Set.of()))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
     }
@@ -131,7 +141,6 @@ public class MediaFactoryImplTest {
                 = new info.movito.themoviedbapi.model.tv.core.credits.Credits();
         final info.movito.themoviedbapi.model.tv.core.credits.Cast cast
                 = new info.movito.themoviedbapi.model.tv.core.credits.Cast();
-        cast.setName(ACTOR_NAME);
         cast.setId(TWO);
         credits.setCast(List.of(cast));
         return credits;
@@ -158,13 +167,14 @@ public class MediaFactoryImplTest {
         final Media media = new Media();
         media.setId(String.valueOf(THREE));
         media.setOverview(OVERVIEW);
+        media.setPhotos(Set.of(PATH));
+        media.setPosterPath(PATH);
         return media;
     }
 
     private Credits getCredits() {
         final Credits credits = new Credits();
         final Cast cast = new Cast();
-        cast.setName(ACTOR_NAME);
         cast.setId(TWO);
         credits.setCast(List.of(cast));
         final Crew crew = new Crew();
@@ -176,7 +186,6 @@ public class MediaFactoryImplTest {
 
     private Actor getActor() {
         final Actor actor = new Actor();
-        actor.setName(ACTOR_NAME);
         actor.setId(TWO);
         return actor;
     }

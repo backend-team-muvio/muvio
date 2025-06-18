@@ -34,6 +34,13 @@ public final class Constants {
     public static final int FIVE = 5;
     public static final String W_200 = "w200";
     public static final String W_500 = "w500";
+    public static final String FULL_DURATION_PATTERN = "%d%s %02d%s";
+    public static final String MINUTES_ONLY_PATTERN = "%02d%s";
+    public static final String REGEX_ANY = ".*";
+    public static final String REGEX_FLAG_IGNORE_CASE = "i";
+    public static final String REGEX_ANCHOR_START = "^";
+    public static final String FORMAT_WITH_HOURS = "%dh %02dm";
+    public static final String FORMAT_MINUTES_ONLY = "%02dm";
 
     private Constants() {
 

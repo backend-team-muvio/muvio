@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.cyberrealm.tech.muvio.util.TestConstants.CURRENT_YEAR;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EMPTY;
-import static org.cyberrealm.tech.muvio.util.TestConstants.EN_LANGUAGE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EXPECTED_SIZE_ONE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EXPECTED_SIZE_THREE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.EXPECTED_SIZE_TWO;
@@ -15,6 +14,7 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.FILTERED_MOVIE_KEY_TW
 import static org.cyberrealm.tech.muvio.util.TestConstants.FILTERED_MOVIE_PREFIX;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_MEDIA_ID;
 import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_POPULAR_MEDIA_DURATION;
+import static org.cyberrealm.tech.muvio.util.TestConstants.FIRST_RECORD;
 import static org.cyberrealm.tech.muvio.util.TestConstants.IS_MOVIES;
 import static org.cyberrealm.tech.muvio.util.TestConstants.IS_TV_SHOW;
 import static org.cyberrealm.tech.muvio.util.TestConstants.MOVIE_KEY_ONE;
@@ -35,7 +35,6 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.TV_MOVIE_KEY_ONE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TV_MOVIE_KEY_TWO;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TV_PREFIX;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TV_SHOW_TITLE_PREFIX;
-import static org.cyberrealm.tech.muvio.util.TestConstants.US_REGION;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ZERO_OF_RECORDS;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -53,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.LocalizationMedia;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.cyberrealm.tech.muvio.service.MediaFactory;
@@ -78,6 +78,7 @@ class MediaSyncServiceImplTest {
     private Map<Integer, Actor> actorStorage;
     private Set<String> imdbTop250;
     private Set<String> winningMedia;
+    private Set<LocalizationMedia> localizationMediaStorage;
 
     @BeforeEach
     void setUp() {
@@ -85,6 +86,7 @@ class MediaSyncServiceImplTest {
         actorStorage = new HashMap<>();
         imdbTop250 = new HashSet<>(Arrays.asList(FIRST_MEDIA_ID, SECOND_MEDIA_ID));
         winningMedia = new HashSet<>(List.of(THIRD_MEDIA_ID));
+        localizationMediaStorage = new HashSet<>();
     }
 
     @Test
@@ -93,22 +95,22 @@ class MediaSyncServiceImplTest {
         // Given
         when(tmdbService.fetchPopularMovies(anyString(), anyInt(), anyString()))
                 .thenReturn(Set.of(POPULAR_MOVIE_ID_ONE, POPULAR_MOVIE_ID_TWO));
-        when(mediaFactory.createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap()))
+        when(mediaFactory.createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet()))
                 .thenAnswer(invocation -> {
-                    int id = invocation.getArgument(POPULAR_MOVIE_ID_ONE);
+                    int id = invocation.getArgument(FIRST_RECORD);
                     return getMedia(String.valueOf(id), MOVIE_PREFIX, Type.MOVIE);
                 });
 
         // When
-        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250, winningMedia,
-                actorStorage, mediaStorage, IS_MOVIES);
+        mediaSyncService.importMedia(CURRENT_YEAR, imdbTop250, winningMedia,
+                actorStorage, mediaStorage, localizationMediaStorage, IS_MOVIES);
 
         // Then
         assertThat(mediaStorage).hasSize(EXPECTED_SIZE_TWO);
         assertThat(mediaStorage.containsKey(MOVIE_KEY_ONE)).isTrue();
         assertThat(mediaStorage.containsKey(MOVIE_KEY_TWO)).isTrue();
         verify(mediaFactory, times(EXPECTED_SIZE_TWO))
-                .createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap());
+                .createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet());
     }
 
     @Test
@@ -117,22 +119,22 @@ class MediaSyncServiceImplTest {
         // Given
         when(tmdbService.fetchPopularTvSerials(anyString(), anyInt()))
                 .thenReturn(Set.of(POPULAR_TV_ID_ONE, POPULAR_TV_ID_TWO));
-        when(mediaFactory.createTvSerial(anyString(), anyInt(), anySet(), anySet(), anyMap()))
+        when(mediaFactory.createTvSerial(anyInt(), anySet(), anySet(), anyMap(), anySet()))
                 .thenAnswer(invocation -> {
-                    int id = invocation.getArgument(POPULAR_MOVIE_ID_ONE);
+                    int id = invocation.getArgument(FIRST_RECORD);
                     return getMedia(TV_PREFIX + id, TV_SHOW_TITLE_PREFIX, Type.TV_SHOW);
                 });
 
         // When
-        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250, winningMedia,
-                actorStorage, mediaStorage, IS_TV_SHOW);
+        mediaSyncService.importMedia(CURRENT_YEAR, imdbTop250, winningMedia,
+                actorStorage, mediaStorage, localizationMediaStorage, IS_TV_SHOW);
 
         // Then
         assertThat(mediaStorage).hasSize(EXPECTED_SIZE_TWO);
         assertThat(mediaStorage.containsKey(TV_MOVIE_KEY_ONE)).isTrue();
         assertThat(mediaStorage.containsKey(TV_MOVIE_KEY_TWO)).isTrue();
         verify(mediaFactory, times(EXPECTED_SIZE_TWO))
-                .createTvSerial(anyString(), anyInt(), anySet(), anySet(), anyMap());
+                .createTvSerial(anyInt(), anySet(), anySet(), anyMap(), anySet());
     }
 
     @Test
@@ -141,22 +143,22 @@ class MediaSyncServiceImplTest {
         // Given
         when(tmdbService.getFilteredMovies(anyInt(), anyInt()))
                 .thenReturn(Set.of(FILTERED_MOVIE_ID_ONE, FILTERED_MOVIE_ID_TWO));
-        when(mediaFactory.createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap()))
+        when(mediaFactory.createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet()))
                 .thenAnswer(invocation -> {
-                    int id = invocation.getArgument(POPULAR_MOVIE_ID_ONE);
+                    int id = invocation.getArgument(FIRST_RECORD);
                     return getMedia(String.valueOf(id), FILTERED_MOVIE_PREFIX, Type.MOVIE);
                 });
 
         // When
-        mediaSyncService.importMediaByFilter(EN_LANGUAGE, CURRENT_YEAR, imdbTop250, winningMedia,
-                mediaStorage, actorStorage, IS_MOVIES);
+        mediaSyncService.importMediaByFilter(CURRENT_YEAR, imdbTop250, winningMedia,
+                mediaStorage, localizationMediaStorage, actorStorage, IS_MOVIES);
 
         // Then
         assertThat(mediaStorage).hasSize(EXPECTED_SIZE_TWO);
         assertThat(mediaStorage.containsKey(FILTERED_MOVIE_KEY_ONE)).isTrue();
         assertThat(mediaStorage.containsKey(FILTERED_MOVIE_KEY_TWO)).isTrue();
         verify(mediaFactory, times(EXPECTED_SIZE_TWO))
-                .createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap());
+                .createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet());
     }
 
     @Test
@@ -165,15 +167,15 @@ class MediaSyncServiceImplTest {
         // Given
         when(tmdbService.searchMovies(anyString(), anyString(), anyString()))
                 .thenReturn(Optional.of(SEARCH_MOVIE_ID));
-        when(mediaFactory.createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap()))
+        when(mediaFactory.createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet()))
                 .thenAnswer(invocation -> {
-                    int id = invocation.getArgument(POPULAR_MOVIE_ID_ONE);
+                    int id = invocation.getArgument(FIRST_RECORD);
                     return getMedia(String.valueOf(id), TITLE_BASED_MOVIE_PREFIX, Type.MOVIE);
                 });
 
         // When
-        mediaSyncService.importByFindingTitles(EN_LANGUAGE, US_REGION, CURRENT_YEAR, actorStorage,
-                mediaStorage, imdbTop250, winningMedia, IS_MOVIES);
+        mediaSyncService.importByFindingTitles(CURRENT_YEAR, actorStorage,
+                mediaStorage, localizationMediaStorage, imdbTop250, winningMedia, IS_MOVIES);
 
         // Then
         assertThat(mediaStorage).hasSize(EXPECTED_SIZE_ONE);
@@ -181,7 +183,7 @@ class MediaSyncServiceImplTest {
         verify(tmdbService, times(EXPECTED_SIZE_THREE))
                 .searchMovies(anyString(), anyString(), anyString());
         verify(mediaFactory, times(EXPECTED_SIZE_ONE))
-                .createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap());
+                .createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet());
     }
 
     @Test
@@ -192,8 +194,8 @@ class MediaSyncServiceImplTest {
         winningMedia.clear();
 
         // When
-        mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250,
-                winningMedia, actorStorage, mediaStorage, IS_MOVIES);
+        mediaSyncService.importMedia(CURRENT_YEAR, imdbTop250,
+                winningMedia, actorStorage, mediaStorage, localizationMediaStorage, IS_MOVIES);
 
         // Then
         assertThat(mediaStorage).isEmpty();
@@ -206,13 +208,13 @@ class MediaSyncServiceImplTest {
         when(tmdbService.getFilteredMovies(anyInt(), anyInt())).thenReturn(Set.of());
 
         // When
-        mediaSyncService.importMediaByFilter(EN_LANGUAGE, CURRENT_YEAR, imdbTop250, winningMedia,
-                mediaStorage, actorStorage, IS_MOVIES);
+        mediaSyncService.importMediaByFilter(CURRENT_YEAR, imdbTop250, winningMedia,
+                mediaStorage, localizationMediaStorage, actorStorage, IS_MOVIES);
 
         // Then
         assertThat(mediaStorage).isEmpty();
         verify(mediaFactory, times(ZERO_OF_RECORDS))
-                .createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap());
+                .createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet());
     }
 
     @Test
@@ -223,15 +225,15 @@ class MediaSyncServiceImplTest {
                 .thenReturn(Optional.empty());
 
         // When
-        mediaSyncService.importByFindingTitles(EN_LANGUAGE, US_REGION, CURRENT_YEAR, actorStorage,
-                mediaStorage, imdbTop250, winningMedia, IS_MOVIES);
+        mediaSyncService.importByFindingTitles(CURRENT_YEAR, actorStorage,
+                mediaStorage, localizationMediaStorage, imdbTop250, winningMedia, IS_MOVIES);
 
         // Then
         assertThat(mediaStorage).isEmpty();
         verify(tmdbService, times(EXPECTED_SIZE_THREE))
                 .searchMovies(anyString(), anyString(), anyString());
         verify(mediaFactory, times(ZERO_OF_RECORDS))
-                .createMovie(anyString(), anyInt(), anySet(), anySet(), anyMap());
+                .createMovie(anyInt(), anySet(), anySet(), anyMap(), anySet());
     }
 
     @Test
@@ -243,8 +245,8 @@ class MediaSyncServiceImplTest {
 
         // Then
         assertThatThrownBy(() ->
-                mediaSyncService.importMedia(EN_LANGUAGE, US_REGION, CURRENT_YEAR, imdbTop250,
-                        winningMedia, actorStorage, mediaStorage, IS_MOVIES))
+                mediaSyncService.importMedia(CURRENT_YEAR, imdbTop250, winningMedia,
+                        actorStorage, mediaStorage, localizationMediaStorage, IS_MOVIES))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining(SERVICE_UNAVAILABLE_MESSAGE);
     }

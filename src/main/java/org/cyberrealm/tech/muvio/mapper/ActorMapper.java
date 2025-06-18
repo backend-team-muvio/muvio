@@ -1,5 +1,7 @@
 package org.cyberrealm.tech.muvio.mapper;
 
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
+
 import info.movito.themoviedbapi.model.movies.Cast;
 import java.util.List;
 import org.cyberrealm.tech.muvio.config.MapperConfig;
@@ -13,14 +15,10 @@ import org.mapstruct.Named;
 @Mapper(config = MapperConfig.class)
 public interface ActorMapper {
 
-    @Mapping(target = "photo", expression = "java(cast.getProfilePath() != null ? org.cyberrealm"
-            + ".tech.muvio.common.Constants.IMAGE_PATH_W200 + cast.getProfilePath() : null)")
-    @Mapping(target = "name", source = "name")
+    @Mapping(target = "photo", source = "cast.profilePath", qualifiedByName = "putPhotoPath")
     Actor toActorEntity(Cast cast);
 
-    @Mapping(target = "photo", expression = "java(cast.getProfilePath() != null ? org.cyberrealm"
-            + ".tech.muvio.common.Constants.IMAGE_PATH_W200 + cast.getProfilePath() : null)")
-    @Mapping(target = "name", source = "name")
+    @Mapping(target = "photo", source = "cast.profilePath", qualifiedByName = "putPhotoPath")
     Actor toActorEntity(info.movito.themoviedbapi.model.tv.core.credits.Cast cast);
 
     @Named("toActorDto")
@@ -33,5 +31,10 @@ public interface ActorMapper {
     @Named("toListActors")
     default List<String> toSetActors(List<RoleActor> actors) {
         return actors.stream().map(roleActor -> roleActor.getActor().getName()).toList();
+    }
+
+    @Named("putPhotoPath")
+    default String putPhotoPath(String profilePath) {
+        return profilePath != null ? IMAGE_PATH_W200 + profilePath : null;
     }
 }

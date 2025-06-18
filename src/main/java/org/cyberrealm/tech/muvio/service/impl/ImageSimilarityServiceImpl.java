@@ -2,6 +2,8 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.BACK_OFF;
 import static org.cyberrealm.tech.muvio.common.Constants.FIVE;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W200;
+import static org.cyberrealm.tech.muvio.common.Constants.IMAGE_PATH_W500;
 import static org.cyberrealm.tech.muvio.common.Constants.MAX_ATTEMPTS;
 
 import dev.brachtendorf.jimagehash.hash.Hash;
@@ -111,7 +113,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
             if (isHashUnique(hash, imageHashes)) {
                 log.debug("Adding unique hash for image: {}", imageUrl);
                 imageHashes.add(hash);
-                filePaths.add(imageUrl);
+                filePaths.add(imageUrl.replace(IMAGE_PATH_W200, IMAGE_PATH_W500));
             } else {
                 log.debug("Skipping similar image: {}", imageUrl);
             }

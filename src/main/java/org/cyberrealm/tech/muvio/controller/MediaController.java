@@ -38,8 +38,9 @@ public class MediaController {
             description = "Retrieve detailed information of a media resource by its "
                     + "unique identifier"
     )
-    public MediaDto getMediaById(@PathVariable String id) {
-        return mediaService.getMediaById(id);
+    public MediaDto getMediaById(@PathVariable String id,
+                                 @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.getMediaById(id, lang);
     }
 
     @GetMapping("/all")
@@ -47,8 +48,9 @@ public class MediaController {
             summary = "Get all",
             description = "Retrieve all medias in the format of MediaBaseDto"
     )
-    public List<MediaBaseDto> getAll(Pageable pageable) {
-        return mediaService.getAll(pageable);
+    public List<MediaBaseDto> getAll(Pageable pageable,
+                                     @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.getAll(pageable, lang);
     }
 
     @GetMapping("/count")
@@ -66,8 +68,7 @@ public class MediaController {
             description = "Retrieve a paginated slice of media items based on vibe "
                     + "filtering parameters"
     )
-    public Slice<MediaDtoWithPoints> getAllMediaByVibe(
-            @Valid MediaVibeRequestDto requestDto) {
+    public Slice<MediaDtoWithPoints> getAllMediaByVibe(@Valid MediaVibeRequestDto requestDto) {
         return mediaService.getAllMediaByVibe(requestDto);
     }
 
@@ -86,8 +87,9 @@ public class MediaController {
             summary = "Get random media selection",
             description = "Retrieve a set of random media items based on the provided size"
     )
-    public Set<MediaDto> getAllLuck(@PathVariable int size) {
-        return mediaService.getAllLuck(size);
+    public Set<MediaDto> getAllLuck(@PathVariable int size,
+                                    @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.getAllLuck(size, lang);
     }
 
     @GetMapping("/recommendations")
@@ -96,8 +98,9 @@ public class MediaController {
             description = "Retrieve a paginated list of recommended media items based "
                     + "on media rating"
     )
-    public Slice<MediaBaseDto> getRecommendations(@RequestParam(defaultValue = "0") int page) {
-        return mediaService.getRecommendations(page);
+    public Slice<MediaBaseDto> getRecommendations(@RequestParam(defaultValue = "0") int page,
+                                                  @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.getRecommendations(page, lang);
     }
 
     @GetMapping("/top-list/{topList}")
@@ -106,10 +109,11 @@ public class MediaController {
             description = "Retrieve a paginated list of media items that belong to a specific "
                     + "top list category"
     )
-    public Slice<MediaDtoWithCast> getMediaByTopList(@PathVariable String topList,
-                                                     @RequestParam(defaultValue = "0") int page,
-                                                     @RequestParam(defaultValue = "20") int size) {
-        return mediaService.findMediaByTopLists(topList, page, size);
+    public Slice<MediaDtoWithCast> getMediaByTopList(
+            @PathVariable String topList, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.findMediaByTopLists(topList, page, size, lang);
     }
 
     @GetMapping("/posters")
@@ -117,8 +121,9 @@ public class MediaController {
             summary = "Get all media posters",
             description = "Retrieve a paginated list of media posters"
     )
-    public List<PosterDto> getRandomPosters(@RequestParam(defaultValue = "70") int size) {
-        return mediaService.getRandomPosters(size);
+    public List<PosterDto> getRandomPosters(@RequestParam(defaultValue = "70") int size,
+                                            @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.getRandomPosters(size, lang);
     }
 
     @GetMapping("/titles")
@@ -126,8 +131,9 @@ public class MediaController {
             summary = "Get all media titles",
             description = "Retrieve a paginated list of media titles"
     )
-    public Slice<TitleDto> findAllTitle(Pageable pageable) {
-        return mediaService.findAllTitles(pageable);
+    public Slice<TitleDto> findAllTitle(Pageable pageable,
+                                        @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.findAllTitles(pageable, lang);
     }
 
     @GetMapping("/titles/{title}")
@@ -135,8 +141,9 @@ public class MediaController {
             summary = "Find media by title",
             description = "Retrieve a media resource that matches the provided title"
     )
-    public Slice<MediaBaseDto> getMediaByTitle(@PathVariable String title, Pageable pageable) {
-        return mediaService.findByTitle(title, pageable);
+    public Slice<MediaBaseDto> getMediaByTitle(@PathVariable String title, Pageable pageable,
+                                               @RequestParam(defaultValue = "en") String lang) {
+        return mediaService.findByTitle(title, pageable, lang);
     }
 
     @GetMapping("/statistics")

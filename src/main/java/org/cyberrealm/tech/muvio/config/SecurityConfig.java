@@ -1,8 +1,12 @@
 package org.cyberrealm.tech.muvio.config;
 
+import static org.cyberrealm.tech.muvio.common.Constants.AMPERSAND;
 import static org.cyberrealm.tech.muvio.common.Constants.FIVE;
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.brachtendorf.jimagehash.hashAlgorithms.PerceptiveHash;
 import info.movito.themoviedbapi.TmdbApi;
 import info.movito.themoviedbapi.TmdbDiscover;
@@ -13,8 +17,14 @@ import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverMovieParamBuilder;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.cyberrealm.tech.muvio.model.LocalizationEntry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +32,7 @@ import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+@Slf4j
 @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
 @EnableRetry
 @EnableScheduling
@@ -30,6 +41,8 @@ public class SecurityConfig {
     private static final int PERCEPTIVE_HASH_BIT_RESOLUTION = 64;
     @Value("${tmdb.api.key}")
     private String apiKey;
+    @Value("${localization.path}")
+    private String localizationPath;
 
     @Bean
     public TmdbApi tmdbApi() {
@@ -84,5 +97,33 @@ public class SecurityConfig {
     @Bean
     public PerceptiveHash perceptiveHash() {
         return new PerceptiveHash(PERCEPTIVE_HASH_BIT_RESOLUTION);
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
+    }
+
+    @Bean
+    public Set<LocalizationEntry> localizationEntrySet(ObjectMapper objectMapper) {
+        final TypeReference<Set<LocalizationEntry>> typeRef = new TypeReference<>() {};
+        try (final InputStream inputStream = getClass().getClassLoader()
+                .getResourceAsStream(localizationPath)) {
+            if (inputStream == null) {
+                log.warn("localization.json not found in resources.");
+                return Set.of();
+            }
+            return objectMapper.readValue(inputStream, typeRef).stream()
+                    .peek(localizationEntry -> {
+                        if (localizationEntry.getAmpersand() == null) {
+                            localizationEntry.setAmpersand(AMPERSAND);
+                        }
+                    }).collect(Collectors.toSet());
+        } catch (IOException e) {
+            log.error("Failed to load localization.json: {}", e.getMessage(), e);
+            return Set.of();
+        }
     }
 }
