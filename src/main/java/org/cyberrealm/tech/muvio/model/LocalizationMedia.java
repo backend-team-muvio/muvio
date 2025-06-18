@@ -21,5 +21,4 @@ public class LocalizationMedia {
     private String duration;
     private String type;
     private Set<String> genres;
-    private List<Review> reviews;
 }

@@ -10,4 +10,5 @@ public class LocalizationEntry {
     private String shorts;
     private String timeH;
     private String timeM;
+    private String ampersand;
 }

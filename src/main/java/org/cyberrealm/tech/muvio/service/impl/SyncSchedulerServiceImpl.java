@@ -1,8 +1,5 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
-import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
-import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
-
 import java.time.Year;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +32,7 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
         log.info("Initiating the initial media synchronization");
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
-        final Map<String, LocalizationMedia> localizationMediaStorage = new ConcurrentHashMap<>();
+        final Set<LocalizationMedia> localizationMediaStorage = ConcurrentHashMap.newKeySet();
         final int currentYear = Year.now().getValue();
         final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
         final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
@@ -57,7 +54,7 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
         log.info("Starting the weekly media update");
         final Map<Integer, Actor> actorStorage = new ConcurrentHashMap<>();
         final Map<String, Media> mediaStorage = new ConcurrentHashMap<>();
-        final Map<String, LocalizationMedia> localizationMediaStorage = new ConcurrentHashMap<>();
+        final Set<LocalizationMedia> localizationMediaStorage = ConcurrentHashMap.newKeySet();
         final int currentYear = Year.now().getValue();
         final Set<String> imdbTop250Movies = awardService.getImdbTop250Movies();
         final Set<String> oscarWinningMovies = awardService.getOscarWinningMovies();
@@ -69,8 +66,8 @@ public class SyncSchedulerServiceImpl implements SyncSchedulerService {
                 emmyWinningTvShows, actorStorage, mediaStorage, localizationMediaStorage, false);
         mediaSyncService.importByFindingTitles(currentYear, actorStorage,
                 mediaStorage, localizationMediaStorage, imdbTop250Movies, oscarWinningMovies, true);
-        mediaSyncService.importByFindingTitles(currentYear, actorStorage,
-                mediaStorage, localizationMediaStorage, imdbTop250TvShows, emmyWinningTvShows, false);
+        mediaSyncService.importByFindingTitles(currentYear, actorStorage, mediaStorage,
+                localizationMediaStorage, imdbTop250TvShows, emmyWinningTvShows, false);
         mediaSyncService.importMediaByFilter(currentYear, imdbTop250Movies,
                 oscarWinningMovies, mediaStorage, localizationMediaStorage, actorStorage, true);
         mediaSyncService.importMediaByFilter(currentYear, imdbTop250TvShows,

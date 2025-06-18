@@ -5,7 +5,12 @@ import static org.cyberrealm.tech.muvio.common.Constants.DIRECTOR;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.TWO;
-import static org.cyberrealm.tech.muvio.util.TestConstants.*;
+import static org.cyberrealm.tech.muvio.util.TestConstants.AUTHOR;
+import static org.cyberrealm.tech.muvio.util.TestConstants.CONTENT_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
+import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
+import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
+import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -27,9 +32,11 @@ import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
 import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.LocalizationEntry;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Review;
 import org.cyberrealm.tech.muvio.service.CategoryService;
+import org.cyberrealm.tech.muvio.service.LocalizationMediaFactory;
 import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.cyberrealm.tech.muvio.service.TopListService;
 import org.cyberrealm.tech.muvio.service.VibeService;
@@ -56,6 +63,10 @@ public class MediaFactoryImplTest {
     private ReviewMapper reviewMapper;
     @Mock
     private TopListService topListService;
+    @Mock
+    private Set<LocalizationEntry> localizationEntrySet;
+    @Mock
+    private LocalizationMediaFactory localizationMediaFactory;
     @InjectMocks
     private MediaFactoryImpl mediaFactory;
 
@@ -79,8 +90,9 @@ public class MediaFactoryImplTest {
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
         when(tmdbService.fetchMoviePhotos(anyString(), anyInt(), anyString()))
                 .thenReturn(Set.of(PATH));
+        when(localizationEntrySet.isEmpty()).thenReturn(true);
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
-        assertThat(mediaFactory.createMovie(THREE, Set.of(), Set.of(), actors, localizationMediaStorage))
+        assertThat(mediaFactory.createMovie(THREE, Set.of(), Set.of(), actors, Set.of()))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
     }
@@ -106,8 +118,9 @@ public class MediaFactoryImplTest {
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
         when(tmdbService.fetchTvSerialsPhotos(anyString(), anyInt(), anyString()))
                 .thenReturn(Set.of(PATH));
+        when(localizationEntrySet.isEmpty()).thenReturn(true);
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
-        assertThat(mediaFactory.createTvSerial(THREE, Set.of(), Set.of(), actors, localizationMediaStorage))
+        assertThat(mediaFactory.createTvSerial(THREE, Set.of(), Set.of(), actors, Set.of()))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
     }
@@ -128,7 +141,6 @@ public class MediaFactoryImplTest {
                 = new info.movito.themoviedbapi.model.tv.core.credits.Credits();
         final info.movito.themoviedbapi.model.tv.core.credits.Cast cast
                 = new info.movito.themoviedbapi.model.tv.core.credits.Cast();
-        cast.setName(ACTOR_NAME_STRING);
         cast.setId(TWO);
         credits.setCast(List.of(cast));
         return credits;
@@ -163,7 +175,6 @@ public class MediaFactoryImplTest {
     private Credits getCredits() {
         final Credits credits = new Credits();
         final Cast cast = new Cast();
-        cast.setName(ACTOR_NAME_STRING);
         cast.setId(TWO);
         credits.setCast(List.of(cast));
         final Crew crew = new Crew();
@@ -175,7 +186,6 @@ public class MediaFactoryImplTest {
 
     private Actor getActor() {
         final Actor actor = new Actor();
-        actor.setName(ACTOR_NAME);
         actor.setId(TWO);
         return actor;
     }

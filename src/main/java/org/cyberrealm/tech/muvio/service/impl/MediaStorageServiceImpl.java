@@ -7,6 +7,7 @@ import com.mongodb.MongoSocketReadTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.model.Actor;
 import org.cyberrealm.tech.muvio.model.LocalizationMedia;
@@ -51,7 +52,7 @@ public class MediaStorageServiceImpl implements MediaStorageService {
     },
             backoff = @Backoff(delay = BACK_OFF))
     public void saveAll(Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
-                        Map<String, LocalizationMedia> localizationMediaStorage) {
+                        Set<LocalizationMedia> localizationMediaStorage) {
         List<Actor> actorList = new ArrayList<>(actorStorage.values());
         for (int i = ZERO; i < actorList.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, actorList.size());
@@ -62,8 +63,7 @@ public class MediaStorageServiceImpl implements MediaStorageService {
             int toIndex = Math.min(i + BATCH_SIZE, mediaList.size());
             mediaRepository.saveAll(mediaList.subList(i, toIndex));
         }
-        List<LocalizationMedia> localizationMediaList = new ArrayList<>(localizationMediaStorage
-                .values());
+        List<LocalizationMedia> localizationMediaList = new ArrayList<>(localizationMediaStorage);
         for (int i = ZERO; i < localizationMediaList.size(); i += BATCH_SIZE) {
             int toIndex = Math.min(i + BATCH_SIZE, localizationMediaList.size());
             localizationMediaRepository.saveAll(localizationMediaList.subList(i, toIndex));

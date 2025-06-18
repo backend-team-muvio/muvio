@@ -10,6 +10,7 @@ import static org.cyberrealm.tech.muvio.common.Constants.TWO;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 import static org.cyberrealm.tech.muvio.util.TestConstants.COUNTRY_NAME;
 import static org.cyberrealm.tech.muvio.util.TestConstants.DIRECTOR_NAME;
+import static org.cyberrealm.tech.muvio.util.TestConstants.EN_LANGUAGE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
 import static org.cyberrealm.tech.muvio.util.TestConstants.POSTER_PATH;
@@ -99,7 +100,7 @@ public class MediaServiceImplTest {
         when(mediaRepository.findMovieById(anyString()))
                 .thenReturn(Optional.of(getMediaDtoFromDb()));
         when(mediaMapper.toMovieDto(any(MediaDtoFromDb.class))).thenReturn(expect);
-        assertThat(mediaService.getMediaById(ID_STRING)).isEqualTo(expect);
+        assertThat(mediaService.getMediaById(ID_STRING, EN_LANGUAGE)).isEqualTo(expect);
     }
 
     @Test
@@ -117,7 +118,7 @@ public class MediaServiceImplTest {
                 new PageImpl<>(List.of(mediaDtoWithPoints)));
         final List<MediaDtoWithPoints> actual = mediaService.getAllMediaByVibe(
                 new MediaVibeRequestDto(VIBE, null, null,
-                null, ZERO, TEN)).getContent();
+                null, ZERO, TEN, EN_LANGUAGE)).getContent();
         assertThat(actual.getFirst()).isEqualTo(mediaDtoWithPoints);
         assertThat(actual.size()).isEqualTo(ONE);
     }
@@ -130,7 +131,7 @@ public class MediaServiceImplTest {
                 .thenReturn(List.of(getMedia()));
         when(mediaMapper.toMediaBaseDto(any(Media.class))).thenReturn(mediaBaseDto);
         assertThat(mediaService.getAllForGallery(new MediaGalleryRequestDto(TITLE,
-                YEAR_2020_STRING, TYPE_MOVIE), getPageable()).getContent())
+                YEAR_2020_STRING, TYPE_MOVIE, EN_LANGUAGE), getPageable()).getContent())
                 .isEqualTo(List.of(mediaBaseDto));
     }
 
@@ -140,7 +141,7 @@ public class MediaServiceImplTest {
         final MediaDto mediaDto = getMediaDto();
         when(mediaRepository.getAllLuck(anyInt())).thenReturn(Set.of(getMediaDtoFromDb()));
         when(mediaMapper.toMovieDto(any(MediaDtoFromDb.class))).thenReturn(mediaDto);
-        assertThat(mediaService.getAllLuck(ONE)).isEqualTo(Set.of(mediaDto));
+        assertThat(mediaService.getAllLuck(ONE, EN_LANGUAGE)).isEqualTo(Set.of(mediaDto));
     }
 
     @Test
@@ -151,7 +152,7 @@ public class MediaServiceImplTest {
                 .thenReturn(new SliceImpl<>(List.of(getMediaDtoWithCastFromDb())));
         when(mediaMapper.toMediaDtoWithCast(any(MediaDtoWithCastFromDb.class)))
                 .thenReturn(mediaDtoWithCast);
-        assertThat(mediaService.findMediaByTopLists(TOP_LIST, ZERO, TEN).getContent())
+        assertThat(mediaService.findMediaByTopLists(TOP_LIST, ZERO, TEN, EN_LANGUAGE).getContent())
                 .isEqualTo(List.of(mediaDtoWithCast));
     }
 
@@ -160,7 +161,7 @@ public class MediaServiceImplTest {
     void getRandomPosters_validResponse_returnSlicePosterDto() {
         final List<PosterDto> randomPosterDto = getRandomPosterDto();
         when(mediaRepository.getRandomPosters(anyInt())).thenReturn(randomPosterDto);
-        assertThat(mediaService.getRandomPosters(TWO)).isEqualTo(randomPosterDto);
+        assertThat(mediaService.getRandomPosters(TWO, EN_LANGUAGE)).isEqualTo(randomPosterDto);
     }
 
     @Test
@@ -168,7 +169,7 @@ public class MediaServiceImplTest {
     void findAllTitles_validResponse_returnSliceTitleDto() {
         final Slice<TitleDto> titleDto = getSliceTitleDto();
         when(mediaRepository.findAllTitles(any(Pageable.class))).thenReturn(titleDto);
-        assertThat(mediaService.findAllTitles(getPageable())).isEqualTo(titleDto);
+        assertThat(mediaService.findAllTitles(getPageable(), EN_LANGUAGE)).isEqualTo(titleDto);
     }
 
     @Test
@@ -180,7 +181,8 @@ public class MediaServiceImplTest {
         when(genreMapper.toStringGenres(any())).thenReturn(Set.of(COMEDY));
         when(mediaMapper.toCorrectType(any())).thenReturn(TYPE_MOVIE);
         assertThat(mediaBaseDto)
-                .isEqualTo(mediaService.findByTitle(TITLE, PAGEABLE).getContent().getFirst());
+                .isEqualTo(mediaService.findByTitle(TITLE, PAGEABLE, EN_LANGUAGE)
+                        .getContent().getFirst());
     }
 
     @Test
@@ -190,7 +192,7 @@ public class MediaServiceImplTest {
         when(mediaRepository.getAll(PAGEABLE)).thenReturn(mediaBaseDto);
         when(mediaMapper.toDuration(anyInt())).thenReturn(DURATION_90_STRING);
         when(genreMapper.toStringGenres(any())).thenReturn(Set.of(COMEDY));
-        assertThat(mediaService.getAll(PAGEABLE)).isEqualTo(mediaBaseDto);
+        assertThat(mediaService.getAll(PAGEABLE, EN_LANGUAGE)).isEqualTo(mediaBaseDto);
     }
 
     @Test
@@ -208,7 +210,7 @@ public class MediaServiceImplTest {
         ).thenReturn(new PageImpl<>(getListMediaBaseDto()));
         when(paginationUtil.paginateList(any(PageRequest.class), anyList()))
                 .thenReturn(new PageImpl<>(Arrays.asList(getListMediaBaseDto().toArray())));
-        final Slice<MediaBaseDto> actual = mediaService.getRecommendations(ZERO);
+        final Slice<MediaBaseDto> actual = mediaService.getRecommendations(ZERO, EN_LANGUAGE);
         assertNotNull(actual);
         assertEquals(SIX, actual.getContent().size());
         assertEquals(TITLE_1, actual.getContent().getFirst().getTitle());
@@ -226,7 +228,7 @@ public class MediaServiceImplTest {
         ).thenReturn(new PageImpl<>(shortList));
         when(paginationUtil.paginateList(any(PageRequest.class), anyList()))
                 .thenReturn(new PageImpl<>(List.of(media1)));
-        Slice<MediaBaseDto> result = mediaService.getRecommendations(ZERO);
+        Slice<MediaBaseDto> result = mediaService.getRecommendations(ZERO, EN_LANGUAGE);
         assertNull(result);
     }
 

@@ -1,5 +1,11 @@
 package org.cyberrealm.tech.muvio.service.impl;
 
+import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
+import static org.cyberrealm.tech.muvio.common.Constants.ONE;
+import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
+import static org.cyberrealm.tech.muvio.common.Constants.TV;
+import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,12 +22,10 @@ import org.cyberrealm.tech.muvio.service.MediaSyncService;
 import org.cyberrealm.tech.muvio.service.TmDbService;
 import org.springframework.stereotype.Service;
 
-import static org.cyberrealm.tech.muvio.common.Constants.*;
-
 @RequiredArgsConstructor
 @Service
 public class MediaSyncServiceImpl implements MediaSyncService {
-    private static final int LAST_PAGE = 1;
+    private static final int LAST_PAGE = 500;
     private static final int FIRST_YEAR = 1946;
     private static final String EMPTY = "";
     private final TmDbService tmdbService;
@@ -31,7 +35,7 @@ public class MediaSyncServiceImpl implements MediaSyncService {
     public void importMedia(int currentYear,
                             Set<String> imdbTop250, Set<String> winningMedia,
                             Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
-                            Map<String, LocalizationMedia> localizationMediaStorage, boolean isMovies) {
+                            Set<LocalizationMedia> localizationMediaStorage, boolean isMovies) {
         final Set<Integer> ids = IntStream.rangeClosed(ZERO, LAST_PAGE).parallel()
                 .mapToObj(page -> isMovies
                         ? tmdbService.fetchPopularMovies(LANGUAGE_EN, page, REGION_US)
@@ -52,9 +56,10 @@ public class MediaSyncServiceImpl implements MediaSyncService {
     }
 
     @Override
-    public void importMediaByFilter(int currentYear, Set<String> imdbTop250,
-                                    Set<String> winningMedia, Map<String, Media> mediaStorage,
-                                    Map<String, LocalizationMedia> localizationMediaStorage, Map<Integer, Actor> actorStorage, boolean isMovies) {
+    public void importMediaByFilter(
+            int currentYear, Set<String> imdbTop250, Set<String> winningMedia,
+            Map<String, Media> mediaStorage, Set<LocalizationMedia> localizationMediaStorage,
+            Map<Integer, Actor> actorStorage, boolean isMovies) {
         final Set<Integer> ids =
                 IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel()
                         .boxed().flatMap(year -> IntStream.iterate(
@@ -80,10 +85,10 @@ public class MediaSyncServiceImpl implements MediaSyncService {
     }
 
     @Override
-    public void importByFindingTitles(int currentYear,
-                                      Map<Integer, Actor> actorStorage,
-                                      Map<String, Media> mediaStorage, Map<String, LocalizationMedia> localizationMediaStorage, Set<String> imdbTop250,
-                                      Set<String> winningMedia, boolean isMovies) {
+    public void importByFindingTitles(
+            int currentYear, Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
+            Set<LocalizationMedia> localizationMediaStorage, Set<String> imdbTop250,
+            Set<String> winningMedia, boolean isMovies) {
         final Set<Integer> mediaId = new HashSet<>();
         findMediasIdsByTitles(imdbTop250, isMovies, mediaId);
         findMediasIdsByTitles(winningMedia, isMovies, mediaId);

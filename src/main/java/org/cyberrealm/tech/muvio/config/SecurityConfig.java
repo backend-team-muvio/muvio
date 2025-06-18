@@ -1,5 +1,6 @@
 package org.cyberrealm.tech.muvio.config;
 
+import static org.cyberrealm.tech.muvio.common.Constants.AMPERSAND;
 import static org.cyberrealm.tech.muvio.common.Constants.FIVE;
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
@@ -16,16 +17,12 @@ import info.movito.themoviedbapi.TmdbTvSeries;
 import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverMovieParamBuilder;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
-
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.cyberrealm.tech.muvio.model.LocalizationEntry;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,24 +107,23 @@ public class SecurityConfig {
     }
 
     @Bean
-    public Map<String, LocalizationEntry> localizationEntryMap(ObjectMapper objectMapper) {
+    public Set<LocalizationEntry> localizationEntrySet(ObjectMapper objectMapper) {
         final TypeReference<Set<LocalizationEntry>> typeRef = new TypeReference<>() {};
-        final Set<LocalizationEntry> localizationEntrySet;
-        try (final InputStream inputStream = getClass().getClassLoader().getResourceAsStream(localizationPath)) {
-            System.out.println("InputStream = " + inputStream);
+        try (final InputStream inputStream = getClass().getClassLoader()
+                .getResourceAsStream(localizationPath)) {
             if (inputStream == null) {
                 log.warn("localization.json not found in resources.");
-                return Collections.emptyMap();
+                return Set.of();
             }
-            localizationEntrySet = objectMapper.readValue(inputStream, typeRef);
+            return objectMapper.readValue(inputStream, typeRef).stream()
+                    .peek(localizationEntry -> {
+                        if (localizationEntry.getAmpersand() == null) {
+                            localizationEntry.setAmpersand(AMPERSAND);
+                        }
+                    }).collect(Collectors.toSet());
         } catch (IOException e) {
             log.error("Failed to load localization.json: {}", e.getMessage(), e);
-            return Collections.emptyMap();
+            return Set.of();
         }
-        final Map<String, LocalizationEntry> localizationEntryMap = new HashMap<>();
-        for (LocalizationEntry entry : localizationEntrySet) {
-            localizationEntryMap.put(entry.getLang(), entry);
-        }
-        return localizationEntryMap;
     }
 }

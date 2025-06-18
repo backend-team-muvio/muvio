@@ -1,6 +1,8 @@
 package org.cyberrealm.tech.muvio.mapper;
 
 import static org.cyberrealm.tech.muvio.common.Constants.DEFAULT_SERIAL_DURATION;
+import static org.cyberrealm.tech.muvio.common.Constants.FORMAT_MINUTES_ONLY;
+import static org.cyberrealm.tech.muvio.common.Constants.FORMAT_WITH_HOURS;
 import static org.cyberrealm.tech.muvio.common.Constants.FOUR;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.ROUNDING_FACTOR;
@@ -27,7 +29,6 @@ import org.cyberrealm.tech.muvio.dto.MediaDtoFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCast;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithCastFromDb;
 import org.cyberrealm.tech.muvio.dto.MediaDtoWithPoints;
-import org.cyberrealm.tech.muvio.model.Category;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.model.Type;
 import org.mapstruct.Mapper;
@@ -77,7 +78,8 @@ public interface MediaMapper {
 
     @Mapping(source = "media.actors", target = "actors", qualifiedByName = "toActorDto")
     @Mapping(source = "media.duration", target = "duration", qualifiedByName = "toDuration")
-    @Mapping(target = "points", expression = "java(calculatePoints(media, categories))")
+    @Mapping(target = "points", expression = "java(org.cyberrealm.tech.muvio.util.MediaPointsUtil"
+            + ".calculatePoints(media, categories))")
     @Mapping(source = "media.genres", target = "genres",
             qualifiedByName = "fromGenreEntityToString")
     @Mapping(source = "media.type", target = "type", qualifiedByName = "fromTypeToString")
@@ -93,20 +95,8 @@ public interface MediaMapper {
     default String toDuration(Integer duration) {
         long hours = TimeUnit.MINUTES.toHours(duration);
         long minutes = duration - TimeUnit.HOURS.toMinutes(hours);
-        return hours > ZERO ? String.format("%dh %02dm", hours, minutes)
-                : String.format("%02dm", minutes);
-    }
-
-    default int calculatePoints(Media media, Set<String> categories) {
-        int points = ZERO;
-        if (categories != null && !categories.isEmpty()) {
-            for (Category category : media.getCategories()) {
-                if (categories.contains(category.name())) {
-                    points++;
-                }
-            }
-        }
-        return points;
+        return hours > ZERO ? String.format(FORMAT_WITH_HOURS, hours, minutes)
+                : String.format(FORMAT_MINUTES_ONLY, minutes);
     }
 
     @Named("getReleaseYear")

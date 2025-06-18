@@ -3,6 +3,7 @@ package org.cyberrealm.tech.muvio.repository.impl;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
+import static org.cyberrealm.tech.muvio.util.TestConstants.EN_LANGUAGE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.STRING_1;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TITLE_1;
 import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
@@ -45,7 +46,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     void getAllMediaByVibes_FilteredParams_ReturnListMediaVibeRequestDto() {
         final MediaVibeRequestDto request = new MediaVibeRequestDto(
                 Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(),
-                Set.of(Category.BASED_ON_A_TRUE_STORY.name()), ZERO, TEN);
+                Set.of(Category.BASED_ON_A_TRUE_STORY.name()), ZERO, TEN, EN_LANGUAGE);
         final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
         assertThat(actual).isEqualTo(List.of(getMedia()));
     }
@@ -53,8 +54,8 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     @Test
     @DisplayName("Should ignore null/empty categories and still return by vibe")
     void getAllMediaByVibes_EmptyCategories_ReturnListMedia() {
-        final MediaVibeRequestDto request = new MediaVibeRequestDto(
-                Vibe.BLOW_MY_MIND.name(), YEARS, Type.MOVIE.name(), Set.of(), ZERO, TEN);
+        final MediaVibeRequestDto request = new MediaVibeRequestDto(Vibe.BLOW_MY_MIND.name(),
+                YEARS, Type.MOVIE.name(), Set.of(), ZERO, TEN, EN_LANGUAGE);
         final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
         assertThat(actual).isEqualTo(List.of(getMedia()));
     }
@@ -63,7 +64,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     @DisplayName("Should return media by partial title, type, and years")
     void getAllForGallery_ValidParams_ReturnListMedia() {
         final MediaGalleryRequestDto request = new MediaGalleryRequestDto(
-                TITLE_1, YEARS, Type.MOVIE.name());
+                TITLE_1, YEARS, Type.MOVIE.name(), EN_LANGUAGE);
         final List<Media> actual = mediaRepositoryCustom.getAllForGallery(
                 request, PageRequest.of(ZERO, TEN));
         assertThat(actual).isEqualTo(List.of(getMedia()));
@@ -73,7 +74,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     @DisplayName("Should return empty list if title does not match")
     void getAllForGallery_TitleNoMatch_ReturnEmpty() {
         final MediaGalleryRequestDto request = new MediaGalleryRequestDto(
-                UNKNOWN, YEARS, Type.MOVIE.name());
+                UNKNOWN, YEARS, Type.MOVIE.name(), EN_LANGUAGE);
         final List<Media> actual = mediaRepositoryCustom
                 .getAllForGallery(request, PageRequest.of(ZERO, TEN));
         assertThat(actual).isEmpty();
@@ -84,7 +85,7 @@ public class MediaRepositoryCustomImplTest extends AbstractMongoTest {
     void getAllMediaByVibes_EmptyYears_ReturnListMedia() {
         final MediaVibeRequestDto request = new MediaVibeRequestDto(
                 Vibe.BLOW_MY_MIND.name(), null, Type.MOVIE.name(),
-                Set.of(Category.BASED_ON_A_TRUE_STORY.name()), ZERO, TEN);
+                Set.of(Category.BASED_ON_A_TRUE_STORY.name()), ZERO, TEN, EN_LANGUAGE);
         final List<Media> actual = mediaRepositoryCustom.getAllMediaByVibes(request);
         assertThat(actual).isEqualTo(List.of(getMedia()));
     }

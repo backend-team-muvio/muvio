@@ -14,13 +14,27 @@ import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.cyberrealm.tech.muvio.mapper.ActorMapper;
 import org.cyberrealm.tech.muvio.mapper.MediaMapper;
 import org.cyberrealm.tech.muvio.mapper.ReviewMapper;
-import org.cyberrealm.tech.muvio.model.*;
-import org.cyberrealm.tech.muvio.service.*;
+import org.cyberrealm.tech.muvio.model.Actor;
+import org.cyberrealm.tech.muvio.model.Category;
+import org.cyberrealm.tech.muvio.model.LocalizationEntry;
+import org.cyberrealm.tech.muvio.model.LocalizationMedia;
+import org.cyberrealm.tech.muvio.model.Media;
+import org.cyberrealm.tech.muvio.model.Review;
+import org.cyberrealm.tech.muvio.model.RoleActor;
+import org.cyberrealm.tech.muvio.model.TopLists;
+import org.cyberrealm.tech.muvio.model.Vibe;
+import org.cyberrealm.tech.muvio.service.CategoryService;
+import org.cyberrealm.tech.muvio.service.LocalizationMediaFactory;
+import org.cyberrealm.tech.muvio.service.MediaFactory;
+import org.cyberrealm.tech.muvio.service.TmDbService;
+import org.cyberrealm.tech.muvio.service.TopListService;
+import org.cyberrealm.tech.muvio.service.VibeService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,53 +56,52 @@ public class MediaFactoryImpl implements MediaFactory {
     private final ActorMapper actorMapper;
     private final ReviewMapper reviewMapper;
     private final TopListService topListService;
-    private final Map<String, LocalizationEntry> localizationEntryMap;
+    private final Set<LocalizationEntry> localizationEntrySet;
     private final LocalizationMediaFactory localizationMediaFactory;
 
     @Override
     public Media createMovie(Integer movieId, Set<String> moviesTop250,
-                             Set<String> oscarWinningMedia, Map<Integer, Actor> actors, Map<String, LocalizationMedia> localizationMediaStorage) {
+                             Set<String> oscarWinningMedia, Map<Integer, Actor> actors,
+                             Set<LocalizationMedia> localizationMediaStorage) {
         final MovieDb movieDb = tmdbService.fetchMovieDetails(movieId, LANGUAGE_EN);
         final List<Keyword> keywords = tmdbService.fetchMovieKeywords(movieId)
                 .getKeywords();
         final Credits credits = tmdbService.fetchMovieCredits(movieId, LANGUAGE_EN);
         final List<Crew> crew = credits.getCrew();
         final Media media = mediaMapper.toEntity(movieDb);
-        media.setPhotos(tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
-                media.getPosterPath()));
-        if (crew.isEmpty() || media.getPhotos().isEmpty()) {
-            return null;
-        }
-        media.setReviews(getReviews(() ->
-                tmdbService.fetchMovieReviews(LANGUAGE_EN, movieId)));
-        media.setDirector(getMovieDirector(crew));
-        media.setActors(getMovieActors(credits.getCast(), actors));
-        boolean existLocalization = false;
-        if (!localizationEntryMap.isEmpty()) {
-            existLocalization = localizationMediaFactory.createFromMovie(media,
-                    localizationMediaStorage, actors);
-        }
-        if (!existLocalization) {
+        final Set<String> photoPaths = tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
+                media.getPosterPath());
+        final String movieDirector = getMovieDirector(crew);
+        if (isInvalidMedia(movieDirector, photoPaths, movieId, localizationMediaStorage,
+                localizationMediaFactory::createFromMovie)) {
             return null;
         }
         final Double voteAverage = media.getRating();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
-        media.setTrailer(tmdbService.fetchMovieTrailer(movieId, LANGUAGE_EN));
-        media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbMovieRatings(movieId),
-                media.getGenres()));
-        media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
-                keywords, voteAverage, voteCount, popularity, moviesTop250, title));
-        media.setTopLists(topListService.putTopLists(keywords, voteAverage, voteCount, popularity,
-                media.getReleaseYear(), oscarWinningMedia, title, movieDb.getBudget(),
-                movieDb.getRevenue()));
+        fillCommonMediaInfo(
+                media,
+                tmdbService.fetchMovieTrailer(movieId, LANGUAGE_EN),
+                photoPaths,
+                getMovieActors(credits.getCast(), actors),
+                getReviews(() -> tmdbService.fetchMovieReviews(LANGUAGE_EN, movieId)),
+                movieDirector,
+                vibeService.getVibes(tmdbService.fetchTmDbMovieRatings(movieId),
+                        media.getGenres()),
+                categoryService.putCategories(media.getOverview().toLowerCase(),
+                        keywords, voteAverage, voteCount, popularity, moviesTop250, title),
+                topListService.putTopLists(keywords, voteAverage, voteCount, popularity,
+                        media.getReleaseYear(), oscarWinningMedia, title, movieDb.getBudget(),
+                        movieDb.getRevenue())
+        );
         return media;
     }
 
     @Override
     public Media createTvSerial(Integer seriesId, Set<String> serialsTop250,
-                                Set<String> emmyWinningMedia, Map<Integer, Actor> actors, Map<String, LocalizationMedia> localizationMediaStorage) {
+                                Set<String> emmyWinningMedia, Map<Integer, Actor> actors,
+                                Set<LocalizationMedia> localizationMediaStorage) {
         final List<Keyword> keywords = tmdbService.fetchTvSerialsKeywords(seriesId)
                 .getResults();
         final TvSeriesDb tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, LANGUAGE_EN);
@@ -98,26 +111,30 @@ public class MediaFactoryImpl implements MediaFactory {
         final List<info.movito.themoviedbapi.model.tv.core.credits.Cast> cast = credits.getCast();
         final String tvDirector = getTvDirector(
                 tvSeriesDb.getCreatedBy(), cast, credits.getCrew());
-        media.setPhotos(tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId,
-                media.getPosterPath()));
-        if (tvDirector == null || media.getPhotos().isEmpty()) {
+        final Set<String> photoPaths = tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId,
+                media.getPosterPath());
+        if (isInvalidMedia(tvDirector, photoPaths, seriesId, localizationMediaStorage,
+                localizationMediaFactory::createFromSerial)) {
             return null;
         }
         final Double voteAverage = media.getRating();
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
-        media.setTrailer(tmdbService.fetchTvSerialsTrailer(seriesId, LANGUAGE_EN));
-        media.setDirector(tvDirector);
-        media.setActors(getTvActors(cast, actors));
-        media.setReviews(getReviews(() ->
-                tmdbService.fetchTvSerialsReviews(LANGUAGE_EN, seriesId)));
-        media.setCategories(categoryService.putCategories(media.getOverview().toLowerCase(),
-                keywords, voteAverage, voteCount, popularity, serialsTop250, title));
-        media.setTopLists(topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
-                popularity, media.getReleaseYear(), emmyWinningMedia, title));
-        media.setVibes(vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId),
-                media.getGenres()));
+        fillCommonMediaInfo(
+                media,
+                tmdbService.fetchTvSerialsTrailer(seriesId, LANGUAGE_EN),
+                photoPaths,
+                getTvActors(cast, actors),
+                getReviews(() -> tmdbService.fetchTvSerialsReviews(LANGUAGE_EN, seriesId)),
+                tvDirector,
+                vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId),
+                        media.getGenres()),
+                categoryService.putCategories(media.getOverview().toLowerCase(),
+                        keywords, voteAverage, voteCount, popularity, serialsTop250, title),
+                topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
+                        popularity, media.getReleaseYear(), emmyWinningMedia, title)
+        );
         return media;
     }
 
@@ -158,8 +175,6 @@ public class MediaFactoryImpl implements MediaFactory {
         }).toList();
     }
 
-
-
     private String findCrewMemberByJob(List<Crew> crews, String job) {
         return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(job))
                 .map(Crew::getName).findFirst().orElse(null);
@@ -199,5 +214,30 @@ public class MediaFactoryImpl implements MediaFactory {
         return crews.stream().filter(crew -> crew.getJob() != null
                         && crew.getJob().equalsIgnoreCase(job)).findFirst()
                 .map(NamedIdElement::getName).orElse(null);
+    }
+
+    private boolean isInvalidMedia(
+            String director, Set<String> photoPaths, Integer id,
+            Set<LocalizationMedia> localizationMediaStorage,
+            BiFunction<Integer, Set<LocalizationMedia>, Boolean> localizationCreator) {
+        if (director == null || photoPaths.isEmpty()) {
+            return true;
+        }
+        return !localizationEntrySet.isEmpty()
+                && !localizationCreator.apply(id, localizationMediaStorage);
+    }
+
+    private void fillCommonMediaInfo(Media media, String trailer, Set<String> photoPaths,
+                                     List<RoleActor> actors, List<Review> reviews,
+                                     String director, Set<Vibe> vibes, Set<Category> categories,
+                                     Set<TopLists> topLists) {
+        media.setTrailer(trailer);
+        media.setPhotos(photoPaths);
+        media.setActors(actors);
+        media.setReviews(reviews);
+        media.setDirector(director);
+        media.setVibes(vibes);
+        media.setCategories(categories);
+        media.setTopLists(topLists);
     }
 }

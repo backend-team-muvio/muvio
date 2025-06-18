@@ -78,7 +78,8 @@ public class TmDbServiceImpl implements TmDbService {
     public Set<Integer> fetchPopularMovies(String language, int page, String region) {
         return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, region)
                                 .getResults().stream().filter(
-                                        movie -> movie.getVoteAverage() > MIN_RATE
+                                        movie -> movie.getVoteAverage() != null
+                                                && movie.getVoteAverage() > MIN_RATE
                                                 && movie.getVideo() != null
                                                 && movie.getPosterPath() != null
                                                 && movie.getOverview() != null
@@ -143,7 +144,8 @@ public class TmDbServiceImpl implements TmDbService {
     @Override
     public Set<Integer> fetchPopularTvSerials(String language, int page) {
         return executeTmDbCall(() -> tmdbTvSeriesLists.getPopular(language, page).getResults()
-                        .stream().filter(tvSeries -> tvSeries.getVoteAverage() > MIN_RATE
+                        .stream().filter(tvSeries -> tvSeries.getVoteAverage() != null
+                                && tvSeries.getVoteAverage() > MIN_RATE
                                 && tvSeries.getPosterPath() != null
                                 && tvSeries.getOverview() != null
                                 && tvSeries.getFirstAirDate() != null

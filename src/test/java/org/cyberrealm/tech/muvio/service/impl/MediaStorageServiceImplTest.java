@@ -2,8 +2,6 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.THREE;
 import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
-import static org.cyberrealm.tech.muvio.util.TestConstants.ACTOR_NAME_STRING;
-import static org.cyberrealm.tech.muvio.util.TestConstants.EN_LANGUAGE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.MEDIA_TITLE;
 import static org.cyberrealm.tech.muvio.util.TestConstants.TEST_SIZE;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -14,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.cyberrealm.tech.muvio.model.Actor;
-import org.cyberrealm.tech.muvio.model.ActorName;
 import org.cyberrealm.tech.muvio.model.Media;
 import org.cyberrealm.tech.muvio.repository.ActorRepository;
 import org.cyberrealm.tech.muvio.repository.MediaRepository;
@@ -50,10 +47,6 @@ public class MediaStorageServiceImplTest {
         for (int i = ZERO; i < TEST_SIZE; i++) {
             Actor actor = new Actor();
             actor.setId(i);
-            final ActorName actorName = new ActorName();
-            actorName.setLang(EN_LANGUAGE);
-            actorName.setName(ACTOR_NAME_STRING + i);
-            actor.setNames(Set.of(actorName));
             actorStorage.put(i, actor);
         }
         for (int i = ZERO; i < TEST_SIZE; i++) {
@@ -62,7 +55,7 @@ public class MediaStorageServiceImplTest {
             media.setTitle(MEDIA_TITLE + i);
             mediaStorage.put(String.valueOf(i), media);
         }
-        mediaStorageService.saveAll(actorStorage, mediaStorage, localizationMediaStorage);
+        mediaStorageService.saveAll(actorStorage, mediaStorage, Set.of());
         verify(actorRepository, times(THREE)).saveAll(anyList());
         verify(mediaRepository, times(THREE)).saveAll(anyList());
     }
