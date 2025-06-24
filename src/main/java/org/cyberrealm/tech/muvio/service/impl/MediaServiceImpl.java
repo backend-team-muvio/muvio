@@ -75,9 +75,11 @@ public class MediaServiceImpl implements MediaService {
             backoff = @Backoff(delay = BACK_OFF))
     public MediaDto getMediaById(String id, String lang) {
         if (isLocalizationRequired(lang)) {
-            return localizationMediaService.findById(id, mediaRepository.findById(
-                    id.substring(lang.length())).orElseThrow(() -> new EntityNotFoundException(
-                            "There is no media with this id: " + id)));
+            final String actualId = id.startsWith(lang) ? id.substring(lang.length()) : id;
+            final Media media = mediaRepository.findById(actualId).orElseThrow(
+                    () -> new EntityNotFoundException("There is no media with this id: " + id));
+            final String localizationId = id.startsWith(lang) ? id : lang + id;
+            return localizationMediaService.findById(localizationId, media);
         } else {
             return mediaMapper.toMovieDto(mediaRepository.findMovieById(id)
                     .orElseThrow(() -> new EntityNotFoundException(
