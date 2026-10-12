@@ -253,14 +253,6 @@ public class TmDbServiceImplTest {
         return releaseDateResults;
     }
 
-    private ContentRatingResults getRatingResults() {
-        final ContentRating contentRating = new ContentRating();
-        contentRating.setRating(AGE_RATING_G);
-        final ContentRatingResults contentRatings = new ContentRatingResults();
-        contentRatings.setResults(List.of(contentRating));
-        return contentRatings;
-    }
-
     private TvSeriesResultsPage getTvSeriesResultsPage() {
         final TvSeries tvSeries = new TvSeries();
         tvSeries.setId(TWO);
@@ -270,11 +262,38 @@ public class TmDbServiceImplTest {
         tvSeries.setPosterPath(POSTER_PATH);
         tvSeries.setFirstAirDate(RELEASE_DATE);
         tvSeries.setName(TITLE);
+        tvSeries.setGenreIds(List.of(1));
         final TvSeriesResultsPage tvSeriesResultsPage = new TvSeriesResultsPage();
         tvSeriesResultsPage.setId(ONE);
         tvSeriesResultsPage.setPage(ONE);
         tvSeriesResultsPage.setResults(List.of(tvSeries));
         return tvSeriesResultsPage;
+    }
+
+    private MovieResultsPage getMovieResultsPage() {
+        final MovieResultsPage movieResultsPage = new MovieResultsPage();
+        final Movie movie = new Movie();
+        movie.setId(ONE);
+        movie.setOverview(OVERVIEW);
+        movie.setVoteAverage(VOTE_AVERAGE_8);
+        movie.setVoteCount(MIN_VOTE_COUNT);
+        movie.setPosterPath(POSTER_PATH);
+        movie.setReleaseDate(RELEASE_DATE);
+        movie.setVideo(true);
+        movie.setTitle(TITLE);
+        movie.setGenreIds(List.of(1));
+        final List<Movie> movieList = List.of(movie);
+        movieResultsPage.setResults(movieList);
+        movieResultsPage.setPage(ONE);
+        return movieResultsPage;
+    }
+
+    private ContentRatingResults getRatingResults() {
+        final ContentRating contentRating = new ContentRating();
+        contentRating.setRating(AGE_RATING_G);
+        final ContentRatingResults contentRatings = new ContentRatingResults();
+        contentRatings.setResults(List.of(contentRating));
+        return contentRatings;
     }
 
     private ReviewResultsPage getReviewResultsPage() {
@@ -296,23 +315,6 @@ public class TmDbServiceImplTest {
         review.setId(ID_STRING);
         review.setAuthorDetails(authorDetails);
         return List.of(review);
-    }
-
-    private MovieResultsPage getMovieResultsPage() {
-        final MovieResultsPage movieResultsPage = new MovieResultsPage();
-        final Movie movie = new Movie();
-        movie.setId(ONE);
-        movie.setOverview(OVERVIEW);
-        movie.setVoteAverage(VOTE_AVERAGE_8);
-        movie.setVoteCount(MIN_VOTE_COUNT);
-        movie.setPosterPath(POSTER_PATH);
-        movie.setReleaseDate(RELEASE_DATE);
-        movie.setVideo(true);
-        movie.setTitle(TITLE);
-        final List<Movie> movieList = List.of(movie);
-        movieResultsPage.setResults(movieList);
-        movieResultsPage.setPage(ONE);
-        return movieResultsPage;
     }
 
     private MovieDb getMovieDb() {
