@@ -16,11 +16,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import info.movito.themoviedbapi.model.core.TvKeywords;
+import info.movito.themoviedbapi.model.core.image.Artwork;
 import info.movito.themoviedbapi.model.movies.Cast;
 import info.movito.themoviedbapi.model.movies.Credits;
 import info.movito.themoviedbapi.model.movies.Crew;
-import info.movito.themoviedbapi.model.movies.KeywordResults;
+import info.movito.themoviedbapi.model.movies.Images;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.CreatedBy;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
@@ -75,22 +75,22 @@ public class MediaFactoryImplTest {
     public void createMovie_ValidResponse_ReturnMedia() {
         final Media media = getMedia();
         final Actor actor = getActor();
-        List<info.movito.themoviedbapi.model.core.Review> tmDbReviews = getTmDbReviews();
-        when(tmdbService.fetchMovieKeywords(anyInt())).thenReturn(new KeywordResults());
-        when(tmdbService.fetchMovieDetails(anyInt(), anyString())).thenReturn(new MovieDb());
+        final List<info.movito.themoviedbapi.model.core.Review> tmDbReviews = getTmDbReviews();
+        final MovieDb movieDb = getMovieDb();
+
+        when(tmdbService.fetchFullMovieDetails(anyInt(), anyString())).thenReturn(movieDb);
         when(mediaMapper.toEntity(any(MovieDb.class))).thenReturn(media);
-        when(tmdbService.fetchMovieCredits(anyInt(), anyString())).thenReturn(getCredits());
+        when(tmdbService.extractPhotos(any(), anyString())).thenReturn(Set.of(PATH));
         when(actorMapper.toActorEntity(any(Cast.class))).thenReturn(actor);
         when(vibeService.getVibes(any(), any())).thenReturn(Set.of());
         when(categoryService.putCategories(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Set.of());
         when(topListService.putTopLists(any(), any(), any(), any(), any(), any(), any(), any(),
                 any())).thenReturn(Set.of());
-        when(tmdbService.fetchMovieReviews(any(), anyInt())).thenReturn(tmDbReviews);
+        when(tmdbService.extractReviews(any())).thenReturn(tmDbReviews);
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
-        when(tmdbService.fetchMoviePhotos(anyString(), anyInt(), anyString()))
-                .thenReturn(Set.of(PATH));
         when(localizationEntrySet.isEmpty()).thenReturn(true);
+
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
         assertThat(mediaFactory.createMovie(THREE, Set.of(), Set.of(), actors, Set.of()))
                 .isEqualTo(media);
@@ -102,11 +102,12 @@ public class MediaFactoryImplTest {
     public void createTvSerial_ValidResponse_ReturnMedia() {
         final Media media = getMedia();
         final Actor actor = getActor();
-        List<info.movito.themoviedbapi.model.core.Review> tmDbReviews = getTmDbReviews();
-        when(tmdbService.fetchTvSerialsKeywords(anyInt())).thenReturn(new TvKeywords());
-        when(tmdbService.fetchTvSerialsDetails(anyInt(), anyString())).thenReturn(getTvSerial());
+        final List<info.movito.themoviedbapi.model.core.Review> tmDbReviews = getTmDbReviews();
+        final TvSeriesDb tvSeriesDb = getTvSerial();
+
+        when(tmdbService.fetchFullTvSeriesDetails(anyInt(), anyString())).thenReturn(tvSeriesDb);
         when(mediaMapper.toEntity(any(TvSeriesDb.class))).thenReturn(media);
-        when(tmdbService.fetchTvSerialsCredits(anyInt(), anyString())).thenReturn(getTvCredits());
+        when(tmdbService.extractPhotos(any(), anyString())).thenReturn(Set.of(PATH));
         when(actorMapper.toActorEntity(any(
                 info.movito.themoviedbapi.model.tv.core.credits.Cast.class))).thenReturn(actor);
         when(vibeService.getVibes(any(), any())).thenReturn(Set.of());
@@ -114,15 +115,37 @@ public class MediaFactoryImplTest {
                 .thenReturn(Set.of());
         when(topListService.putTopListsForTvShow(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Set.of());
-        when(tmdbService.fetchTvSerialsReviews(any(), anyInt())).thenReturn(tmDbReviews);
+        when(tmdbService.extractReviews(any())).thenReturn(tmDbReviews);
         when(reviewMapper.toEntity(any())).thenReturn(getReview());
-        when(tmdbService.fetchTvSerialsPhotos(anyString(), anyInt(), anyString()))
-                .thenReturn(Set.of(PATH));
         when(localizationEntrySet.isEmpty()).thenReturn(true);
+
         final Map<Integer, Actor> actors = new ConcurrentHashMap<>();
         assertThat(mediaFactory.createTvSerial(THREE, Set.of(), Set.of(), actors, Set.of()))
                 .isEqualTo(media);
         assertThat(actors.get(TWO)).isEqualTo(actor);
+    }
+
+    private MovieDb getMovieDb() {
+        final MovieDb movieDb = new MovieDb();
+        movieDb.setId(THREE);
+        movieDb.setOverview(OVERVIEW);
+        final Credits credits = new Credits();
+        final Cast cast = new Cast();
+        cast.setId(TWO);
+        credits.setCast(List.of(cast));
+        final Crew crew = new Crew();
+        crew.setJob(DIRECTOR);
+        crew.setName(DIRECTOR_NAME);
+        credits.setCrew(List.of(crew));
+        movieDb.setCredits(credits);
+
+        final Images images = new Images();
+        final Artwork artwork = new Artwork();
+        artwork.setFilePath(PATH);
+        images.setBackdrops(List.of(artwork));
+        movieDb.setImages(images);
+
+        return movieDb;
     }
 
     private TvSeriesDb getTvSerial() {
@@ -133,17 +156,23 @@ public class MediaFactoryImplTest {
         createdBy.setName(DIRECTOR_NAME);
         createdBy.setId(ONE);
         tvSeriesDb.setCreatedBy(List.of(createdBy));
-        return tvSeriesDb;
-    }
 
-    private info.movito.themoviedbapi.model.tv.core.credits.Credits getTvCredits() {
-        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
-                = new info.movito.themoviedbapi.model.tv.core.credits.Credits();
-        final info.movito.themoviedbapi.model.tv.core.credits.Cast cast
-                = new info.movito.themoviedbapi.model.tv.core.credits.Cast();
+        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits =
+                new info.movito.themoviedbapi.model.tv.core.credits.Credits();
+        final info.movito.themoviedbapi.model.tv.core.credits.Cast cast =
+                new info.movito.themoviedbapi.model.tv.core.credits.Cast();
         cast.setId(TWO);
         credits.setCast(List.of(cast));
-        return credits;
+        tvSeriesDb.setCredits(credits);
+
+        final info.movito.themoviedbapi.model.tv.series.Images images =
+                new info.movito.themoviedbapi.model.tv.series.Images();
+        final Artwork artwork = new Artwork();
+        artwork.setFilePath(PATH);
+        images.setBackdrops(List.of(artwork));
+        tvSeriesDb.setImages(images);
+
+        return tvSeriesDb;
     }
 
     private List<info.movito.themoviedbapi.model.core.Review> getTmDbReviews() {
@@ -170,18 +199,6 @@ public class MediaFactoryImplTest {
         media.setPhotos(Set.of(PATH));
         media.setPosterPath(PATH);
         return media;
-    }
-
-    private Credits getCredits() {
-        final Credits credits = new Credits();
-        final Cast cast = new Cast();
-        cast.setId(TWO);
-        credits.setCast(List.of(cast));
-        final Crew crew = new Crew();
-        crew.setJob(DIRECTOR);
-        crew.setName(DIRECTOR_NAME);
-        credits.setCrew(List.of(crew));
-        return credits;
     }
 
     private Actor getActor() {

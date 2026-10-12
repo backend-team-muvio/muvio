@@ -18,32 +18,30 @@ import info.movito.themoviedbapi.TmdbTvSeriesLists;
 import info.movito.themoviedbapi.model.core.IdElement;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.core.ReviewResultsPage;
-import info.movito.themoviedbapi.model.core.TvKeywords;
 import info.movito.themoviedbapi.model.core.image.Artwork;
 import info.movito.themoviedbapi.model.core.video.VideoResults;
-import info.movito.themoviedbapi.model.movies.Credits;
-import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.movies.ReleaseDate;
 import info.movito.themoviedbapi.model.reviews.AuthorDetails;
 import info.movito.themoviedbapi.model.tv.series.ContentRating;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import info.movito.themoviedbapi.tools.TmdbException;
+import info.movito.themoviedbapi.tools.appendtoresponse.MovieAppendToResponse;
+import info.movito.themoviedbapi.tools.appendtoresponse.TvSeriesAppendToResponse;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverMovieParamBuilder;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
 import info.movito.themoviedbapi.tools.sortby.DiscoverMovieSortBy;
 import info.movito.themoviedbapi.tools.sortby.DiscoverTvSortBy;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +60,9 @@ public class TmDbServiceImpl implements TmDbService {
     private static final int MAX_NUMBER_OF_PHOTOS = 6;
     private static final int MAX_NUMBER_OF_REVIEWS = 3;
     private static final Semaphore SEMAPHORE = new Semaphore(100, true);
+    private static final List<Integer> FORBIDDEN_GENRE_IDS =
+            List.of(16, 99, 36, 27, 10402, 10752, 10763, 10764, 10768, 10767);
+
     private final TmdbMovies tmdbMovies;
     private final TmdbTvSeries tmdbTvSeries;
     private final TmdbMovieLists tmdbMovieLists;
@@ -77,14 +78,17 @@ public class TmDbServiceImpl implements TmDbService {
     @Override
     public Set<Integer> fetchPopularMovies(String language, int page, String region) {
         return executeTmDbCall(() -> tmdbMovieLists.getPopular(language, page, region)
-                                .getResults().stream().filter(
-                                        movie -> movie.getVoteAverage() != null
-                                                && movie.getVoteAverage() > MIN_RATE
-                                                && movie.getVideo() != null
-                                                && movie.getPosterPath() != null
-                                                && movie.getOverview() != null
-                                                && movie.getReleaseDate() != null
-                                                && movie.getVoteCount() >= MIN_VOTE_COUNT)
+                        .getResults().stream()
+                        .filter(movie ->
+                                !new HashSet<>(FORBIDDEN_GENRE_IDS)
+                                        .containsAll(movie.getGenreIds())
+                                        && movie.getVoteAverage() != null
+                                        && movie.getVoteAverage() > MIN_RATE
+                                        && movie.getVideo() != null
+                                        && movie.getPosterPath() != null
+                                        && movie.getOverview() != null
+                                        && movie.getReleaseDate() != null
+                                        && movie.getVoteCount() >= MIN_VOTE_COUNT)
                         .map(IdElement::getId).collect(Collectors.toSet()),
                 "Failed to fetch popular movies from TmDb");
     }
@@ -92,137 +96,19 @@ public class TmDbServiceImpl implements TmDbService {
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
             backoff = @Backoff(delay = BACK_OFF))
     @Override
-    public MovieDb fetchMovieDetails(int movieId, String language) {
-        return executeTmDbCall(() -> tmdbMovies.getDetails(movieId, language),
-                "Can't load movie details by movieId: " + movieId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public Credits fetchMovieCredits(int movieId, String language) {
-        return executeTmDbCall(() -> tmdbMovies.getCredits(movieId, language),
-                "Can't load credits by movieId: " + movieId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public String fetchMovieTrailer(int movieId, String language) {
-        return fetchTrailer(() -> executeTmDbCall(() -> tmdbMovies.getVideos(movieId, language),
-                "Failed to fetch trailer from TmDb by movieId: " + movieId));
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public Set<String> fetchMoviePhotos(String language, int movieId, String posterPath) {
-        return fetchPhotos(() -> executeTmDbCall(() -> tmdbMovies.getImages(movieId, language)
-                        .getBackdrops(),
-                "Failed to fetch photos from TmDb by movieId: " + movieId), posterPath);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public KeywordResults fetchMovieKeywords(int movieId) {
-        return executeTmDbCall(() -> tmdbMovies.getKeywords(movieId),
-                "Failed to fetch keywords from TmDb by movieId: " + movieId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public List<Review> fetchMovieReviews(String language, int movieId) {
-        return fetchAllReviews(page -> executeTmDbCall(() -> tmdbMovies.getReviews(
-                movieId, language, page),
-                "Failed to fetch reviews from TmDb by movieId: " + movieId));
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
     public Set<Integer> fetchPopularTvSerials(String language, int page) {
         return executeTmDbCall(() -> tmdbTvSeriesLists.getPopular(language, page).getResults()
-                        .stream().filter(tvSeries -> tvSeries.getVoteAverage() != null
-                                && tvSeries.getVoteAverage() > MIN_RATE
-                                && tvSeries.getPosterPath() != null
-                                && tvSeries.getOverview() != null
-                                && tvSeries.getFirstAirDate() != null
-                                && tvSeries.getVoteCount() >= MIN_VOTE_COUNT)
-                .map(IdElement::getId).collect(Collectors.toSet()),
+                        .stream().filter(tvSeries ->
+                                !new HashSet<>(FORBIDDEN_GENRE_IDS)
+                                        .containsAll(tvSeries.getGenreIds())
+                                        && tvSeries.getVoteAverage() != null
+                                        && tvSeries.getVoteAverage() > MIN_RATE
+                                        && tvSeries.getPosterPath() != null
+                                        && tvSeries.getOverview() != null
+                                        && tvSeries.getFirstAirDate() != null
+                                        && tvSeries.getVoteCount() >= MIN_VOTE_COUNT)
+                        .map(IdElement::getId).collect(Collectors.toSet()),
                 "Failed to fetch popular TVSerials from TmDb by page: " + page);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public TvSeriesDb fetchTvSerialsDetails(int serialId, String language) {
-        return executeTmDbCall(() -> tmdbTvSeries.getDetails(serialId, language),
-                "Can't load movie details by serialId: " + serialId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public info.movito.themoviedbapi.model.tv.core.credits.Credits fetchTvSerialsCredits(
-            int serialId, String language) {
-        return executeTmDbCall(() -> tmdbTvSeries.getCredits(serialId, language),
-                "Can't load credits by serialId: " + serialId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public String fetchTvSerialsTrailer(int serialId, String language) {
-        return fetchTrailer(() -> executeTmDbCall(() -> tmdbTvSeries.getVideos(serialId, language),
-                        "Failed to fetch trailer from TmDb by serialId " + serialId));
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public Set<String> fetchTvSerialsPhotos(String language, int serialId, String posterPath) {
-        return fetchPhotos(() -> executeTmDbCall(() -> tmdbTvSeries.getImages(serialId, language)
-                        .getBackdrops(),
-                        "Failed to fetch photos from TmDb by serialId " + serialId), posterPath);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public TvKeywords fetchTvSerialsKeywords(int serialId) {
-        return executeTmDbCall(() -> tmdbTvSeries.getKeywords(serialId),
-                "Failed to fetch keywords from TmDb by serialId " + serialId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public List<Review> fetchTvSerialsReviews(String language, int serialId) {
-        return fetchAllReviews(page -> executeTmDbCall(() -> tmdbTvSeries
-                        .getReviews(serialId, language, page),
-                        "Failed to fetch reviews from TmDb by serialId "
-                                + serialId + " and page " + page));
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public Set<String> fetchTmDbTvRatings(int seriesId) {
-        return executeTmDbCall(() -> tmdbTvSeries.getContentRatings(seriesId).getResults().stream()
-                .map(ContentRating::getRating).collect(Collectors.toSet()),
-                "Failed to fetch ratings from TmDb by seriesId " + seriesId);
-    }
-
-    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
-            backoff = @Backoff(delay = BACK_OFF))
-    @Override
-    public Set<String> fetchTmDbMovieRatings(int movieId) {
-        return executeTmDbCall(() -> tmdbMovies.getReleaseDates(movieId).getResults().stream()
-                .flatMap(info -> info.getReleaseDates().stream()
-                        .map(ReleaseDate::getCertification)).collect(Collectors.toSet()),
-                "Failed to fetch release info from TmDb by movieId " + movieId);
     }
 
     @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
@@ -231,8 +117,12 @@ public class TmDbServiceImpl implements TmDbService {
     public Optional<Integer> searchMovies(String query, String language, String region) {
         return executeTmDbCall(() -> tmdbSearch.searchMovie(query, false, language,
                                 null, FIRST_PAGE, region, null)
-                .getResults().stream().filter(movie -> movie.getTitle().equalsIgnoreCase(query))
-                .map(IdElement::getId).findFirst(),
+                        .getResults().stream()
+                        .filter(movie ->
+                                !new HashSet<>(FORBIDDEN_GENRE_IDS)
+                                        .containsAll(movie.getGenreIds())
+                                        && movie.getTitle().equalsIgnoreCase(query))
+                        .map(IdElement::getId).findFirst(),
                 "Failed to find movie info from TmDb by query " + query);
     }
 
@@ -240,10 +130,14 @@ public class TmDbServiceImpl implements TmDbService {
             backoff = @Backoff(delay = BACK_OFF))
     @Override
     public Optional<Integer> searchTvSeries(String query, String language) {
-        return executeTmDbCall(() -> tmdbSearch.searchTv(query, null, false,
-                                language, FIRST_PAGE, null)
-                .getResults().stream().filter(series -> series.getName().equalsIgnoreCase(query))
-                .map(IdElement::getId).findFirst(),
+        return executeTmDbCall(() -> tmdbSearch.searchTv(query, null, false, language,
+                                FIRST_PAGE, null)
+                        .getResults().stream()
+                        .filter(series ->
+                                !new HashSet<>(FORBIDDEN_GENRE_IDS)
+                                        .containsAll(series.getGenreIds())
+                                        && series.getName().equalsIgnoreCase(query))
+                        .map(IdElement::getId).findFirst(),
                 "Failed to find tv series info from TmDb by query " + query);
     }
 
@@ -252,6 +146,7 @@ public class TmDbServiceImpl implements TmDbService {
     @Override
     public Set<Integer> getFilteredMovies(int year, int page) {
         return executeTmDbCall(() -> tmdbDiscover.getMovie(discoverMovieParamBuilder.year(year)
+                                .withoutGenres(FORBIDDEN_GENRE_IDS)
                                 .voteAverageGte(MIN_RATE).voteCountGte(MIN_VOTE_COUNT).page(page)
                                 .sortBy(DiscoverMovieSortBy.VOTE_AVERAGE_DESC))
                         .getResults().stream().map(IdElement::getId).collect(Collectors.toSet()),
@@ -263,11 +158,117 @@ public class TmDbServiceImpl implements TmDbService {
     @Override
     public Set<Integer> getFilteredTvShows(int year, int page) {
         return executeTmDbCall(() -> tmdbDiscover.getTv(discoverTvParamBuilder
+                                .withoutGenres(FORBIDDEN_GENRE_IDS)
                                 .firstAirDateYear(year).voteAverageGte(MIN_RATE)
                                 .voteCountGte(MIN_VOTE_COUNT).page(page)
                                 .sortBy(DiscoverTvSortBy.VOTE_AVERAGE_DESC))
                         .getResults().stream().map(IdElement::getId).collect(Collectors.toSet()),
                 "Failed to filter tv shows from TmDb");
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public MovieDb fetchFullMovieDetails(int movieId, String language) {
+        return executeTmDbCall(() -> tmdbMovies.getDetails(movieId, language,
+                MovieAppendToResponse.CREDITS,
+                MovieAppendToResponse.VIDEOS,
+                MovieAppendToResponse.IMAGES,
+                MovieAppendToResponse.KEYWORDS,
+                MovieAppendToResponse.REVIEWS,
+                MovieAppendToResponse.RELEASE_DATES
+        ), "Can't load full movie details by movieId: " + movieId);
+    }
+
+    @Retryable(retryFor = TmdbServiceException.class, maxAttempts = MAX_ATTEMPTS,
+            backoff = @Backoff(delay = BACK_OFF))
+    @Override
+    public TvSeriesDb fetchFullTvSeriesDetails(int serialId, String language) {
+        return executeTmDbCall(() -> tmdbTvSeries.getDetails(serialId, language,
+                TvSeriesAppendToResponse.CREDITS,
+                TvSeriesAppendToResponse.VIDEOS,
+                TvSeriesAppendToResponse.IMAGES,
+                TvSeriesAppendToResponse.KEYWORDS,
+                TvSeriesAppendToResponse.REVIEWS,
+                TvSeriesAppendToResponse.CONTENT_RATINGS
+        ), "Can't load full tv series details by serialId: " + serialId);
+    }
+
+    @Override
+    public String extractTrailer(VideoResults videos) {
+        if (videos == null || videos.getResults() == null) {
+            return null;
+        }
+        return Stream.of(TRAILER, TEASER)
+                .map(type -> getTrailerLink(videos, type))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public Set<String> extractPhotos(List<Artwork> backdrops, String posterPath) {
+        if (backdrops == null || backdrops.isEmpty()) {
+            return Collections.emptySet();
+        }
+        List<String> imagePaths = backdrops.stream()
+                .filter(artwork -> artwork.getFilePath() != null)
+                .sorted(Comparator.comparing(Artwork::getVoteAverage,
+                        Comparator.nullsLast(Double::compareTo)).reversed())
+                .map(artwork -> IMAGE_PATH_W200 + artwork.getFilePath())
+                .toList();
+
+        Set<Hash> seenHashes = new HashSet<>();
+        Set<String> uniqueImagePaths = new LinkedHashSet<>();
+
+        imageSimilarityService.addIfUniqueHash(posterPath, seenHashes, uniqueImagePaths);
+        uniqueImagePaths.clear();
+
+        for (String filePath : imagePaths) {
+            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
+            if (uniqueImagePaths.size() >= MAX_NUMBER_OF_PHOTOS) {
+                break;
+            }
+        }
+        return uniqueImagePaths;
+    }
+
+    @Override
+    public List<Review> extractReviews(ReviewResultsPage reviewPage) {
+        if (reviewPage == null || reviewPage.getResults() == null) {
+            return Collections.emptyList();
+        }
+
+        return reviewPage.getResults().stream()
+                .filter(review -> review.getAuthorDetails() != null
+                        && review.getAuthorDetails().getRating() != null)
+                .sorted(getReviewComparator())
+                .limit(MAX_NUMBER_OF_REVIEWS)
+                .map(this::updateReviewAvatar)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Set<String> extractMovieRatings(MovieDb movie) {
+        if (movie.getReleaseDates() == null || movie.getReleaseDates().getResults() == null) {
+            return Collections.emptySet();
+        }
+        return movie.getReleaseDates().getResults().stream()
+                .flatMap(info -> info.getReleaseDates().stream()
+                        .map(ReleaseDate::getCertification))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<String> extractTvRatings(TvSeriesDb tvSeries) {
+        if (tvSeries.getContentRatings() == null
+                || tvSeries.getContentRatings().getResults() == null) {
+            return Collections.emptySet();
+        }
+        return tvSeries.getContentRatings().getResults().stream()
+                .map(ContentRating::getRating)
+                .collect(Collectors.toSet());
     }
 
     private Optional<String> getTrailerLink(VideoResults videos, String type) {
@@ -289,63 +290,14 @@ public class TmDbServiceImpl implements TmDbService {
         return review;
     }
 
-    private List<Review> fetchAllReviews(Function<Integer, ReviewResultsPage> reviewFetcher) {
-        ReviewResultsPage firstPage = reviewFetcher.apply(FIRST_PAGE);
-        final List<Review> allReviews = new ArrayList<>();
-        int totalPages = firstPage.getTotalPages();
-        for (int page = FIRST_PAGE; page <= totalPages; page++) {
-            ReviewResultsPage reviewPage = reviewFetcher.apply(page);
-            if (reviewPage != null && reviewPage.getResults() != null) {
-                allReviews.addAll(reviewPage.getResults());
-            }
-        }
-        return allReviews.stream()
-                .sorted(getReviewComparator())
-                .filter(review -> review.getAuthorDetails().getRating() != null)
-                .limit(MAX_NUMBER_OF_REVIEWS)
-                .map(this::updateReviewAvatar)
-                .collect(Collectors.toList());
-    }
-
     private Comparator<Review> getReviewComparator() {
         return Comparator.comparing(
-                review -> Optional.ofNullable(review.getAuthorDetails())
+                review -> Objects.requireNonNull(Optional.ofNullable(review.getAuthorDetails())
                         .map(AuthorDetails::getRating)
                         .map(Double::parseDouble)
-                        .orElse(null),
+                        .orElse(null)),
                 Comparator.nullsLast(Comparator.reverseOrder())
         );
-    }
-
-    private String fetchTrailer(Supplier<VideoResults> videoSupplier) {
-        VideoResults videos = videoSupplier.get();
-        return Stream.of(TRAILER, TEASER)
-                .map(type -> getTrailerLink(videos, type))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private Set<String> fetchPhotos(Supplier<List<Artwork>> imagesSupplier, String posterPath) {
-        List<String> imagePaths = imagesSupplier.get().stream()
-                .filter(artwork -> artwork.getFilePath() != null)
-                .sorted(Comparator.comparing(Artwork::getVoteAverage,
-                        Comparator.nullsLast(Double::compareTo)).reversed())
-                .map(artwork -> IMAGE_PATH_W200 + artwork.getFilePath())
-                .toList();
-        Set<Hash> seenHashes = new HashSet<>();
-        Set<String> uniqueImagePaths = new LinkedHashSet<>();
-        imageSimilarityService.addIfUniqueHash(posterPath, seenHashes,
-                uniqueImagePaths);
-        uniqueImagePaths = new LinkedHashSet<>();
-        for (String filePath : imagePaths) {
-            imageSimilarityService.addIfUniqueHash(filePath, seenHashes, uniqueImagePaths);
-            if (uniqueImagePaths.size() >= MAX_NUMBER_OF_PHOTOS) {
-                break;
-            }
-        }
-        return uniqueImagePaths;
     }
 
     private <T> T executeTmDbCall(Callable<T> callable, String errorMessage) {
@@ -354,8 +306,7 @@ public class TmDbServiceImpl implements TmDbService {
             return callable.call();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new TmdbServiceException("Thread was interrupted while waiting for semaphore",
-                    e);
+            throw new TmdbServiceException("Thread was interrupted while waiting for semaphore", e);
         } catch (TmdbException e) {
             throw new TmdbServiceException(errorMessage, e);
         } catch (Exception e) {

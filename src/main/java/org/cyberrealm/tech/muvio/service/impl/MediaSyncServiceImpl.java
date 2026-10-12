@@ -4,7 +4,6 @@ import static org.cyberrealm.tech.muvio.common.Constants.LANGUAGE_EN;
 import static org.cyberrealm.tech.muvio.common.Constants.ONE;
 import static org.cyberrealm.tech.muvio.common.Constants.REGION_US;
 import static org.cyberrealm.tech.muvio.common.Constants.TV;
-import static org.cyberrealm.tech.muvio.common.Constants.ZERO;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,22 +35,24 @@ public class MediaSyncServiceImpl implements MediaSyncService {
                             Set<String> imdbTop250, Set<String> winningMedia,
                             Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
                             Set<LocalizationMedia> localizationMediaStorage, boolean isMovies) {
-        final Set<Integer> ids = IntStream.rangeClosed(ZERO, LAST_PAGE).parallel()
+
+        final Set<Integer> ids = IntStream.rangeClosed(ONE, LAST_PAGE).parallel()
                 .mapToObj(page -> isMovies
                         ? tmdbService.fetchPopularMovies(LANGUAGE_EN, page, REGION_US)
                         : tmdbService.fetchPopularTvSerials(LANGUAGE_EN, page))
-                .flatMap(Collection::stream).filter(id -> isNewIds(id, isMovies, mediaStorage))
+                .flatMap(Collection::stream)
+                .filter(id -> isNewIds(id, isMovies, mediaStorage))
                 .collect(Collectors.toSet());
+
         ids.parallelStream().forEach(id -> {
             final Media media = isMovies
-                    ? mediaFactory.createMovie(id, imdbTop250,
-                    winningMedia, actorStorage, localizationMediaStorage)
-                    : mediaFactory.createTvSerial(id, imdbTop250,
-                    winningMedia, actorStorage, localizationMediaStorage);
-            if (media == null) {
-                return;
+                    ? mediaFactory.createMovie(id, imdbTop250, winningMedia, actorStorage,
+                    localizationMediaStorage)
+                    : mediaFactory.createTvSerial(id, imdbTop250, winningMedia, actorStorage,
+                    localizationMediaStorage);
+            if (media != null) {
+                mediaStorage.put(media.getId(), media);
             }
-            mediaStorage.put(media.getId(), media);
         });
     }
 
@@ -60,27 +61,27 @@ public class MediaSyncServiceImpl implements MediaSyncService {
             int currentYear, Set<String> imdbTop250, Set<String> winningMedia,
             Map<String, Media> mediaStorage, Set<LocalizationMedia> localizationMediaStorage,
             Map<Integer, Actor> actorStorage, boolean isMovies) {
-        final Set<Integer> ids =
-                IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel()
-                        .boxed().flatMap(year -> IntStream.iterate(
-                                        ONE, page -> page <= LAST_PAGE, page -> page + ONE)
-                                .mapToObj(page -> (isMovies
-                                        ? tmdbService.getFilteredMovies(year, page)
-                                        : tmdbService.getFilteredTvShows(year, page)))
-                                .takeWhile(set -> !set.isEmpty()))
-                        .flatMap(Collection::stream)
-                        .filter(id -> isNewIds(id, isMovies, mediaStorage))
-                        .collect(Collectors.toSet());
+
+        final Set<Integer> ids = IntStream.rangeClosed(FIRST_YEAR, currentYear).parallel().boxed()
+                .flatMap(year -> IntStream.iterate(ONE, page -> page <= LAST_PAGE, page -> page
+                                + ONE)
+                        .mapToObj(page -> isMovies
+                                ? tmdbService.getFilteredMovies(year, page)
+                                : tmdbService.getFilteredTvShows(year, page))
+                        .takeWhile(set -> !set.isEmpty()))
+                .flatMap(Collection::stream)
+                .filter(id -> isNewIds(id, isMovies, mediaStorage))
+                .collect(Collectors.toSet());
+
         ids.parallelStream().forEach(id -> {
             final Media newMedia = isMovies
-                    ? mediaFactory.createMovie(id, imdbTop250, winningMedia,
-                    actorStorage, localizationMediaStorage)
-                    : mediaFactory.createTvSerial(id, imdbTop250,
-                    winningMedia, actorStorage, localizationMediaStorage);
-            if (newMedia == null) {
-                return;
+                    ? mediaFactory.createMovie(id, imdbTop250, winningMedia, actorStorage,
+                    localizationMediaStorage)
+                    : mediaFactory.createTvSerial(id, imdbTop250, winningMedia, actorStorage,
+                    localizationMediaStorage);
+            if (newMedia != null) {
+                mediaStorage.put(newMedia.getId(), newMedia);
             }
-            mediaStorage.put(newMedia.getId(), newMedia);
         });
     }
 
@@ -89,28 +90,30 @@ public class MediaSyncServiceImpl implements MediaSyncService {
             int currentYear, Map<Integer, Actor> actorStorage, Map<String, Media> mediaStorage,
             Set<LocalizationMedia> localizationMediaStorage, Set<String> imdbTop250,
             Set<String> winningMedia, boolean isMovies) {
+
         final Set<Integer> mediaId = new HashSet<>();
         findMediasIdsByTitles(imdbTop250, isMovies, mediaId);
         findMediasIdsByTitles(winningMedia, isMovies, mediaId);
         if (mediaId.isEmpty()) {
             return;
         }
-        mediaId.parallelStream().filter(id -> isNewIds(id, isMovies, mediaStorage))
+
+        mediaId.parallelStream()
+                .filter(id -> isNewIds(id, isMovies, mediaStorage))
                 .forEach(id -> {
                     final Media newMedia = isMovies
-                            ? mediaFactory.createMovie(id, imdbTop250, winningMedia,
-                            actorStorage, localizationMediaStorage)
-                            : mediaFactory.createTvSerial(id, imdbTop250,
-                            winningMedia, actorStorage, localizationMediaStorage);
-                    if (newMedia == null) {
-                        return;
+                            ? mediaFactory.createMovie(id, imdbTop250, winningMedia, actorStorage,
+                            localizationMediaStorage)
+                            : mediaFactory.createTvSerial(id, imdbTop250, winningMedia,
+                            actorStorage,
+                            localizationMediaStorage);
+                    if (newMedia != null) {
+                        mediaStorage.put(newMedia.getId(), newMedia);
                     }
-                    mediaStorage.put(newMedia.getId(), newMedia);
                 });
     }
 
-    private void findMediasIdsByTitles(Set<String> titles,
-                                       boolean isMovies, Set<Integer> mediaId) {
+    private void findMediasIdsByTitles(Set<String> titles, boolean isMovies, Set<Integer> mediaId) {
         if (!titles.isEmpty()) {
             titles.parallelStream()
                     .map(title -> isMovies

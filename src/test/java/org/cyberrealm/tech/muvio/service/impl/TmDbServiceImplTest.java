@@ -17,11 +17,12 @@ import static org.cyberrealm.tech.muvio.util.TestConstants.ID_STRING;
 import static org.cyberrealm.tech.muvio.util.TestConstants.OVERVIEW;
 import static org.cyberrealm.tech.muvio.util.TestConstants.PATH;
 import static org.cyberrealm.tech.muvio.util.TestConstants.POSTER_PATH;
-import static org.cyberrealm.tech.muvio.util.TestConstants.TRUE_STORY;
 import static org.cyberrealm.tech.muvio.util.TestConstants.VOTE_AVERAGE_8;
 import static org.cyberrealm.tech.muvio.util.TestConstants.YEAR_2020;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -37,16 +38,11 @@ import info.movito.themoviedbapi.model.core.Movie;
 import info.movito.themoviedbapi.model.core.MovieResultsPage;
 import info.movito.themoviedbapi.model.core.Review;
 import info.movito.themoviedbapi.model.core.ReviewResultsPage;
-import info.movito.themoviedbapi.model.core.TvKeywords;
 import info.movito.themoviedbapi.model.core.TvSeries;
 import info.movito.themoviedbapi.model.core.TvSeriesResultsPage;
 import info.movito.themoviedbapi.model.core.image.Artwork;
 import info.movito.themoviedbapi.model.core.video.Video;
 import info.movito.themoviedbapi.model.core.video.VideoResults;
-import info.movito.themoviedbapi.model.keywords.Keyword;
-import info.movito.themoviedbapi.model.movies.Credits;
-import info.movito.themoviedbapi.model.movies.Images;
-import info.movito.themoviedbapi.model.movies.KeywordResults;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.movies.ReleaseDate;
 import info.movito.themoviedbapi.model.movies.ReleaseDateResults;
@@ -55,6 +51,8 @@ import info.movito.themoviedbapi.model.reviews.AuthorDetails;
 import info.movito.themoviedbapi.model.tv.series.ContentRating;
 import info.movito.themoviedbapi.model.tv.series.ContentRatingResults;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
+import info.movito.themoviedbapi.tools.appendtoresponse.MovieAppendToResponse;
+import info.movito.themoviedbapi.tools.appendtoresponse.TvSeriesAppendToResponse;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverMovieParamBuilder;
 import info.movito.themoviedbapi.tools.builders.discover.DiscoverTvParamBuilder;
 import info.movito.themoviedbapi.tools.sortby.DiscoverMovieSortBy;
@@ -109,61 +107,12 @@ public class TmDbServiceImplTest {
 
     @SneakyThrows
     @Test
-    @DisplayName("Verify fetchMovieDetails() method works")
-    public void fetchMovieDetails_ValidResponse_ReturnMovieDb() {
+    @DisplayName("Verify fetchFullMovieDetails() method works")
+    public void fetchFullMovieDetails_ValidResponse_ReturnMovieDb() {
         final MovieDb movieDb = getMovieDb();
-        when(tmdbMovies.getDetails(anyInt(), anyString())).thenReturn(movieDb);
-        assertThat(tmDbService.fetchMovieDetails(ONE, LANGUAGE_EN)).isEqualTo(movieDb);
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchMovieCredits() method works")
-    public void fetchMovieCredits_ValidResponse_ReturnCredits() {
-        final Credits creditsMovie = getCreditsMovie();
-        when(tmdbMovies.getCredits(anyInt(), anyString())).thenReturn(creditsMovie);
-        assertThat(tmDbService.fetchMovieCredits(ONE, LANGUAGE_EN)).isEqualTo(creditsMovie);
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchMovieTrailer() method works")
-    public void fetchMovieTrailer_ValidResponse_ReturnPath() {
-        when(tmdbMovies.getVideos(anyInt(), anyString())).thenReturn(getVideoResults());
-        assertThat(tmDbService.fetchMovieTrailer(ONE, LANGUAGE_EN)).isEqualTo(YOUTUBE_PATH + PATH);
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchMoviePhotos() method works")
-    public void fetchMoviePhotos_ValidResponse_ReturnSetPaths() {
-        when(tmdbMovies.getImages(anyInt(), anyString())).thenReturn(getImages());
-        doAnswer(invocation -> {
-            final String imageUrl = invocation.getArgument(ZERO);
-            final Set<String> filePaths = invocation.getArgument(TWO);
-            filePaths.add(imageUrl);
-            return null;
-        }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
-        assertThat(tmDbService.fetchMoviePhotos(LANGUAGE_EN, ONE, POSTER_PATH))
-                .isEqualTo(Set.of(IMAGE_PATH_W200 + PATH));
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchMovieKeywords() method works")
-    public void fetchMovieKeywords_ValidResponse_ReturnKeywordResults() {
-        final KeywordResults keywordResults = getKeywordResults();
-        when(tmdbMovies.getKeywords(anyInt())).thenReturn(keywordResults);
-        assertThat(tmDbService.fetchMovieKeywords(ONE)).isEqualTo(keywordResults);
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchMovieReviews() method works")
-    public void fetchMovieReviews_ValidResponse_ReturnListReview() {
-        when(tmdbMovies.getReviews(anyInt(), anyString(), anyInt()))
-                .thenReturn(getReviewResultsPage());
-        assertThat(tmDbService.fetchMovieReviews(LANGUAGE_EN, ONE)).isEqualTo(getListReviews());
+        when(tmdbMovies.getDetails(anyInt(), anyString(), any(MovieAppendToResponse[].class)))
+                .thenReturn(movieDb);
+        assertThat(tmDbService.fetchFullMovieDetails(ONE, LANGUAGE_EN)).isEqualTo(movieDb);
     }
 
     @SneakyThrows
@@ -177,79 +126,59 @@ public class TmDbServiceImplTest {
 
     @SneakyThrows
     @Test
-    @DisplayName("Verify fetchTvSerialsDetails() method works")
-    public void fetchTvSerialsDetails_ValidResponse_ReturnTvSeriesDb() {
+    @DisplayName("Verify fetchFullTvSeriesDetails() method works")
+    public void fetchFullTvSeriesDetails_ValidResponse_ReturnTvSeriesDb() {
         final TvSeriesDb tvSeriesDb = getTvSeriesDb();
-        when(tmdbTvSeries.getDetails(anyInt(),anyString())).thenReturn(tvSeriesDb);
-        assertThat(tmDbService.fetchTvSerialsDetails(TWO, LANGUAGE_EN)).isEqualTo(tvSeriesDb);
+        when(tmdbTvSeries.getDetails(anyInt(), anyString(), any(TvSeriesAppendToResponse[].class)))
+                .thenReturn(tvSeriesDb);
+        assertThat(tmDbService.fetchFullTvSeriesDetails(TWO, LANGUAGE_EN)).isEqualTo(tvSeriesDb);
     }
 
-    @SneakyThrows
     @Test
-    @DisplayName("Verify fetchTvSerialsCredits() method works")
-    public void fetchTvSerialsCredits_ValidResponse_ReturnCredits() {
-        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
-                = getCreditsTvSerial();
-        when(tmdbTvSeries.getCredits(anyInt(), anyString())).thenReturn(credits);
-        assertThat(tmDbService.fetchTvSerialsCredits(TWO, LANGUAGE_EN)).isEqualTo(credits);
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchTvSerialsTrailer() method works")
-    public void fetchTvSerialsTrailer_ValidResponse_ReturnPath() {
-        when(tmdbTvSeries.getVideos(anyInt(), anyString())).thenReturn(getVideoResults());
-        assertThat(tmDbService.fetchTvSerialsTrailer(TWO, LANGUAGE_EN))
+    @DisplayName("Verify extractTrailer() method works")
+    public void extractTrailer_ValidResponse_ReturnPath() {
+        assertThat(tmDbService.extractTrailer(getVideoResults()))
                 .isEqualTo(YOUTUBE_PATH + PATH);
     }
 
-    @SneakyThrows
     @Test
-    @DisplayName("Verify fetchTvSerialsPhotos() method works")
-    public void fetchTvSerialsPhotos_ValidResponse_ReturnSetPaths() {
-        when(tmdbTvSeries.getImages(anyInt(), anyString())).thenReturn(getTvImages());
+    @DisplayName("Verify extractPhotos() method works")
+    public void extractPhotos_ValidResponse_ReturnSetPaths() {
         doAnswer(invocation -> {
             final String imageUrl = invocation.getArgument(ZERO);
             final Set<String> filePaths = invocation.getArgument(TWO);
             filePaths.add(imageUrl);
             return null;
         }).when(imageSimilarityService).addIfUniqueHash(anyString(), anySet(), anySet());
-        assertThat(tmDbService.fetchTvSerialsPhotos(LANGUAGE_EN, ONE, POSTER_PATH))
+
+        assertThat(tmDbService.extractPhotos(getListArtworks(), POSTER_PATH))
                 .isEqualTo(Set.of(IMAGE_PATH_W200 + PATH));
     }
 
-    @SneakyThrows
     @Test
-    @DisplayName("Verify fetchTvSerialsKeywords() method works")
-    public void fetchTvSerialsKeywords_ValidResponse_ReturnTvKeywords() {
-        final TvKeywords tvKeywords = getTvKeywords();
-        when(tmdbTvSeries.getKeywords(anyInt())).thenReturn(tvKeywords);
-        assertThat(tmDbService.fetchTvSerialsKeywords(ONE)).isEqualTo(tvKeywords);
+    @DisplayName("Verify extractReviews() method works")
+    public void extractReviews_ValidResponse_ReturnListReviews() {
+        final List<Review> expectedReviews = getListReviews();
+        expectedReviews.get(ZERO).getAuthorDetails().setAvatarPath(IMAGE_PATH_W200 + PATH);
+
+        assertThat(tmDbService.extractReviews(getReviewResultsPage()))
+                .isEqualTo(expectedReviews);
     }
 
-    @SneakyThrows
     @Test
-    @DisplayName("Verify fetchTvSerialsReviews() method works")
-    public void fetchTvSerialsReviews_ValidResponse_ReturnListReviews() {
-        when(tmdbTvSeries.getReviews(anyInt(), anyString(), anyInt()))
-                .thenReturn(getReviewResultsPage());
-        assertThat(tmDbService.fetchTvSerialsReviews(LANGUAGE_EN, ONE)).isEqualTo(getListReviews());
+    @DisplayName("Verify extractMovieRatings() method works")
+    public void extractMovieRatings_ValidResponse_ReturnSetAgeRatings() {
+        final MovieDb movieDb = getMovieDb();
+        movieDb.setReleaseDates(getReleaseDates());
+        assertThat(tmDbService.extractMovieRatings(movieDb)).isEqualTo(Set.of(AGE_RATING_G));
     }
 
-    @SneakyThrows
     @Test
-    @DisplayName("Verify fetchTmDbTvRatings() method works")
-    public void fetchTmDbTvRatings_ValidResponse_ReturnSetAgeRatings() {
-        when(tmdbTvSeries.getContentRatings(anyInt())).thenReturn(getRatingResults());
-        assertThat(tmDbService.fetchTmDbTvRatings(ONE)).isEqualTo(Set.of(AGE_RATING_G));
-    }
-
-    @SneakyThrows
-    @Test
-    @DisplayName("Verify fetchTmDbMovieRatings() method works")
-    public void fetchTmDbMovieRatings_ValidResponse_ReturnSetAgeRatings() {
-        when(tmdbMovies.getReleaseDates(anyInt())).thenReturn(getReleaseDates());
-        assertThat(tmDbService.fetchTmDbMovieRatings(ONE)).isEqualTo(Set.of(AGE_RATING_G));
+    @DisplayName("Verify extractTvRatings() method works")
+    public void extractTvRatings_ValidResponse_ReturnSetAgeRatings() {
+        final TvSeriesDb tvSeriesDb = getTvSeriesDb();
+        tvSeriesDb.setContentRatings(getRatingResults());
+        assertThat(tmDbService.extractTvRatings(tvSeriesDb)).isEqualTo(Set.of(AGE_RATING_G));
     }
 
     @SneakyThrows
@@ -276,6 +205,8 @@ public class TmDbServiceImplTest {
     @DisplayName("Verify getFilteredMovies() method works")
     public void getFilteredMovies_ValidResponse_ReturnSetIds() {
         when(discoverMovieParamBuilder.year(anyInt())).thenReturn(discoverMovieParamBuilder);
+        when(discoverMovieParamBuilder.withoutGenres(anyList()))
+                .thenReturn(discoverMovieParamBuilder);
         when(discoverMovieParamBuilder.voteAverageGte(anyDouble()))
                 .thenReturn(discoverMovieParamBuilder);
         when(discoverMovieParamBuilder.voteCountGte(anyDouble()))
@@ -283,9 +214,10 @@ public class TmDbServiceImplTest {
         when(discoverMovieParamBuilder.page(anyInt())).thenReturn(discoverMovieParamBuilder);
         when(tmdbDiscover.getMovie(discoverMovieParamBuilder
                 .year(anyInt())
+                .withoutGenres(anyList())
                 .voteAverageGte(anyDouble()).voteCountGte(anyDouble()).page(anyInt())
                 .sortBy(DiscoverMovieSortBy.VOTE_AVERAGE_DESC)
-                )).thenReturn(getMovieResultsPage());
+        )).thenReturn(getMovieResultsPage());
         assertThat(tmDbService.getFilteredMovies(YEAR_2020, ONE)).isEqualTo(Set.of(ONE));
     }
 
@@ -293,12 +225,18 @@ public class TmDbServiceImplTest {
     @Test
     @DisplayName("Verify getFilteredTvShows() method works")
     public void getFilteredTvShows_ValidResponse_ReturnSetIds() {
-        when(discoverTvParamBuilder.firstAirDateYear(anyInt())).thenReturn(discoverTvParamBuilder);
-        when(discoverTvParamBuilder.voteAverageGte(anyDouble())).thenReturn(discoverTvParamBuilder);
+        when(discoverTvParamBuilder.firstAirDateYear(anyInt()))
+                .thenReturn(discoverTvParamBuilder);
+        when(discoverTvParamBuilder.withoutGenres(anyList()))
+                .thenReturn(discoverTvParamBuilder);
+        when(discoverTvParamBuilder.voteAverageGte(anyDouble()))
+                .thenReturn(discoverTvParamBuilder);
         when(discoverTvParamBuilder.voteCountGte(anyDouble())).thenReturn(discoverTvParamBuilder);
         when(discoverTvParamBuilder.page(anyInt())).thenReturn(discoverTvParamBuilder);
         when(tmdbDiscover.getTv(discoverTvParamBuilder
-                .firstAirDateYear(anyInt()).voteAverageGte(anyDouble())
+                .firstAirDateYear(anyInt())
+                .withoutGenres(anyList())
+                .voteAverageGte(anyDouble())
                 .voteCountGte(anyDouble()).page(anyInt())
                 .sortBy(DiscoverTvSortBy.VOTE_AVERAGE_DESC)
         )).thenReturn(getTvSeriesResultsPage());
@@ -318,41 +256,13 @@ public class TmDbServiceImplTest {
     private ContentRatingResults getRatingResults() {
         final ContentRating contentRating = new ContentRating();
         contentRating.setRating(AGE_RATING_G);
-        ContentRatingResults contentRatings = new ContentRatingResults();
+        final ContentRatingResults contentRatings = new ContentRatingResults();
         contentRatings.setResults(List.of(contentRating));
         return contentRatings;
     }
 
-    private TvKeywords getTvKeywords() {
-        final TvKeywords tvKeywords = new TvKeywords();
-        tvKeywords.setId(ONE);
-        tvKeywords.setResults(getListKeywords());
-        return tvKeywords;
-    }
-
-    private info.movito.themoviedbapi.model.tv.series.Images getTvImages() {
-        final info.movito.themoviedbapi.model.tv.series.Images images =
-                new info.movito.themoviedbapi.model.tv.series.Images();
-        images.setId(ONE);
-        images.setBackdrops(getListArtworks());
-        return images;
-    }
-
-    private info.movito.themoviedbapi.model.tv.core.credits.Credits getCreditsTvSerial() {
-        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
-                = new info.movito.themoviedbapi.model.tv.core.credits.Credits();
-        credits.setId(TWO);
-        return credits;
-    }
-
-    private TvSeriesDb getTvSeriesDb() {
-        final TvSeriesDb tvSeriesDb = new TvSeriesDb();
-        tvSeriesDb.setId(TWO);
-        return tvSeriesDb;
-    }
-
     private TvSeriesResultsPage getTvSeriesResultsPage() {
-        TvSeries tvSeries = new TvSeries();
+        final TvSeries tvSeries = new TvSeries();
         tvSeries.setId(TWO);
         tvSeries.setOverview(OVERVIEW);
         tvSeries.setVoteAverage(VOTE_AVERAGE_8);
@@ -360,8 +270,7 @@ public class TmDbServiceImplTest {
         tvSeries.setPosterPath(POSTER_PATH);
         tvSeries.setFirstAirDate(RELEASE_DATE);
         tvSeries.setName(TITLE);
-        tvSeries.setFirstAirDate(RELEASE_DATE);
-        TvSeriesResultsPage tvSeriesResultsPage = new TvSeriesResultsPage();
+        final TvSeriesResultsPage tvSeriesResultsPage = new TvSeriesResultsPage();
         tvSeriesResultsPage.setId(ONE);
         tvSeriesResultsPage.setPage(ONE);
         tvSeriesResultsPage.setResults(List.of(tvSeries));
@@ -381,24 +290,12 @@ public class TmDbServiceImplTest {
         final Review review = new Review();
         final AuthorDetails authorDetails = new AuthorDetails();
         authorDetails.setRating("6");
+        authorDetails.setAvatarPath(PATH);
         review.setAuthor(AUTHOR);
         review.setContent(CONTENT_STRING);
         review.setId(ID_STRING);
         review.setAuthorDetails(authorDetails);
         return List.of(review);
-    }
-
-    private KeywordResults getKeywordResults() {
-        final KeywordResults keywordResults = new KeywordResults();
-        keywordResults.setKeywords(getListKeywords());
-        return keywordResults;
-    }
-
-    private List<Keyword> getListKeywords() {
-        final Keyword keyword = new Keyword();
-        keyword.setId(ONE);
-        keyword.setName(TRUE_STORY);
-        return List.of(keyword);
     }
 
     private MovieResultsPage getMovieResultsPage() {
@@ -424,10 +321,10 @@ public class TmDbServiceImplTest {
         return movieDb;
     }
 
-    private Credits getCreditsMovie() {
-        final Credits creditsMovie = new Credits();
-        creditsMovie.setId(ONE);
-        return creditsMovie;
+    private TvSeriesDb getTvSeriesDb() {
+        final TvSeriesDb tvSeriesDb = new TvSeriesDb();
+        tvSeriesDb.setId(TWO);
+        return tvSeriesDb;
     }
 
     private VideoResults getVideoResults() {
@@ -437,13 +334,6 @@ public class TmDbServiceImplTest {
         final VideoResults videoResults = new VideoResults();
         videoResults.setResults(List.of(video));
         return videoResults;
-    }
-
-    private Images getImages() {
-        final Images images = new Images();
-        images.setId(ONE);
-        images.setBackdrops(getListArtworks());
-        return images;
     }
 
     private List<Artwork> getListArtworks() {
