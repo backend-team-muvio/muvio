@@ -11,6 +11,7 @@ import info.movito.themoviedbapi.model.movies.Crew;
 import info.movito.themoviedbapi.model.movies.MovieDb;
 import info.movito.themoviedbapi.model.tv.series.CreatedBy;
 import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,8 +48,8 @@ public class MediaFactoryImpl implements MediaFactory {
     private static final String CREATOR = "Creator";
     private static final String CHIEF_DIRECTOR = "Chief Director";
     private static final String EPISODE_DIRECTOR = "Episode Director";
-    private static final String DEFAULT_LANGUAGE = "null";
     private static final int MAX_NUMBER_OF_ACTORS = 3;
+
     private final TmDbService tmdbService;
     private final CategoryService categoryService;
     private final VibeService vibeService;
@@ -63,38 +64,59 @@ public class MediaFactoryImpl implements MediaFactory {
     public Media createMovie(Integer movieId, Set<String> moviesTop250,
                              Set<String> oscarWinningMedia, Map<Integer, Actor> actors,
                              Set<LocalizationMedia> localizationMediaStorage) {
-        final MovieDb movieDb = tmdbService.fetchMovieDetails(movieId, LANGUAGE_EN);
-        final List<Keyword> keywords = tmdbService.fetchMovieKeywords(movieId)
-                .getKeywords();
-        final Credits credits = tmdbService.fetchMovieCredits(movieId, LANGUAGE_EN);
-        final List<Crew> crew = credits.getCrew();
+
+        final MovieDb movieDb = tmdbService.fetchFullMovieDetails(movieId, LANGUAGE_EN);
+        if (movieDb == null) {
+            return null;
+        }
+
+        final List<Keyword> keywords = (movieDb.getKeywords() != null
+                && movieDb.getKeywords().getKeywords() != null)
+                ? movieDb.getKeywords().getKeywords() : Collections.emptyList();
+
+        final Credits credits = movieDb.getCredits();
+        final List<Crew> crew = (credits != null && credits.getCrew() != null)
+                ? credits.getCrew() : Collections.emptyList();
+        final List<Cast> cast = (credits != null && credits.getCast() != null)
+                ? credits.getCast() : Collections.emptyList();
+
         final Media media = mediaMapper.toEntity(movieDb);
-        final Set<String> photoPaths = tmdbService.fetchMoviePhotos(DEFAULT_LANGUAGE, movieId,
+
+        final Set<String> photoPaths = tmdbService.extractPhotos(
+                movieDb.getImages()
+                        != null ? movieDb.getImages().getBackdrops() : Collections.emptyList(),
                 media.getPosterPath());
+
         final String movieDirector = getMovieDirector(crew);
+
         if (isInvalidMedia(movieDirector, photoPaths, movieId, localizationMediaStorage,
                 localizationMediaFactory::createFromMovie)) {
             return null;
         }
+
         final Double voteAverage = media.getRating();
         final Integer voteCount = movieDb.getVoteCount();
         final Double popularity = movieDb.getPopularity();
         final String title = media.getTitle();
+        final String overview =
+                media.getOverview() != null ? media.getOverview().toLowerCase() : "";
+
         fillCommonMediaInfo(
                 media,
-                tmdbService.fetchMovieTrailer(movieId, LANGUAGE_EN),
+                tmdbService.extractTrailer(movieDb.getVideos()),
                 photoPaths,
-                getMovieActors(credits.getCast(), actors),
-                getReviews(() -> tmdbService.fetchMovieReviews(LANGUAGE_EN, movieId)),
+                getMovieActors(cast, actors),
+                getReviews(tmdbService.extractReviews(movieDb.getReviews())),
                 movieDirector,
-                vibeService.getVibes(tmdbService.fetchTmDbMovieRatings(movieId),
+                vibeService.getVibes(tmdbService.extractMovieRatings(movieDb),
                         media.getGenres()),
-                categoryService.putCategories(media.getOverview().toLowerCase(),
-                        keywords, voteAverage, voteCount, popularity, moviesTop250, title),
+                categoryService.putCategories(overview, keywords, voteAverage, voteCount,
+                        popularity, moviesTop250, title),
                 topListService.putTopLists(keywords, voteAverage, voteCount, popularity,
-                        media.getReleaseYear(), oscarWinningMedia, title, movieDb.getBudget(),
-                        movieDb.getRevenue())
+                        media.getReleaseYear(), oscarWinningMedia,
+                        title, movieDb.getBudget(), movieDb.getRevenue())
         );
+
         return media;
     }
 
@@ -102,39 +124,60 @@ public class MediaFactoryImpl implements MediaFactory {
     public Media createTvSerial(Integer seriesId, Set<String> serialsTop250,
                                 Set<String> emmyWinningMedia, Map<Integer, Actor> actors,
                                 Set<LocalizationMedia> localizationMediaStorage) {
-        final List<Keyword> keywords = tmdbService.fetchTvSerialsKeywords(seriesId)
-                .getResults();
-        final TvSeriesDb tvSeriesDb = tmdbService.fetchTvSerialsDetails(seriesId, LANGUAGE_EN);
+
+        final TvSeriesDb tvSeriesDb = tmdbService.fetchFullTvSeriesDetails(seriesId, LANGUAGE_EN);
+        if (tvSeriesDb == null) {
+            return null;
+        }
+
+        final List<Keyword> keywords = (tvSeriesDb.getKeywords() != null
+                && tvSeriesDb.getKeywords().getResults() != null)
+                ? tvSeriesDb.getKeywords().getResults() : Collections.emptyList();
+
+        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits =
+                tvSeriesDb.getCredits();
+        final List<info.movito.themoviedbapi.model.tv.core.credits.Cast> cast =
+                (credits != null
+                        && credits.getCast() != null) ? credits.getCast() : Collections.emptyList();
+        final List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crew =
+                (credits != null
+                        && credits.getCrew() != null) ? credits.getCrew() : Collections.emptyList();
+
         final Media media = mediaMapper.toEntity(tvSeriesDb);
-        final info.movito.themoviedbapi.model.tv.core.credits.Credits credits
-                = tmdbService.fetchTvSerialsCredits(seriesId, LANGUAGE_EN);
-        final List<info.movito.themoviedbapi.model.tv.core.credits.Cast> cast = credits.getCast();
-        final String tvDirector = getTvDirector(
-                tvSeriesDb.getCreatedBy(), cast, credits.getCrew());
-        final Set<String> photoPaths = tmdbService.fetchTvSerialsPhotos(DEFAULT_LANGUAGE, seriesId,
+
+        final String tvDirector = getTvDirector(tvSeriesDb.getCreatedBy(), cast, crew);
+
+        final Set<String> photoPaths = tmdbService.extractPhotos(
+                tvSeriesDb.getImages()
+                        != null ? tvSeriesDb.getImages().getBackdrops() : Collections.emptyList(),
                 media.getPosterPath());
+
         if (isInvalidMedia(tvDirector, photoPaths, seriesId, localizationMediaStorage,
                 localizationMediaFactory::createFromSerial)) {
             return null;
         }
+
         final Double voteAverage = media.getRating();
         final Integer voteCount = tvSeriesDb.getVoteCount();
         final Double popularity = tvSeriesDb.getPopularity();
         final String title = media.getTitle();
+        final String overview =
+                media.getOverview() != null ? media.getOverview().toLowerCase() : "";
+
         fillCommonMediaInfo(
                 media,
-                tmdbService.fetchTvSerialsTrailer(seriesId, LANGUAGE_EN),
+                tmdbService.extractTrailer(tvSeriesDb.getVideos()),
                 photoPaths,
                 getTvActors(cast, actors),
-                getReviews(() -> tmdbService.fetchTvSerialsReviews(LANGUAGE_EN, seriesId)),
+                getReviews(tmdbService.extractReviews(tvSeriesDb.getReviews())),
                 tvDirector,
-                vibeService.getVibes(tmdbService.fetchTmDbTvRatings(seriesId),
-                        media.getGenres()),
-                categoryService.putCategories(media.getOverview().toLowerCase(),
-                        keywords, voteAverage, voteCount, popularity, serialsTop250, title),
-                topListService.putTopListsForTvShow(keywords, voteAverage, voteCount,
-                        popularity, media.getReleaseYear(), emmyWinningMedia, title)
+                vibeService.getVibes(tmdbService.extractTvRatings(tvSeriesDb), media.getGenres()),
+                categoryService.putCategories(overview, keywords, voteAverage,
+                        voteCount, popularity, serialsTop250, title),
+                topListService.putTopListsForTvShow(keywords, voteAverage, voteCount, popularity,
+                        media.getReleaseYear(), emmyWinningMedia, title)
         );
+
         return media;
     }
 
@@ -146,9 +189,11 @@ public class MediaFactoryImpl implements MediaFactory {
     }
 
     private List<Review> getReviews(
-            Supplier<List<info.movito.themoviedbapi.model.core.Review>> reviewsSupplier
-    ) {
-        return reviewsSupplier.get().stream()
+            List<info.movito.themoviedbapi.model.core.Review> tmdbReviews) {
+        if (tmdbReviews == null || tmdbReviews.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return tmdbReviews.stream()
                 .map(reviewMapper::toEntity)
                 .toList();
     }
@@ -176,16 +221,25 @@ public class MediaFactoryImpl implements MediaFactory {
     }
 
     private String findCrewMemberByJob(List<Crew> crews, String job) {
-        return crews.stream().filter(crew -> crew.getJob().equalsIgnoreCase(job))
-                .map(Crew::getName).findFirst().orElse(null);
+        if (crews == null) {
+            return null;
+        }
+        return crews.stream()
+                .filter(crew -> crew.getJob() != null && crew.getJob().equalsIgnoreCase(job))
+                .map(Crew::getName)
+                .findFirst()
+                .orElse(null);
     }
 
     private String getTvDirector(List<CreatedBy> creators,
                                  List<info.movito.themoviedbapi.model.tv.core.credits.Cast> casts,
-                                 List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crews
-    ) {
+                                 List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crews) {
         return tryGetFirstNonNull(
-                () -> creators.stream().map(NamedIdElement::getName).findFirst().orElse(null),
+                () -> (creators
+                        != null) ? creators.stream()
+                        .map(NamedIdElement::getName)
+                        .findFirst()
+                        .orElse(null) : null,
                 () -> getCrewNameByJob(crews, DIRECTOR),
                 () -> getCrewNameByJob(crews, CREATOR),
                 () -> getCrewNameByJob(crews, PRODUCER),
@@ -193,9 +247,9 @@ public class MediaFactoryImpl implements MediaFactory {
                 () -> getCrewNameByJob(crews, SERIES_DIRECTOR),
                 () -> getCrewNameByJob(crews, EPISODE_DIRECTOR),
                 () -> getCrewNameByJob(crews, CHIEF_DIRECTOR),
-                () -> casts.stream().filter(cast -> cast.getCharacter() != null
+                () -> (casts != null) ? casts.stream().filter(cast -> cast.getCharacter() != null
                                 && cast.getCharacter().toLowerCase().contains(HOST))
-                        .findFirst().map(NamedIdElement::getName).orElse(null));
+                        .findFirst().map(NamedIdElement::getName).orElse(null) : null);
     }
 
     @SafeVarargs
@@ -211,9 +265,14 @@ public class MediaFactoryImpl implements MediaFactory {
 
     private String getCrewNameByJob(
             List<info.movito.themoviedbapi.model.tv.core.credits.Crew> crews, String job) {
-        return crews.stream().filter(crew -> crew.getJob() != null
-                        && crew.getJob().equalsIgnoreCase(job)).findFirst()
-                .map(NamedIdElement::getName).orElse(null);
+        if (crews == null) {
+            return null;
+        }
+        return crews.stream()
+                .filter(crew -> crew.getJob() != null && crew.getJob().equalsIgnoreCase(job))
+                .findFirst()
+                .map(NamedIdElement::getName)
+                .orElse(null);
     }
 
     private boolean isInvalidMedia(

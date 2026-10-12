@@ -2,6 +2,8 @@ package org.cyberrealm.tech.muvio.service.impl;
 
 import static org.cyberrealm.tech.muvio.common.Constants.TEN;
 
+import info.movito.themoviedbapi.model.movies.MovieDb;
+import info.movito.themoviedbapi.model.tv.series.TvSeriesDb;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +27,20 @@ public class LocalizationMediaFactoryImpl implements LocalizationMediaFactory {
         final Set<LocalizationMedia> tempStorage = new HashSet<>();
         final boolean allValid = localizationEntrySet.stream().allMatch(localizationEntry -> {
             final String language = localizationEntry.getLang();
+
+            final MovieDb movieDb = tmDbService.fetchFullMovieDetails(mediaId, language);
+            if (movieDb == null) {
+                return false;
+            }
+
             LocalizationMedia localizationMedia = localizationMediaMapper
-                    .toLocalizationMovie(tmDbService.fetchMovieDetails(mediaId, language),
-                            localizationEntry);
+                    .toLocalizationMovie(movieDb, localizationEntry);
+
             if (isInvalidOverview(localizationMedia.getOverview())) {
                 return false;
             }
-            localizationMedia.setTrailer(tmDbService.fetchMovieTrailer(mediaId, language));
+
+            localizationMedia.setTrailer(tmDbService.extractTrailer(movieDb.getVideos()));
             tempStorage.add(localizationMedia);
             return true;
         });
@@ -44,13 +53,20 @@ public class LocalizationMediaFactoryImpl implements LocalizationMediaFactory {
         final Set<LocalizationMedia> tempStorage = new HashSet<>();
         final boolean allValid = localizationEntrySet.stream().allMatch(localizationEntry -> {
             final String language = localizationEntry.getLang();
+
+            final TvSeriesDb tvSeriesDb = tmDbService.fetchFullTvSeriesDetails(seriesId, language);
+            if (tvSeriesDb == null) {
+                return false;
+            }
+
             LocalizationMedia localizationMedia = localizationMediaMapper
-                    .toLocalizationTvSerial(tmDbService.fetchTvSerialsDetails(seriesId, language),
-                            localizationEntry);
+                    .toLocalizationTvSerial(tvSeriesDb, localizationEntry);
+
             if (isInvalidOverview(localizationMedia.getOverview())) {
                 return false;
             }
-            localizationMedia.setTrailer(tmDbService.fetchTvSerialsTrailer(seriesId, language));
+
+            localizationMedia.setTrailer(tmDbService.extractTrailer(tvSeriesDb.getVideos()));
             tempStorage.add(localizationMedia);
             return true;
         });

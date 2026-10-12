@@ -56,7 +56,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
 
         BufferedImage image = fetchImage(imageUrl);
         if (image == null) {
-            log.warn("Could not process image from URL: {}", imageUrl);
+            log.warn("Skipping image processing due to loading/decoding failure: {}", imageUrl);
             return;
         }
 
@@ -78,14 +78,18 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
                 try (final InputStream imageStream = new ByteArrayInputStream(imageBytes)) {
                     final BufferedImage image = ImageIO.read(imageStream);
                     if (image == null) {
-                        log.warn("Could not read image data from URL: {}", imageUrl);
+                        log.warn("ImageIO returned null (unsupported format) for URL: {}",
+                                imageUrl);
                     }
                     return image;
                 }
             }
+        } catch (javax.imageio.IIOException | IllegalArgumentException e) {
+            log.error("Failed to decode image content from {}: {}", imageUrl, e.getMessage());
+            return null;
         } catch (IOException | URISyntaxException e) {
             throw new NetworkRequestException(
-                    "Failed to read image from: " + imageUrl, e);
+                    "Network error occurred while fetching image: " + imageUrl, e);
         }
     }
 
@@ -118,7 +122,7 @@ public class ImageSimilarityServiceImpl implements ImageSimilarityService {
                 log.debug("Skipping similar image: {}", imageUrl);
             }
         } catch (Exception e) {
-            throw new NetworkRequestException("Error while hashing image: " + imageUrl, e);
+            log.error("Error while hashing image: {}", imageUrl, e);
         }
     }
 

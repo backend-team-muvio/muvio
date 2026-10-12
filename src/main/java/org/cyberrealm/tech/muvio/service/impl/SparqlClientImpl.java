@@ -18,6 +18,10 @@ public class SparqlClientImpl implements SparqlClient {
     private static final String FORMAT_JSON = "&format=json";
     private static final String GET = "GET";
     private static final String PATTERN_A = "\\A";
+
+    private static final String USER_AGENT =
+            "MuvioApp/1.0 (contact@cyberrealm.tech) Java/HttpURLConnection";
+
     @Value("${sparql.endpoint}")
     private String sparqlEndpoint;
 
@@ -28,7 +32,12 @@ public class SparqlClientImpl implements SparqlClient {
                     .encode(query, StandardCharsets.UTF_8) + FORMAT_JSON;
             final HttpURLConnection connection = (HttpURLConnection) new URI(queryUrl).toURL()
                     .openConnection();
+
             connection.setRequestMethod(GET);
+
+            connection.setRequestProperty("User-Agent", USER_AGENT);
+            connection.setRequestProperty("Accept", "application/json");
+
             try (Scanner scanner = new Scanner(connection.getInputStream())) {
                 return scanner.useDelimiter(PATTERN_A).next();
             }
